@@ -177,6 +177,7 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
 
 @patch(MODULE_PATH_MODELS_OWNERS + ".Owner.update_is_up", lambda *args, **kwargs: None)
 @patch(MODULE_PATH + ".delete_stale_notifications")
+@patch(MODULE_PATH + ".send_jump_fuel_notifications_for_config")
 @patch(MODULE_PATH + ".send_structure_fuel_notifications_for_config")
 @patch(MODULE_PATH + ".process_notifications_for_owner")
 class TestFetchAllNotifications(NoSocketsTestCase):
@@ -191,6 +192,7 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         self,
         mock_fetch_notifications_owner,
         mock_send_fuel_notifications_for_config,
+        mock_send_jump_fuel_notifications_for_config,
         mock_delete_stale_notifications,
     ):
         # given
@@ -217,6 +219,7 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         self,
         mock_fetch_notifications_owner,
         mock_send_fuel_notifications_for_config,
+        mock_send_jump_fuel_notifications_for_config,
         mock_delete_stale_notifications,
     ):
         # given
@@ -232,6 +235,7 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         self,
         mock_fetch_notifications_owner,
         mock_send_fuel_notifications_for_config,
+        mock_send_jump_fuel_notifications_for_config,
         mock_delete_stale_notifications,
     ):
         # when
@@ -486,18 +490,21 @@ class TestGetUser(NoSocketsTestCase):
         self.assertIsNone(result)
 
 
+@patch(MODULE_PATH + ".batch_delete_notifications")
 @patch(MODULE_PATH + ".Notification.objects.filter_stale")
-@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 class TestDeleteStateNotifications(TestCase):
-    def test_should_delete_stale_entries_only(self, mock_filter_stale):
+    def test_should_delete_stale_entries_only(
+        self, mock_filter_stale, mock_batch_delete_notifications
+    ):
         # given
         stale_entry = NotificationFactory(
             timestamp=timezone.now() - dt.timedelta(hours=3, seconds=1)
         )
-        current_entry = NotificationFactory(timestamp=timezone.now())
+        NotificationFactory(timestamp=timezone.now())
         mock_filter_stale.return_value = Notification.objects.filter(pk=stale_entry.pk)
         # when
-        tasks.delete_stale_notifications.delay()
+        tasks.delete_stale_notifications()
         # then
-        self.assertFalse(Notification.objects.filter(pk=stale_entry.pk).exists())
-        self.assertTrue(Notification.objects.filter(pk=current_entry.pk).exists())
+        self.assertTrue(mock_batch_delete_notifications.apply_async.called)
+        _, kwargs = mock_batch_delete_notifications.apply_async.call_args
+        self.assertEqual(kwargs["kwargs"]["pks"], [stale_entry.pk])

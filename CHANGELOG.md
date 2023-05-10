@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Stale notifications are automatically deleted. You can configure what constitutes a stale notifications via settings. The default is 30 days. (#85)
+- Support for Python 3.11
 
 ## [2.3.0] - 2023-04-25
 

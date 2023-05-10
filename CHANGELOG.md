@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.4.0] - 2023-05-10
+
+### Added
+
+- Stale notifications are automatically deleted. You can configure what constitutes a stale notifications via settings. The default is 30 days. (#85)
+
 ## [2.3.0] - 2023-04-25
 
 ### Added

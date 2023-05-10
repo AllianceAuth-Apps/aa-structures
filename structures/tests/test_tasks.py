@@ -1,7 +1,9 @@
+import datetime as dt
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from allianceauth.eveonline.models import EveCorporationInfo
 from app_utils.testdata_factories import UserFactory
@@ -11,12 +13,20 @@ from app_utils.testing import (
     generate_invalid_pk,
 )
 
-from .. import tasks
-from ..models import FuelAlertConfig, NotificationType, Owner, Webhook
+from structures import tasks
+from structures.models import (
+    FuelAlertConfig,
+    Notification,
+    NotificationType,
+    Owner,
+    Webhook,
+)
+
 from .testdata.factories import create_notification, create_owner_from_user
 from .testdata.factories_2 import (
     FuelAlertConfigFactory,
     JumpFuelAlertConfigFactory,
+    NotificationFactory,
     OwnerFactory,
     WebhookFactory,
 )
@@ -166,6 +176,7 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
 
 
 @patch(MODULE_PATH_MODELS_OWNERS + ".Owner.update_is_up", lambda *args, **kwargs: None)
+@patch(MODULE_PATH + ".delete_stale_notifications")
 @patch(MODULE_PATH + ".send_structure_fuel_notifications_for_config")
 @patch(MODULE_PATH + ".process_notifications_for_owner")
 class TestFetchAllNotifications(NoSocketsTestCase):
@@ -177,7 +188,10 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         cls.user, cls.owner = set_owner_character(character_id=1001)
 
     def test_fetch_all_notifications(
-        self, mock_fetch_notifications_owner, mock_send_fuel_notifications_for_config
+        self,
+        mock_fetch_notifications_owner,
+        mock_send_fuel_notifications_for_config,
+        mock_delete_stale_notifications,
     ):
         # given
         owner_2001 = Owner.objects.get(
@@ -200,7 +214,10 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         self.assertEqual(kwargs["kwargs"]["owner_pk"], owner_2002.pk)
 
     def test_send_new_fuel_notifications(
-        self, mock_fetch_notifications_owner, mock_send_fuel_notifications_for_config
+        self,
+        mock_fetch_notifications_owner,
+        mock_send_fuel_notifications_for_config,
+        mock_delete_stale_notifications,
     ):
         # given
         config = FuelAlertConfig.objects.create(start=48, end=0, repeat=12)
@@ -210,6 +227,17 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         self.assertEqual(mock_send_fuel_notifications_for_config.delay.call_count, 1)
         args, _ = mock_send_fuel_notifications_for_config.delay.call_args
         self.assertEqual(args[0], config.pk)
+
+    def test_should_call_delete_stale_notifications(
+        self,
+        mock_fetch_notifications_owner,
+        mock_send_fuel_notifications_for_config,
+        mock_delete_stale_notifications,
+    ):
+        # when
+        tasks.fetch_all_notifications()
+        # then
+        self.assertTrue(mock_delete_stale_notifications.delay.called)
 
 
 # TODO: Fix tests. Does not work with tox.
@@ -456,3 +484,20 @@ class TestGetUser(NoSocketsTestCase):
         result = tasks._get_user(None)
         # then
         self.assertIsNone(result)
+
+
+@patch(MODULE_PATH + ".Notification.objects.filter_stale")
+@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
+class TestDeleteStateNotifications(TestCase):
+    def test_should_delete_stale_entries_only(self, mock_filter_stale):
+        # given
+        stale_entry = NotificationFactory(
+            timestamp=timezone.now() - dt.timedelta(hours=3, seconds=1)
+        )
+        current_entry = NotificationFactory(timestamp=timezone.now())
+        mock_filter_stale.return_value = Notification.objects.filter(pk=stale_entry.pk)
+        # when
+        tasks.delete_stale_notifications.delay()
+        # then
+        self.assertFalse(Notification.objects.filter(pk=stale_entry.pk).exists())
+        self.assertTrue(Notification.objects.filter(pk=current_entry.pk).exists())

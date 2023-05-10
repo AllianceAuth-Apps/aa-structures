@@ -64,6 +64,19 @@ STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES = clean_setting(
 before service is reported as down.
 """
 
+STRUCTURES_NOTIFICATION_MAX_STORAGE_AGE_DAYS = clean_setting(
+    "STRUCTURES_NOTIFICATION_MAX_AGE_DAYS", 30
+)
+"""Max age in days for storing notification in the database.
+Older notifications will be deleted automatically.
+"""
+
+STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE = clean_setting(
+    "STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE", 2000
+)
+"""How many notifications are deleted in one batch."""
+
+
 STRUCTURES_NOTIFICATION_WAIT_SEC = clean_setting("STRUCTURES_NOTIFICATION_WAIT_SEC", 5)
 """Default wait time in seconds before retrying to send a notification
 to Discord after an error occurred.

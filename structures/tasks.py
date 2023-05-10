@@ -8,14 +8,19 @@ from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
 from app_utils.esi import fetch_esi_status
+from app_utils.helpers import chunks
 from app_utils.logging import LoggerAddTag
 
 from . import __title__
-from .app_settings import STRUCTURES_TASKS_TIME_LIMIT
+from .app_settings import (
+    STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE,
+    STRUCTURES_TASKS_TIME_LIMIT,
+)
 from .models import (
     EveSovereigntyMap,
     FuelAlertConfig,
     JumpFuelAlertConfig,
+    Notification,
     NotificationType,
     Owner,
     Webhook,
@@ -114,6 +119,7 @@ def fetch_all_notifications():
         "pk", flat=True
     ):
         send_jump_fuel_notifications_for_config.delay(config_pk)
+    delete_stale_notifications.delay()
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
@@ -244,3 +250,19 @@ def _get_user(user_pk: Optional[int]) -> Optional[User]:
     except User.DoesNotExist:
         logger.warning("Ignoring non-existing user with pk %s", user_pk)
         return None
+
+
+@shared_task
+def delete_stale_notifications():
+    """Delete all stale notifications from the database."""
+    pks = Notification.objects.filter_stale().values_list("pk", flat=True)
+    for pks_chunk in chunks(pks, STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE):
+        batch_delete_notifications.apply_async(priority=7, kwargs={"pks": pks_chunk})
+
+
+@shared_task
+def batch_delete_notifications(pks: Iterable[int]):
+    """Delete a batch of notifications."""
+    notifs_to_delete = Notification.objects.filter(pk__in=list(pks))
+    logger.info(f"Deleting {notifs_to_delete.count():,} stale notifications.")
+    notifs_to_delete._raw_delete(notifs_to_delete.db)

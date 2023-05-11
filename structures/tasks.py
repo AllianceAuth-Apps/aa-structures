@@ -265,4 +265,4 @@ def batch_delete_notifications(pks: Iterable[int]):
     """Delete a batch of notifications."""
     notifs_to_delete = Notification.objects.filter(pk__in=list(pks))
     logger.info(f"Deleting {notifs_to_delete.count():,} stale notifications.")
-    notifs_to_delete._raw_delete(notifs_to_delete.db)
+    notifs_to_delete.delete()

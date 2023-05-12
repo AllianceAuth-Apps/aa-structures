@@ -14,7 +14,10 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 
 from . import __title__
-from .app_settings import STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION
+from .app_settings import (
+    STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION,
+    STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE,
+)
 from .constants import EveCategoryId, EveTypeId
 from .providers import esi
 from .webhooks.managers import WebhookBaseManager
@@ -116,7 +119,12 @@ class NotificationBaseManagerBase(models.Manager):
 
 
 class NotificationQuerySet(NotificationBaseQuerySet):
-    pass
+    def filter_stale(self):
+        """Filter queryset to contain stale notifications only."""
+        return self.filter(
+            timestamp__lte=now()
+            - dt.timedelta(days=STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE)
+        )
 
 
 class NotificationManagerBase(NotificationBaseManagerBase):

@@ -474,9 +474,12 @@ class OwnerAdmin(admin.ModelAdmin):
     def update_all(self, request, queryset):
         for obj in queryset:
             tasks.update_all_for_owner.delay(obj.pk, user_pk=request.user.pk)  # type: ignore
-            text = _(
-                "Started updating structures and notifications for %s. "
-                "You will receive a notification once it is completed." % obj
+            text = (
+                _(
+                    "Started updating structures and notifications for %s. "
+                    "You will receive a notification once it is completed."
+                )
+                % obj
             )
             self.message_user(request, text)
 

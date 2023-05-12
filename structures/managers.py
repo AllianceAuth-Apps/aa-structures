@@ -16,7 +16,7 @@ from app_utils.logging import LoggerAddTag
 from . import __title__
 from .app_settings import (
     STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION,
-    STRUCTURES_NOTIFICATION_MAX_STORAGE_AGE_DAYS,
+    STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE,
 )
 from .constants import EveCategoryId, EveTypeId
 from .providers import esi
@@ -123,7 +123,7 @@ class NotificationQuerySet(NotificationBaseQuerySet):
         """Filter queryset to contain stale notifications only."""
         return self.filter(
             timestamp__lte=now()
-            - dt.timedelta(days=STRUCTURES_NOTIFICATION_MAX_STORAGE_AGE_DAYS)
+            - dt.timedelta(days=STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE)
         )
 
 

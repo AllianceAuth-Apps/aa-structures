@@ -13,7 +13,7 @@ from app_utils.logging import LoggerAddTag
 
 from . import __title__
 from .app_settings import (
-    STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE,
+    STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE,
     STRUCTURES_TASKS_TIME_LIMIT,
 )
 from .models import (
@@ -256,7 +256,7 @@ def _get_user(user_pk: Optional[int]) -> Optional[User]:
 def delete_stale_notifications():
     """Delete all stale notifications from the database."""
     pks = Notification.objects.filter_stale().values_list("pk", flat=True)
-    for pks_chunk in chunks(pks, STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE):
+    for pks_chunk in chunks(pks, STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE):
         batch_delete_notifications.apply_async(priority=7, kwargs={"pks": pks_chunk})
 
 

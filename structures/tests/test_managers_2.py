@@ -54,7 +54,7 @@ class TestNotificationBaseAddOrRemoveTimers(NoSocketsTestCase):
         self.assertEqual(mock_add_or_remove_timer_from_notification.call_count, 1)
 
 
-@patch(MANAGERS_PATH + ".STRUCTURES_NOTIFICATION_MAX_STORAGE_AGE_DAYS", 3)
+@patch(MANAGERS_PATH + ".STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE", 3)
 class TestNotificationQuerySet(NoSocketsTestCase):
     def test_should_filter_stale_notifications_only(self):
         # given

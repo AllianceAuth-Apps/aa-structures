@@ -18,6 +18,7 @@ e.g. this language will be used when creating timers
 
 Please use the language codes as defined in the base.py settings file.
 """
+
 STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED = clean_setting(
     "STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", False
 )
@@ -64,15 +65,20 @@ STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES = clean_setting(
 before service is reported as down.
 """
 
-STRUCTURES_NOTIFICATION_MAX_STORAGE_AGE_DAYS = clean_setting(
-    "STRUCTURES_NOTIFICATION_MAX_AGE_DAYS", 30
+STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE = clean_setting(
+    "STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE", 30
 )
-"""Max age in days for storing notification in the database.
-Older notifications will be deleted automatically.
+"""Days until notifications become stale in the database.
+Stale notifications will be deleted automatically.
 """
 
-STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE = clean_setting(
-    "STRUCTURES_NOTIFICATION_DELETE_BATCH_SIZE", 2000
+STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE = clean_setting(
+    "STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE", 2000
+)
+"""How many notifications are deleted in one batch."""
+
+STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE = clean_setting(
+    "STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE", 2000
 )
 """How many notifications are deleted in one batch."""
 
@@ -145,6 +151,7 @@ STRUCTURES_NOTIFICATION_TURNAROUND_SHORT = clean_setting(
     "STRUCTURES_NOTIFICATION_TURNAROUND_SHORT", 5
 )
 """Number of notifications to count for short mean turnaround time."""
+
 STRUCTURES_NOTIFICATION_TURNAROUND_MEDIUM = clean_setting(
     "STRUCTURES_NOTIFICATION_TURNAROUND_MEDIUM", 15
 )

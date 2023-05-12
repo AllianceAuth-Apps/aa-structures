@@ -334,7 +334,7 @@ Structure fuel alerts can be configured to provide additional alert notification
 
 Here is an example:
 
-_First configuration_
+##### First configuration
 
 When fuel is down to 3 days, send a warning notification every 12 hours. For this the configuration would be:
 
@@ -344,7 +344,7 @@ When fuel is down to 3 days, send a warning notification every 12 hours. For thi
 - channel pings: @here
 - color: warning
 
-_Second configuration_
+##### Second configuration
 
 When fuel is down to 24 hours, send a danger notification every 6 hours and ping everybody. For this the configuration would be:
 
@@ -382,7 +382,7 @@ STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED|Whether to create / remove timers from
 STRUCTURES_NOTIFICATIONS_ARCHIVING_ENABLED|Enables archiving of all notifications received from ESI to files notifications will by stored into one continuous file per corporations. For debugging.|`False`
 STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE|Days until notifications become stale in the database. Stale notifications will be deleted automatically.|`30`
 STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE|How many notifications are deleted in one batch.|`2000`
-STRUCTURES_NOTIFICATIONS_DELETE_TIMEOUT_HOURS|How often stale notifications are deleted.|`21600`
+STRUCTURES_NOTIFICATIONS_DELETE_TIMEOUT_HOURS|How often stale notifications are deleted.|`1`
 STRUCTURES_NOTIFICATION_DISABLE_ESI_FUEL_ALERTS|This allows you to turn off ESI fuel alert notifications to use the Structure's generated fuel notifications exclusively.|`False`
 STRUCTURES_NOTIFICATION_MAX_RETRIES|Max number of retries for sending a notification if an error occurred e.g. rate limiting.|`3`
 STRUCTURES_NOTIFICATION_SET_AVATAR|Wether structures sets the name and avatar icon of a webhook else the webhook will show it's default names as set when defining the webhook.|`True`

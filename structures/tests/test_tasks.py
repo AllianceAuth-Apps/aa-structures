@@ -514,7 +514,7 @@ class TestGetUser(NoSocketsTestCase):
 @patch(MODULE_PATH + ".batch_delete_notifications")
 @patch(MODULE_PATH + ".Notification.objects.filter_stale")
 class TestDeleteStateNotifications(TestCase):
-    def test_should_delete_stale_entries_only(
+    def test_should_call_task_to_delete_stale_entries_only(
         self, mock_filter_stale, mock_batch_delete_notifications
     ):
         # given
@@ -529,3 +529,17 @@ class TestDeleteStateNotifications(TestCase):
         self.assertTrue(mock_batch_delete_notifications.apply_async.called)
         _, kwargs = mock_batch_delete_notifications.apply_async.call_args
         self.assertEqual(kwargs["kwargs"]["pks"], [stale_entry.pk])
+
+
+class TestBatchDeleteNotifications(TestCase):
+    def test_should_delete_specified_notifications_only(self):
+        # given
+        stale_notif = NotificationFactory(
+            timestamp=timezone.now() - dt.timedelta(hours=3, seconds=1)
+        )
+        normal_notif = NotificationFactory(timestamp=timezone.now())
+        # when
+        tasks.batch_delete_notifications(pks=[stale_notif.pk])
+        # then
+        self.assertNotIn(stale_notif, Notification.objects.all())
+        self.assertIn(normal_notif, Notification.objects.all())

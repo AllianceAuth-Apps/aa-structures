@@ -364,32 +364,43 @@ Here is a list of available settings for this app. They can be configured by add
 
 Note that all settings are optional and the app will use the documented default settings if they are not used.
 
-Name | Description | Default
--- | -- | --
-`STRUCTURES_ADD_TIMERS`| Whether to automatically add timers for certain notifications on the timerboard (will have no effect if [aa-timerboard](https://allianceauth.readthedocs.io/en/latest/features/timerboard/) app is not installed). Will create timers from anchoring, lost shield and lost armor notifications  | `True`
-`STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED`| Whether admins will get notifications about import events like when someone adds a structure owner and when services for an owner are down. | `True`
-`STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED`| Enable default tags filter for structure list as default | `False`
-`STRUCTURES_DEFAULT_LANGUAGE`| Sets the default language to be used in case no language can be determined. e.g. this language will be used when creating timers. Please use the language codes as defined in the base.py settings file. | `en`
-`STRUCTURES_DEFAULT_PAGE_LENGTH`| Default page size for structure list. Must be an integer value from the available options in the app. | `10`
-`STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES`| Max retries before a character is deleted when ESI claims the character is not a director (Since this sometimes is reported wrongly by ESI). | `3`
-`STRUCTURES_FEATURE_CUSTOMS_OFFICES`| Enable / disable custom offices feature | `True`
-`STRUCTURES_FEATURE_STARBASES`| Enable / disable starbases feature | `True`
-`STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS`| Enable / disable refueled notifications feature | `False`
-`STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION`| Defines after how many hours a notification is regarded as stale. Stale notifications are no longer sent automatically. | `24`
-`STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED`| whether to create / remove timers from moon extraction notifications  | `True`
-`STRUCTURES_NOTIFICATION_DISABLE_ESI_FUEL_ALERTS`| This allows you to turn off ESI fuel alert notifications to use the Structure's generated fuel notifications exclusively.  | `False`
-`STRUCTURES_NOTIFICATION_MAX_RETRIES`| Max number of retries after a HTTP error occurred incl. rate limiting  | `3`
-`STRUCTURES_NOTIFICATION_SET_AVATAR`| Wether structures sets the name and avatar icon of a webhook. When `False` the webhook will use it's own values as set on the platform | `True`
-`STRUCTURES_NOTIFICATION_SHOW_MOON_ORE`| Wether ore details are shown on moon notifications | `True`
-`STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES`| Max time in minutes since last successful notifications sync before service is reported as down  | `40`
-`STRUCTURES_NOTIFICATION_WAIT_SEC`| Default wait time in seconds before retrying after HTTP error (not used for rate limits)  | `5`
-`STRUCTURES_PAGING_ENABLED`| Wether paging is enabled for the structure list. | `True`
-`STRUCTURES_REPORT_NPC_ATTACKS`| Enable / disable sending notifications for attacks by NPCs (structure reinforcements are still reported) | `True`
-`STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE`| Enable / disable whether fuel expire is shown as relative figure | `True`
-`STRUCTURES_SHOW_JUMP_GATES`| Whether to show the jump gates tab | `True`
-`STRUCTURES_STRUCTURE_SYNC_GRACE_MINUTES`| Max time in minutes since last successful structures sync before service is reported as down  | `120`
-`STRUCTURES_TASKS_TIME_LIMIT`| Hard timeout for tasks in seconds to reduce task accumulation during outages | `7200`
-`STRUCTURES_TIMERS_ARE_CORP_RESTRICTED`| whether created timers are corp restricted on the timerboard  | `False`
+Name|Description|Default
+--|--|--
+STRUCTURES_ADD_TIMERS|Whether to automatically add timers for certain notifications on the timerboard (will have no effect if aa-timerboard app is not installed).|`True`
+STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED|Whether admins will get notifications about import events like when someone adds a structure owner.|`True`
+STRUCTURES_DEFAULT_LANGUAGE|Sets the default language to be used in case no language can be determined e.g. this language will be used when creating timers  Please use the language codes as defined in the base.py settings file.|`en`
+STRUCTURES_DEFAULT_PAGE_LENGTH|Default page size for structure list.  Must be an integer value from the current options as seen in the app.|`10`
+STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED|Whether the structure list has default tags filter enabled by default.|`False`
+STRUCTURES_DEVELOPER_MODE|Enables features for developers e.g. write access to all models in admin and writing raw data received from ESI  UNDOCUMENTED SETTING.|`False`
+STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES|Max retries before a character is deleted when ESI claims the character is not a director (Since this sometimes is reported wrongly by ESI).|`3`
+STRUCTURES_ESI_TIMEOUT_ENABLED|Whether ESI timeout is enabled.|`True`
+STRUCTURES_FEATURE_CUSTOMS_OFFICES|Whether the customs offices feature is active.|`True`
+STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS|Feature flag to enable refueled notifications|`True`
+STRUCTURES_FEATURE_STARBASES|Whether the starbases / POSes feature is active.|`True`
+STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION|Defines after how many hours a notification becomes stale stale notification will no longer be sent automatically|`24`
+STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED|Whether to create / remove timers from moon extraction notifications.|`True`
+STRUCTURES_NOTIFICATIONS_ARCHIVING_ENABLED|Enables archiving of all notifications received from ESI to files notifications will by stored into one continuous file per corporations. For debugging.|`False`
+STRUCTURES_NOTIFICATIONS_DAYS_UNTIL_STALE|Days until notifications become stale in the database. Stale notifications will be deleted automatically.|`30`
+STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE|How many notifications are deleted in one batch.|`2000`
+STRUCTURES_NOTIFICATIONS_DELETE_TIMEOUT_HOURS|How often stale notifications are deleted.|`21600`
+STRUCTURES_NOTIFICATION_DISABLE_ESI_FUEL_ALERTS|This allows you to turn off ESI fuel alert notifications to use the Structure's generated fuel notifications exclusively.|`False`
+STRUCTURES_NOTIFICATION_MAX_RETRIES|Max number of retries for sending a notification if an error occurred e.g. rate limiting.|`3`
+STRUCTURES_NOTIFICATION_SET_AVATAR|Wether structures sets the name and avatar icon of a webhook else the webhook will show it's default names as set when defining the webhook.|`True`
+STRUCTURES_NOTIFICATION_SHOW_MOON_ORE|Wether ore details are shown on moon timers.|`True`
+STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES|Max time in minutes since last successful notification sync before service is reported as down.|`40`
+STRUCTURES_NOTIFICATION_TURNAROUND_LONG|Number of notifications to count for long mean turnaround time.|`50`
+STRUCTURES_NOTIFICATION_TURNAROUND_MAX_VALID|Turnaround duration with more than x seconds are regarded as outliers and will be ignored when calculating the averages.|`3600`
+STRUCTURES_NOTIFICATION_TURNAROUND_MEDIUM|Number of notifications to count for medium mean turnaround time.|`15`
+STRUCTURES_NOTIFICATION_TURNAROUND_SHORT|Internal: Number of notifications to count for short mean turnaround time.|`5`
+STRUCTURES_NOTIFICATION_WAIT_SEC|Default wait time in seconds before retrying to send a notification to Discord after an error occurred.|`5`
+STRUCTURES_NOTIFY_THROTTLED_TIMEOUT|Timeout for throttled issue notifications to users and admins in seconds.|`86400`
+STRUCTURES_PAGING_ENABLED|Wether paging is enabled for the structure list.|`True`
+STRUCTURES_REPORT_NPC_ATTACKS|How to handle notification about NPC attacks.|`True`
+STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE|Whether fuel expires in structures browser is shown as absolute value.|`True`
+STRUCTURES_SHOW_JUMP_GATES|Whether to show the jump gates tab.|`True`
+STRUCTURES_STRUCTURE_SYNC_GRACE_MINUTES|Max time in minutes since last successful structures sync before service is reported as down.|`120`
+STRUCTURES_TASKS_TIME_LIMIT|Hard timeout for tasks in seconds to reduce task accumulation during outages.|`7200`
+STRUCTURES_TIMERS_ARE_CORP_RESTRICTED|Whether created timers are corp restricted on the timerboard.|`False`
 
 ## Permissions
 

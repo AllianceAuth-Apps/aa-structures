@@ -3,6 +3,7 @@ from typing import Iterable, Optional
 from celery import chain, shared_task
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 
 from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
@@ -14,6 +15,7 @@ from app_utils.logging import LoggerAddTag
 from . import __title__
 from .app_settings import (
     STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE,
+    STRUCTURES_NOTIFICATIONS_DELETE_TIMEOUT_HOURS,
     STRUCTURES_TASKS_TIME_LIMIT,
 )
 from .models import (
@@ -119,7 +121,14 @@ def fetch_all_notifications():
         "pk", flat=True
     ):
         send_jump_fuel_notifications_for_config.delay(config_pk)
-    delete_stale_notifications.delay()
+
+    has_timeout_expired = cache.add(
+        "structures-delete-stale-notifications",
+        True,
+        timeout=STRUCTURES_NOTIFICATIONS_DELETE_TIMEOUT_HOURS * 3600,
+    )
+    if has_timeout_expired:
+        delete_stale_notifications.delay()
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)

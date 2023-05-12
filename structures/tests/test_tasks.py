@@ -176,6 +176,7 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
 
 
 @patch(MODULE_PATH_MODELS_OWNERS + ".Owner.update_is_up", lambda *args, **kwargs: None)
+@patch(MODULE_PATH + ".cache.add", spec=True)
 @patch(MODULE_PATH + ".delete_stale_notifications")
 @patch(MODULE_PATH + ".send_jump_fuel_notifications_for_config")
 @patch(MODULE_PATH + ".send_structure_fuel_notifications_for_config")
@@ -194,6 +195,7 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         mock_send_fuel_notifications_for_config,
         mock_send_jump_fuel_notifications_for_config,
         mock_delete_stale_notifications,
+        mock_cache_add,
     ):
         # given
         owner_2001 = Owner.objects.get(
@@ -221,6 +223,7 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         mock_send_fuel_notifications_for_config,
         mock_send_jump_fuel_notifications_for_config,
         mock_delete_stale_notifications,
+        mock_cache_add,
     ):
         # given
         config = FuelAlertConfig.objects.create(start=48, end=0, repeat=12)
@@ -237,11 +240,29 @@ class TestFetchAllNotifications(NoSocketsTestCase):
         mock_send_fuel_notifications_for_config,
         mock_send_jump_fuel_notifications_for_config,
         mock_delete_stale_notifications,
+        mock_cache_add,
     ):
+        # given
+        mock_cache_add.return_value = True
         # when
         tasks.fetch_all_notifications()
         # then
         self.assertTrue(mock_delete_stale_notifications.delay.called)
+
+    def test_should_not_call_delete_stale_notifications(
+        self,
+        mock_fetch_notifications_owner,
+        mock_send_fuel_notifications_for_config,
+        mock_send_jump_fuel_notifications_for_config,
+        mock_delete_stale_notifications,
+        mock_cache_add,
+    ):
+        # given
+        mock_cache_add.return_value = False
+        # when
+        tasks.fetch_all_notifications()
+        # then
+        self.assertFalse(mock_delete_stale_notifications.delay.called)
 
 
 # TODO: Fix tests. Does not work with tox.

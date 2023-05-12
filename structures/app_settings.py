@@ -77,6 +77,11 @@ STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE = clean_setting(
 )
 """How many notifications are deleted in one batch."""
 
+STRUCTURES_NOTIFICATIONS_DELETE_TIMEOUT_HOURS = clean_setting(
+    "STRUCTURES_NOTIFICATIONS_DELETE_TIMEOUT_HOURS", 1
+)
+"""How often stale notifications are deleted."""
+
 STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE = clean_setting(
     "STRUCTURES_NOTIFICATIONS_DELETE_BATCH_SIZE", 2000
 )
@@ -92,9 +97,9 @@ STRUCTURES_NOTIFICATIONS_ARCHIVING_ENABLED = clean_setting(
     "STRUCTURES_NOTIFICATIONS_ARCHIVING_ENABLED", False
 )
 """Enables archiving of all notifications received from ESI to files
-notifications will by stored into one continuous file per corporations
-UNDOCUMENTED SETTING.
+notifications will by stored into one continuous file per corporations. For debugging.
 """
+
 STRUCTURES_NOTIFICATION_SET_AVATAR = clean_setting(
     "STRUCTURES_NOTIFICATION_SET_AVATAR", True
 )
@@ -150,7 +155,7 @@ STRUCTURES_PAGING_ENABLED = clean_setting("STRUCTURES_PAGING_ENABLED", True)
 STRUCTURES_NOTIFICATION_TURNAROUND_SHORT = clean_setting(
     "STRUCTURES_NOTIFICATION_TURNAROUND_SHORT", 5
 )
-"""Number of notifications to count for short mean turnaround time."""
+"""Internal: Number of notifications to count for short mean turnaround time."""
 
 STRUCTURES_NOTIFICATION_TURNAROUND_MEDIUM = clean_setting(
     "STRUCTURES_NOTIFICATION_TURNAROUND_MEDIUM", 15

@@ -1,13 +1,10 @@
 """API for Structures."""
 
-from django.utils.translation import gettext as _
 
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.authentication.models import CharacterOwnership
 
 from .models import Owner, Webhook
-
-from . import __title__
 
 
 def get_add_character_permissions():

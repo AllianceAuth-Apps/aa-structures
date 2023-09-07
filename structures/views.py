@@ -432,8 +432,8 @@ def add_structure_owner(request, token):
     """View for adding or replacing a structure owner."""
     try:
         owner = add_character(request, token)
-    except EveCharacter.DoesNotExist:
-        raise Http404()
+    except EveCharacter.DoesNotExist as e:
+        raise Http404 from e
     except CharacterOwnership.DoesNotExist:
         messages_plus.error(
             request,

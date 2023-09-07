@@ -9,12 +9,12 @@ from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db.models import Count, Q
-from django.http import HttpResponse, HttpResponseServerError, JsonResponse, Http404
+from django.http import Http404, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import translation
-from django.utils.translation import gettext as _
 from django.utils.html import format_html
+from django.utils.translation import gettext as _
 from esi.decorators import token_required
 from eveuniverse.core import eveimageserver
 from eveuniverse.models import EveType, EveTypeDogmaAttribute
@@ -22,19 +22,24 @@ from eveuniverse.models import EveType, EveTypeDogmaAttribute
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter
 from allianceauth.services.hooks import get_extension_logger
+from app_utils.allianceauth import notify_admins
 from app_utils.logging import LoggerAddTag
 from app_utils.messages import messages_plus
-from app_utils.allianceauth import notify_admins
 from app_utils.views import image_html
 
 from . import __title__, tasks
+from .api import (
+    add_character,
+    get_add_character_esi_scopes,
+    get_add_character_permissions,
+)
 from .app_settings import (
+    STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
+    STRUCTURES_DEFAULT_LANGUAGE,
     STRUCTURES_DEFAULT_PAGE_LENGTH,
     STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED,
     STRUCTURES_PAGING_ENABLED,
     STRUCTURES_SHOW_JUMP_GATES,
-    STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
-    STRUCTURES_DEFAULT_LANGUAGE,
 )
 from .constants import EveAttributeId, EveCategoryId, EveGroupId, EveTypeId
 from .core.serializers import (
@@ -44,7 +49,6 @@ from .core.serializers import (
 )
 from .forms import TagsFilterForm
 from .models import Owner, Structure, StructureItem, StructureTag
-from .api import add_character, get_add_character_esi_scopes, get_add_character_permissions
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 

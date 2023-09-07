@@ -1,8 +1,8 @@
 """API for Structures."""
 
 
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.authentication.models import CharacterOwnership
+from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 
 from .models import Owner, Webhook
 

@@ -55,7 +55,7 @@ def add_character(request, token) -> Owner:
         with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
             notify_admins(
                 message=_(
-                    "%(corporation)s was added as new " "structure owner by %(user)s."
+                    "%(corporation)s was added as new structure owner by %(user)s."
                 )
                 % {"corporation": owner, "user": request.user.username},
                 title=_("%s: Structure owner added: %s") % (__title__, owner),

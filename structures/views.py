@@ -12,7 +12,6 @@ from django.db.models import Count, Q
 from django.http import Http404, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import translation
 from django.utils.html import format_html
 from django.utils.translation import gettext as _
 from esi.decorators import token_required
@@ -22,7 +21,6 @@ from eveuniverse.models import EveType, EveTypeDogmaAttribute
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.allianceauth import notify_admins
 from app_utils.logging import LoggerAddTag
 from app_utils.messages import messages_plus
 from app_utils.views import image_html
@@ -34,8 +32,6 @@ from .api import (
     get_add_character_permissions,
 )
 from .app_settings import (
-    STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
-    STRUCTURES_DEFAULT_LANGUAGE,
     STRUCTURES_DEFAULT_PAGE_LENGTH,
     STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED,
     STRUCTURES_PAGING_ENABLED,
@@ -470,16 +466,6 @@ def add_structure_owner(request, token):
                     }
                 ),
             )
-            if STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
-                with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
-                    notify_admins(
-                        message=_(
-                            "%(corporation)s was added as new "
-                            "structure owner by %(user)s."
-                        )
-                        % {"corporation": owner, "user": request.user.username},
-                        title=_("%s: Structure owner added: %s") % (__title__, owner),
-                    )
         else:
             messages_plus.info(
                 request,
@@ -496,22 +482,6 @@ def add_structure_owner(request, token):
                     }
                 ),
             )
-            if STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
-                with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
-                    notify_admins(
-                        message=_(
-                            "%(character)s was added as sync character to "
-                            "%(corporation)s by %(user)s.\n"
-                            "We now have %(characters_count)d sync character(s) configured."
-                        )
-                        % {
-                            "character": token_char,
-                            "corporation": owner,
-                            "user": request.user.username,
-                            "characters_count": owner.characters_count(),
-                        },
-                        title=_("%s: Character added to: %s") % (__title__, owner),
-                    )
     return redirect("structures:index")
 
 

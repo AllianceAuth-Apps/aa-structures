@@ -431,7 +431,7 @@ def starbase_detail(request, structure_id):
 def add_structure_owner(request, token):
     """View for adding or replacing a structure owner."""
     try:
-        owner = add_character(request, token)
+        owner = add_character(request.user, token)
     except EveCharacter.DoesNotExist as exc:
         raise Http404 from exc
     except CharacterOwnership.DoesNotExist:

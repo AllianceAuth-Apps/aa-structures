@@ -31,6 +31,7 @@ from .testdata.load_eveuniverse import load_eveuniverse
 
 VIEWS_PATH = "structures.views"
 OWNERS_PATH = "structures.models.owners"
+API_PATH = "structures.api"
 
 
 def json_response_to_dict(response, key="id") -> dict:
@@ -554,9 +555,9 @@ class TestAddStructureOwner(TestCase):
         # when
         return orig_view(request, token)
 
-    @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
-    @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
-    @patch(VIEWS_PATH + ".notify_admins")
+    @patch(API_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
+    @patch(API_PATH + ".tasks.update_all_for_owner")
+    @patch(API_PATH + ".notify_admins")
     @patch(VIEWS_PATH + ".messages_plus")
     def test_should_add_new_structure_owner_and_notify_admins(
         self, mock_messages, mock_notify_admins, mock_update_all_for_owner
@@ -576,12 +577,11 @@ class TestAddStructureOwner(TestCase):
         self.assertEqual(owner.webhooks.first().name, "Test Webhook 1")
         self.assertTrue(mock_update_all_for_owner.delay.called)
 
-    @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
-    @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
-    @patch(VIEWS_PATH + ".notify_admins")
+    @patch(API_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
+    @patch(API_PATH + ".tasks.update_all_for_owner")
     @patch(VIEWS_PATH + ".messages_plus")
     def test_should_add_character_to_existing_structure_owner_and_reactive(
-        self, mock_messages, mock_notify_admins, mock_update_all_for_owner
+        self, mock_messages, mock_update_all_for_owner
     ):
         # given
         owner = Owner.objects.create(
@@ -613,9 +613,9 @@ class TestAddStructureOwner(TestCase):
         )
         self.assertTrue(owner.is_active)
 
-    @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
-    @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
-    @patch(VIEWS_PATH + ".notify_admins")
+    @patch(API_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
+    @patch(API_PATH + ".tasks.update_all_for_owner")
+    @patch(API_PATH + ".notify_admins")
     @patch(VIEWS_PATH + ".messages_plus")
     def test_should_add_new_structure_owner_and_not_notify_admins(
         self, mock_messages, mock_notify_admins, mock_update_all_for_owner
@@ -634,9 +634,9 @@ class TestAddStructureOwner(TestCase):
         self.assertFalse(mock_notify_admins.called)
         self.assertTrue(mock_update_all_for_owner.delay.called)
 
-    @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
-    @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
-    @patch(VIEWS_PATH + ".notify_admins")
+    @patch(API_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
+    @patch(API_PATH + ".tasks.update_all_for_owner")
+    @patch(API_PATH + ".notify_admins")
     @patch(VIEWS_PATH + ".messages_plus")
     def test_should_add_structure_owner_with_no_default_webhook(
         self, mock_messages, mock_notify_admins, mock_update_all_for_owner

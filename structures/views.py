@@ -25,7 +25,7 @@ from app_utils.logging import LoggerAddTag
 from app_utils.messages import messages_plus
 from app_utils.views import image_html
 
-from . import __title__, tasks
+from . import __title__
 from .api import (
     add_character,
     get_add_character_esi_scopes,
@@ -449,7 +449,6 @@ def add_structure_owner(request, token):
     else:
         token_char = EveCharacter.objects.get(character_id=token.character_id)
         if owner.characters.count() == 1:
-            tasks.update_all_for_owner.delay(owner_pk=owner.pk, user_pk=request.user.pk)  # type: ignore
             messages_plus.info(
                 request,
                 format_html(

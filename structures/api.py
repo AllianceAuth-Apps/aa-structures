@@ -8,7 +8,7 @@ from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from app_utils.allianceauth import notify_admins
 
-from . import __title__
+from . import __title__, tasks
 from .app_settings import (
     STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
     STRUCTURES_DEFAULT_LANGUAGE,
@@ -17,7 +17,7 @@ from .models import Owner, Webhook
 
 
 def get_add_character_permissions():
-    """Return permission required for adding a character."""
+    """Return permissions required for adding a character."""
     return ["structures.add_structure_owner"]
 
 
@@ -26,11 +26,11 @@ def get_add_character_esi_scopes():
     return Owner.get_esi_scopes()
 
 
-def add_character(request, token) -> Owner:
+def add_character(user, token) -> Owner:
     """Add the character in the token as a structure owner."""
     token_char = EveCharacter.objects.get(character_id=token.character_id)
     character_ownership = CharacterOwnership.objects.get(
-        user=request.user, character=token_char
+        user=user, character=token_char
     )
     try:
         corporation = EveCorporationInfo.objects.get(
@@ -51,15 +51,17 @@ def add_character(request, token) -> Owner:
                 owner.webhooks.add(webhook)
             owner.save()
 
-    if owner.characters.count() == 1 and STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
-        with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
-            notify_admins(
-                message=_(
-                    "%(corporation)s was added as new structure owner by %(user)s."
+    if owner.characters.count() == 1:
+        tasks.update_all_for_owner.delay(owner_pk=owner.pk, user_pk=user.pk)  # type: ignore
+        if STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
+            with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
+                notify_admins(
+                    message=_(
+                        "%(corporation)s was added as new structure owner by %(user)s."
+                    )
+                    % {"corporation": owner, "user": user.username},
+                    title=_("%s: Structure owner added: %s") % (__title__, owner),
                 )
-                % {"corporation": owner, "user": request.user.username},
-                title=_("%s: Structure owner added: %s") % (__title__, owner),
-            )
     elif STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
         with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
             notify_admins(
@@ -71,7 +73,7 @@ def add_character(request, token) -> Owner:
                 % {
                     "character": token_char,
                     "corporation": owner,
-                    "user": request.user.username,
+                    "user": user.username,
                     "characters_count": owner.characters_count(),
                 },
                 title=_("%s: Character added to: %s") % (__title__, owner),

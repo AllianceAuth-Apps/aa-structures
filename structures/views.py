@@ -9,10 +9,9 @@ from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db.models import Count, Q
-from django.http import HttpResponse, HttpResponseServerError, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import translation
 from django.utils.html import format_html
 from django.utils.translation import gettext as _
 from esi.decorators import token_required
@@ -20,17 +19,19 @@ from eveuniverse.core import eveimageserver
 from eveuniverse.models import EveType, EveTypeDogmaAttribute
 
 from allianceauth.authentication.models import CharacterOwnership
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
+from allianceauth.eveonline.models import EveCharacter
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.allianceauth import notify_admins
 from app_utils.logging import LoggerAddTag
 from app_utils.messages import messages_plus
 from app_utils.views import image_html
 
-from . import __title__, tasks
+from . import __title__
+from .api import (
+    add_character,
+    get_add_character_esi_scopes,
+    get_add_character_permissions,
+)
 from .app_settings import (
-    STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
-    STRUCTURES_DEFAULT_LANGUAGE,
     STRUCTURES_DEFAULT_PAGE_LENGTH,
     STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED,
     STRUCTURES_PAGING_ENABLED,
@@ -43,7 +44,7 @@ from .core.serializers import (
     StructureListSerializer,
 )
 from .forms import TagsFilterForm
-from .models import Owner, Structure, StructureItem, StructureTag, Webhook
+from .models import Owner, Structure, StructureItem, StructureTag
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -425,17 +426,15 @@ def starbase_detail(request, structure_id):
 
 
 @login_required
-@permission_required("structures.add_structure_owner")
-@token_required(scopes=Owner.get_esi_scopes())  # type: ignore
+@permission_required(get_add_character_permissions())
+@token_required(scopes=get_add_character_esi_scopes())  # type: ignore
 def add_structure_owner(request, token):
     """View for adding or replacing a structure owner."""
-    token_char = get_object_or_404(EveCharacter, character_id=token.character_id)
     try:
-        character_ownership = CharacterOwnership.objects.get(
-            user=request.user, character=token_char
-        )
+        owner = add_character(request.user, token)
+    except EveCharacter.DoesNotExist as exc:
+        raise Http404 from exc
     except CharacterOwnership.DoesNotExist:
-        character_ownership = None
         messages_plus.error(
             request,
             format_html(
@@ -444,89 +443,44 @@ def add_structure_owner(request, token):
                     "to add corporations. "
                     "However, character %s is neither. "
                 )
-                % format_html("<strong>{}</strong>", token_char.character_name)
+                % format_html("<strong>{}</strong>", token.character_name)
             ),
         )
-        return redirect("structures:index")
-    try:
-        corporation = EveCorporationInfo.objects.get(
-            corporation_id=token_char.corporation_id
-        )
-    except EveCorporationInfo.DoesNotExist:
-        corporation = EveCorporationInfo.objects.create_corporation(
-            token_char.corporation_id
-        )
-    owner, created = Owner.objects.update_or_create(
-        corporation=corporation, defaults={"is_active": True}
-    )
-    owner.add_character(character_ownership)
-    if created:
-        default_webhooks = Webhook.objects.filter(is_default=True)
-        if default_webhooks:
-            for webhook in default_webhooks:
-                owner.webhooks.add(webhook)
-            owner.save()
-
-    if owner.characters.count() == 1:
-        tasks.update_all_for_owner.delay(owner_pk=owner.pk, user_pk=request.user.pk)  # type: ignore
-        messages_plus.info(
-            request,
-            format_html(
-                _(
-                    "%(corporation)s has been added with %(character)s "
-                    "as sync character. "
-                    "We have started fetching structures and notifications "
-                    "for this corporation and you will receive a report once "
-                    "the process is finished."
-                )
-                % {
-                    "corporation": format_html("<strong>{}</strong>", owner),
-                    "character": format_html("<strong>{}</strong>", token_char),
-                }
-            ),
-        )
-        if STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
-            with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
-                notify_admins(
-                    message=_(
-                        "%(corporation)s was added as new "
-                        "structure owner by %(user)s."
-                    )
-                    % {"corporation": owner, "user": request.user.username},
-                    title=_("%s: Structure owner added: %s") % (__title__, owner),
-                )
     else:
-        messages_plus.info(
-            request,
-            format_html(
-                _(
-                    "%(character)s has been added to %(corporation)s "
-                    "as sync character. "
-                    "You now have %(characters_count)d sync character(s) configured."
-                )
-                % {
-                    "corporation": format_html("<strong>{}</strong>", owner),
-                    "character": format_html("<strong>{}</strong>", token_char),
-                    "characters_count": owner.characters_count(),
-                }
-            ),
-        )
-        if STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
-            with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
-                notify_admins(
-                    message=_(
-                        "%(character)s was added as sync character to "
-                        "%(corporation)s by %(user)s.\n"
-                        "We now have %(characters_count)d sync character(s) configured."
+        token_char = EveCharacter.objects.get(character_id=token.character_id)
+        if owner.characters.count() == 1:
+            messages_plus.info(
+                request,
+                format_html(
+                    _(
+                        "%(corporation)s has been added with %(character)s "
+                        "as sync character. "
+                        "We have started fetching structures and notifications "
+                        "for this corporation and you will receive a report once "
+                        "the process is finished."
                     )
                     % {
-                        "character": token_char,
-                        "corporation": owner,
-                        "user": request.user.username,
+                        "corporation": format_html("<strong>{}</strong>", owner),
+                        "character": format_html("<strong>{}</strong>", token_char),
+                    }
+                ),
+            )
+        else:
+            messages_plus.info(
+                request,
+                format_html(
+                    _(
+                        "%(character)s has been added to %(corporation)s "
+                        "as sync character. "
+                        "You now have %(characters_count)d sync character(s) configured."
+                    )
+                    % {
+                        "corporation": format_html("<strong>{}</strong>", owner),
+                        "character": format_html("<strong>{}</strong>", token_char),
                         "characters_count": owner.characters_count(),
-                    },
-                    title=_("%s: Character added to: %s") % (__title__, owner),
-                )
+                    }
+                ),
+            )
     return redirect("structures:index")
 
 

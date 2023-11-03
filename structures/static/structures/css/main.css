@@ -1,14 +1,28 @@
 @media all {
     #tab_structures thead th {
-        text-align: center;
+        text-align: left;
         vertical-align: middle;
         white-space: nowrap;
     }
 
     #tab_structures tbody td {
-        text-align: center;
+        text-align: left;
         vertical-align: middle;
-        word-wrap: break-word;
+    }
+
+    #tab_structures tbody td:nth-child(1) {
+        white-space: nowrap;
+        min-width: 11em;
+    }
+
+    #tab_structures tbody td:nth-child(2) {
+        white-space: nowrap;
+        min-width: 9em;
+    }
+
+    #tab_structures tbody td:nth-child(3) {
+        white-space: nowrap;
+        min-width: 15em;
     }
 
     .template-light-mode .list-group-item-custom {

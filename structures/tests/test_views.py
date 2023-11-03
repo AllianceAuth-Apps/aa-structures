@@ -38,7 +38,7 @@ def json_response_to_dict(response, key="id") -> dict:
     return {x[key]: x for x in json_response_to_python(response)["data"]}
 
 
-class TestStructureListFormat(TestCase):
+class TestStructureListData(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -63,30 +63,57 @@ class _AbstractStructureListSerializer(ABC):
     def _icon_html(self, url) -> str:
         return image_html(url, size=self.ICON_OUTPUT_SIZE)
 
+    def _icon_with_two_lines_html(
+        self, icon_url: str, primary_text: str, primary_url: str, secondary_text: str
+    ) -> str:
+        """Return HTML for a 2-line paragraph with a floating icon on the left."""
+        icon_html = format_html(
+            (
+                '<img src="{}" style="float: left; width: {}px; height: {}px; '
+                'margin-right: 0.75em;">'
+            ),
+            icon_url,
+            self.ICON_OUTPUT_SIZE,
+            self.ICON_OUTPUT_SIZE,
+        )
+        type_html = format_html(
+            "<p>{}{}<br><em>{}</em></p>",
+            icon_html,
+            no_wrap_html(link_html(primary_url, primary_text)),
+            no_wrap_html(secondary_text),
+        )
+        return type_html
+
     def _add_owner(self, structure, row):
         corporation = structure.owner.corporation
-        alliance_name = (
-            corporation.alliance.alliance_name if corporation.alliance else ""
-        )
-        row["owner"] = format_html(
-            '<a href="{}">{}</a><br>{}',
-            dotlan.corporation_url(corporation.corporation_name),
-            corporation.corporation_name,
-            alliance_name,
-        )
+        if corporation.alliance:
+            alliance_name = corporation.alliance.alliance_name
+            alliance_ticker = corporation.alliance.alliance_ticker
+        else:
+            alliance_name = alliance_ticker = ""
+
         if not structure.owner.is_structure_sync_fresh:
             update_warning_html = format_html(
-                '<i class="fas fa-exclamation-circle text-warning" '
+                ' <i class="fas fa-exclamation-circle text-warning" '
                 'title="Data has not been updated for a while and may be outdated."></i>'
             )
         else:
             update_warning_html = ""
-        row["corporation_icon"] = format_html(
-            '<span class="text-nowrap">{}{}</span>',
-            update_warning_html,
-            self._icon_html(corporation.logo_url(size=self.ICON_RENDER_SIZE)),
+
+        secondary_text = format_html("{}{}", alliance_ticker, update_warning_html)
+        owner_display_html = self._icon_with_two_lines_html(
+            icon_url=corporation.logo_url(size=self.ICON_RENDER_SIZE),
+            primary_text=corporation.corporation_name,
+            primary_url=dotlan.corporation_url(corporation.corporation_name),
+            secondary_text=secondary_text,
         )
-        row["alliance_name"] = alliance_name
+        row["owner"] = {
+            "display": owner_display_html,
+            "value": corporation.corporation_name,
+        }
+        row["alliance_name"] = (
+            f"{alliance_name} [{alliance_ticker}]" if alliance_ticker else ""
+        )
         row["corporation_name"] = corporation.corporation_name
 
     def _add_location(self, structure, row):
@@ -111,6 +138,7 @@ class _AbstractStructureListSerializer(ABC):
 
     def _add_type(self, structure, row):
         structure_type = structure.eve_type
+
         # category
         my_group = structure_type.eve_group
         row["group_name"] = my_group.name
@@ -121,17 +149,16 @@ class _AbstractStructureListSerializer(ABC):
         except AttributeError:
             row["category_name"] = ""
             row["is_starbase"] = None
-        # type icon
-        row["type_icon"] = self._icon_html(
-            structure_type.icon_url(size=self.ICON_RENDER_SIZE)
+
+        # type
+        type_html = self._icon_with_two_lines_html(
+            icon_url=structure_type.icon_url(size=self.ICON_RENDER_SIZE),
+            primary_text=structure_type.name,
+            primary_url=structure_type.profile_url,
+            secondary_text=row["group_name"],
         )
-        # type name
-        row["type_name"] = structure_type.name
-        row["type"] = format_html(
-            "{}<br><em>{}</em>",
-            no_wrap_html(link_html(structure_type.profile_url, row["type_name"])),
-            no_wrap_html(row["group_name"]),
-        )
+        row["type"] = type_html
+
         # poco
         row["is_poco"] = structure.is_poco
 

@@ -108,7 +108,13 @@
                         }
                     },
                     { data: 'location' },
-                    { data: 'type' },
+                    {
+                        data: 'type',
+                        render: {
+                            _: 'display',
+                            sort: 'value'
+                        }
+                    },
                     { data: 'structure_name' },
                     { data: 'services' },
                     {

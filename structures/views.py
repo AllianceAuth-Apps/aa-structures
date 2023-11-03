@@ -49,6 +49,9 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 QUERY_PARAM_TAGS = "tags"
 
+# TODO: Consolidate two date columns into one
+# TODO: Change icons to new style on POCO page
+
 
 def default_if_none(value, default=None):
     """Return default if a value is None."""

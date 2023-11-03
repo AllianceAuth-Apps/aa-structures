@@ -112,7 +112,7 @@ class _AbstractStructureListSerializer(ABC):
             "value": corporation.corporation_name,
         }
         row["alliance_name"] = (
-            f"{alliance_name} [{alliance_ticker}]" if alliance_ticker else ""
+            f"{alliance_name} [{alliance_ticker}]" if alliance_ticker else alliance_name
         )
         row["corporation_name"] = corporation.corporation_name
 
@@ -157,7 +157,8 @@ class _AbstractStructureListSerializer(ABC):
             primary_url=structure_type.profile_url,
             secondary_text=row["group_name"],
         )
-        row["type"] = type_html
+        row["type"] = {"display": type_html, "value": structure_type.name}
+        row["type_name"] = structure_type.name
 
         # poco
         row["is_poco"] = structure.is_poco

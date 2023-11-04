@@ -111,6 +111,7 @@
             });
 
             /* structures */
+            let structures_idx_start = 9;
             $('#tab_structures').DataTable({
                 ajax: {
                     url: "{% url 'structures:structure_list_data' %}?tags={{ active_tags|join:',' }}",
@@ -176,52 +177,52 @@
                 {
                     columns: [
                         {
-                            idx: 9,
+                            idx: structures_idx_start,
                             title: "{% translate 'Alliance' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 10,
+                            idx: structures_idx_start + 1,
                             title: "{% translate 'Corporation' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 11,
+                            idx: structures_idx_start + 2,
                             title: "{% translate 'Region' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: 12,
+                            idx: structures_idx_start + 3,
                             title: "{% translate 'Solar System' %}",
                             maxWidth: "14em"
                         },
                         {
-                            idx: 13,
+                            idx: structures_idx_start + 4,
                             title: "{% translate 'Category' %}",
                             maxWidth: "10em"
                         },
                         {
-                            idx: 14,
+                            idx: structures_idx_start + 5,
                             title: "{% translate 'Group' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: 15,
+                            idx: structures_idx_start + 6,
                             title: "{% translate 'Reinforced?' %}",
                             maxWidth: "13em"
                         },
                         {
-                            idx: 16,
+                            idx: structures_idx_start + 7,
                             title: "{% translate 'State' %}",
                             maxWidth: "6em"
                         },
                         {
-                            idx: 17,
+                            idx: structures_idx_start + 8,
                             title: "{% translate 'Power Mode' %}",
                             maxWidth: "12em"
                         },
                         {
-                            idx: 18,
+                            idx: structures_idx_start + 9,
                             title: "{% translate 'Core?' %}",
                             maxWidth: "6em"
                         }

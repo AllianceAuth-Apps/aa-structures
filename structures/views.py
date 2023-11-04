@@ -183,7 +183,7 @@ class Slot(IntEnum):
 @login_required
 @permission_required("structures.view_structure_fit")
 def structure_details(request, structure_id):
-    """Main view of the structure fit"""
+    """Render structure details view."""
 
     structure = get_object_or_404(
         Structure.objects.select_related(

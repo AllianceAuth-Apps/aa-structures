@@ -253,7 +253,7 @@ class _AbstractStructureListSerializer(ABC):
         if structure.is_poco:
             return "-"
 
-        elif structure.is_full_power:
+        if structure.is_full_power:
             last_online_at_display = format_html_lazy(
                 bootstrap_label_html(
                     structure.get_power_mode_display(), BootstrapStyle.SUCCESS
@@ -524,6 +524,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             "sort": planet_type_name,
         }
         row["planet_type_name"] = planet_type_name
+        row["planet_name"] = planet_name
 
     def _add_has_access_and_tax(self, structure: Structure, row: dict, main_character):
         tax = None

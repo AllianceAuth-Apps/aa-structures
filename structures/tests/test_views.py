@@ -74,7 +74,8 @@ class TestStructureListData(TestCase):
         self.assertEqual(obj["is_reinforced_str"], "no")
         self.assertEqual(obj["reinforcement"], "05:00")
         self.assertEqual(
-            obj["fuel_expires_at"]["timestamp"], structure.fuel_expires_at.isoformat()
+            obj["fuel_and_power"]["fuel_expires_at"],
+            structure.fuel_expires_at.isoformat(),
         )
         self.assertEqual(obj["power_mode_str"], "Full Power")
         self.assertEqual(obj["state_str"], "Shield vulnerable")
@@ -453,10 +454,10 @@ class TestStructurePowerModes(TestCase):
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "Full Power")
         self.assertEqual(
-            parse_datetime(my_structure["fuel_expires_at"]["timestamp"]),
+            parse_datetime(my_structure["fuel_and_power"]["fuel_expires_at"]),
             structure.fuel_expires_at,
         )
-        self.assertIn("Full Power", my_structure["last_online_at"]["display"])
+        self.assertIn("Full Power", my_structure["fuel_and_power"]["display"])
 
     def test_low_power(self):
         structure_id = 1000000000001
@@ -466,11 +467,7 @@ class TestStructurePowerModes(TestCase):
         structure.save()
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "Low Power")
-        self.assertEqual(
-            parse_datetime(my_structure["last_online_at"]["timestamp"]),
-            structure.last_online_at,
-        )
-        self.assertIn("Low Power", my_structure["fuel_expires_at"]["display"])
+        self.assertIn("Low Power", my_structure["fuel_and_power"]["display"])
 
     def test_abandoned(self):
         structure_id = 1000000000001
@@ -480,8 +477,7 @@ class TestStructurePowerModes(TestCase):
         structure.save()
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "Abandoned")
-        self.assertIn("Abandoned", my_structure["fuel_expires_at"]["display"])
-        self.assertIn("Abandoned", my_structure["last_online_at"]["display"])
+        self.assertIn("Abandoned", my_structure["fuel_and_power"]["display"])
 
     def test_maybe_abandoned(self):
         structure_id = 1000000000001
@@ -491,15 +487,13 @@ class TestStructurePowerModes(TestCase):
         structure.save()
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "Abandoned?")
-        self.assertIn("Abandoned?", my_structure["fuel_expires_at"]["display"])
-        self.assertIn("Abandoned?", my_structure["last_online_at"]["display"])
+        self.assertIn("Abandoned?", my_structure["fuel_and_power"]["display"])
 
     def test_poco(self):
         structure_id = 1200000000003
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "")
-        self.assertIn("-", my_structure["fuel_expires_at"]["display"])
-        self.assertIn("-", my_structure["last_online_at"]["display"])
+        self.assertIn("-", my_structure["fuel_and_power"]["display"])
 
     def test_starbase_online(self):
         structure_id = 1300000000001
@@ -509,10 +503,9 @@ class TestStructurePowerModes(TestCase):
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "")
         self.assertEqual(
-            parse_datetime(my_structure["fuel_expires_at"]["timestamp"]),
+            parse_datetime(my_structure["fuel_and_power"]["fuel_expires_at"]),
             structure.fuel_expires_at,
         )
-        self.assertIn("-", my_structure["last_online_at"]["display"])
 
     def test_starbase_offline(self):
         structure_id = 1300000000001
@@ -521,8 +514,7 @@ class TestStructurePowerModes(TestCase):
         structure.save()
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "")
-        self.assertIn("-", my_structure["fuel_expires_at"]["display"])
-        self.assertIn("-", my_structure["last_online_at"]["display"])
+        self.assertIn("-", my_structure["fuel_and_power"]["display"])
 
 
 class TestAddStructureOwner(TestCase):
@@ -791,7 +783,7 @@ class TestPocoList(TestCase):
         obj = data[1200000000003]
         self.assertEqual(obj["region"], "Heimatar")
         self.assertEqual(obj["solar_system"], "Amamake")
-        self.assertEqual(obj["planet"], "Amamake V")
+        self.assertEqual(obj["planet_name"], "Amamake V")
         self.assertEqual(obj["planet_type_name"], "Barren")
         self.assertEqual(obj["space_type"], "lowsec")
         self.assertEqual(obj["has_access_str"], "yes")
@@ -939,6 +931,6 @@ class TestJumpGateList(TestCase):
         self.assertEqual(obj["region_name"], "Detorid")
         self.assertEqual(obj["solar_system_name"], "1-PGSG")
         self.assertEqual(
-            obj["structure_name"], "1-PGSG &gt;&gt; A-C5TC - Test Jump Gate"
+            obj["structure_name_and_tags"], "1-PGSG &gt;&gt; A-C5TC - Test Jump Gate"
         )
         self.assertEqual(obj["jump_fuel_quantity"], 5000)

@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.http import HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -25,7 +25,8 @@ from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.allianceauth import notify_admins
 from app_utils.logging import LoggerAddTag
-from app_utils.views import image_html
+
+from structures.helpers import icon_with_two_lines_html
 
 from . import __title__, tasks
 from .app_settings import (
@@ -561,9 +562,10 @@ def structure_summary_data(request) -> JsonResponse:
     """View returning data for structure summary page."""
     summary_qs = (
         Structure.objects.values(
-            "owner__corporation__corporation_id",
-            "owner__corporation__corporation_name",
-            "owner__corporation__alliance__alliance_name",
+            corporation_id=F("owner__corporation__corporation_id"),
+            corporation_name=F("owner__corporation__corporation_name"),
+            alliance_name=F("owner__corporation__alliance__alliance_name"),
+            alliance_ticker=F("owner__corporation__alliance__alliance_ticker"),
         )
         .annotate(
             ec_count=Count(
@@ -600,19 +602,33 @@ def structure_summary_data(request) -> JsonResponse:
             - row["citadel_count"]
         )
         total = row["upwell_count"] + row["poco_count"] + row["starbase_count"]
+
+        corporation_id = row["corporation_id"]
+        corporation_name = row["corporation_name"]
+        alliance_name = default_if_none(row["alliance_name"], "")
+        alliance_ticker = default_if_none(row["alliance_ticker"], "")
         corporation_icon_url = eveimageserver.corporation_logo_url(
-            row["owner__corporation__corporation_id"], size=64
+            corporation_id, size=64
         )
-        corporation_icon = image_html(corporation_icon_url, size=32)
-        alliance_name = default_if_none(
-            row["owner__corporation__alliance__alliance_name"], ""
+        owner_display_html = icon_with_two_lines_html(
+            icon_url=corporation_icon_url,
+            primary_text=corporation_name,
+            primary_url="#",
+            secondary_text=alliance_ticker,
         )
+        owner_html = {
+            "display": owner_display_html,
+            "value": corporation_name,
+        }
+        alliance_name_str = (
+            f"{alliance_name} [{alliance_ticker}]" if alliance_ticker else alliance_name
+        )
+
         data.append(
             {
-                "id": int(row["owner__corporation__corporation_id"]),
-                "corporation_icon": corporation_icon,
-                "corporation_name": row["owner__corporation__corporation_name"],
-                "alliance_name": alliance_name,
+                "id": int(corporation_id),
+                "owner": owner_html,
+                "alliance_name": alliance_name_str,
                 "citadel_count": row["citadel_count"],
                 "ec_count": row["ec_count"],
                 "refinery_count": row["refinery_count"],

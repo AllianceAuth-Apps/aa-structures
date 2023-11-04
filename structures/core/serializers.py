@@ -30,6 +30,7 @@ from app_utils.views import (
 
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
 from structures.constants import EveTypeId
+from structures.helpers import icon_with_two_lines_html
 from structures.models import EveSpaceType, Structure, StructureItem, StructureService
 
 
@@ -63,19 +64,6 @@ class _AbstractStructureListSerializer(ABC):
     def _icon_html(self, url) -> str:  # TODO: Try to remove
         return image_html(url, size=self.ICON_OUTPUT_SIZE)
 
-    def _icon_with_two_lines_html(
-        self, icon_url: str, primary_text: str, primary_url: str, secondary_text: str
-    ) -> str:
-        """Return HTML for a 2-line paragraph with a floating icon on the left."""
-        icon_html = format_html(('<img src="{}" class="floating-icon">'), icon_url)
-        type_html = format_html(
-            "<p>{}{}<br><em>{}</em></p>",
-            icon_html,
-            no_wrap_html(link_html(primary_url, primary_text)),
-            no_wrap_html(secondary_text),
-        )
-        return type_html
-
     def _add_owner(self, structure: Structure, row: dict):
         corporation = structure.owner.corporation
         if corporation.alliance:
@@ -93,7 +81,7 @@ class _AbstractStructureListSerializer(ABC):
             update_warning_html = ""
 
         secondary_text = format_html("{}{}", alliance_ticker, update_warning_html)
-        owner_display_html = self._icon_with_two_lines_html(
+        owner_display_html = icon_with_two_lines_html(
             icon_url=corporation.logo_url(size=self.ICON_RENDER_SIZE),
             primary_text=corporation.corporation_name,
             primary_url=dotlan.corporation_url(corporation.corporation_name),
@@ -145,7 +133,7 @@ class _AbstractStructureListSerializer(ABC):
             row["is_starbase"] = None
 
         # type
-        type_html = self._icon_with_two_lines_html(
+        type_html = icon_with_two_lines_html(
             icon_url=structure_type.icon_url(size=self.ICON_RENDER_SIZE),
             primary_text=structure_type.name,
             primary_url=structure_type.profile_url,

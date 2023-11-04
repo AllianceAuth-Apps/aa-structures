@@ -1,5 +1,13 @@
 @media all {
 
+    /* General */
+    .floating-icon {
+        float: left;
+        width: 48px;
+        height: 48px;
+        margin-right: 0.75em;
+    }
+
     /* Structures */
     #tab_structures thead th {
         text-align: left;
@@ -39,36 +47,80 @@
 
     /* Summary */
 
+    #tab_summary thead th {
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    #tab_summary tbody td:nth-child(2) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tbody td:nth-child(3) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
     #tab_summary tbody td:nth-child(4) {
-        text-align: right;
+        text-align: center;
+        vertical-align: middle;
     }
 
     #tab_summary tbody td:nth-child(5) {
-        text-align: right;
+        text-align: center;
+        vertical-align: middle;
     }
 
     #tab_summary tbody td:nth-child(6) {
-        text-align: right;
+        text-align: center;
+        vertical-align: middle;
     }
 
     #tab_summary tbody td:nth-child(7) {
-        text-align: right;
+        text-align: center;
+        vertical-align: middle;
     }
 
     #tab_summary tbody td:nth-child(8) {
-        text-align: right;
+        text-align: center;
+        vertical-align: middle;
     }
 
-    #tab_summary tbody td:nth-child(9) {
-        text-align: right;
+    #tab_summary tfoot th:nth-child(2) {
+        text-align: center;
+        vertical-align: middle;
     }
 
-    #tab_summary tbody td:nth-child(10) {
-        text-align: right;
+    #tab_summary tfoot th:nth-child(3) {
+        text-align: center;
+        vertical-align: middle;
     }
 
-    #tab_jump_gates tbody td:nth-child(7) {
-        text-align: right;
+    #tab_summary tfoot th:nth-child(4) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(5) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(6) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(7) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(8) {
+        text-align: center;
+        vertical-align: middle;
     }
 
     /* Jump Gates */
@@ -83,10 +135,8 @@
         vertical-align: top;
     }
 
-    .floating-icon {
-        float: left;
-        width: 48px;
-        height: 48px;
-        margin-right: 0.75em;
+    #tab_jump_gates tbody td:nth-child(7) {
+        text-align: right;
     }
+
 }

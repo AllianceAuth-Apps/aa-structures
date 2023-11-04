@@ -551,7 +551,7 @@ def poco_list_data(request) -> JsonResponse:
     pocos = Structure.objects.filter(
         eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL,
         owner__are_pocos_public=True,
-    )
+    ).select_related("eve_planet__eve_type__eve_group")
     serializer = PocoListSerializer(queryset=pocos, request=request)
     return JsonResponse({"data": serializer.to_list()})
 

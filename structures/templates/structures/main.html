@@ -73,6 +73,19 @@
     <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
 
     <script type="application/javascript">
+        function draw_spinner(elem){
+            let url = "";
+
+            {% if NIGHT_MODE %}
+                url = "{% static 'structures/img/Spinner-1s-64px-dark.gif' %}"
+            {% else %}
+                url = "{% static 'structures/img/Spinner-1s-64px-light.gif' %}"
+            {% endif %}
+
+            elem.find('.modal-title').html('Loading...');
+            elem.find('.modal-body').html('<img class="center-image" src="' + url + '">');
+        }
+
         $(document).ready(function () {
             const COOKIE_LAST_TAB_ID = "structures_last_tab_id"
             const COOKIE_LAST_TAB_HOURS = 6
@@ -224,12 +237,7 @@
             });
 
             $('#modalUpwellDetails').on('show.bs.modal', function(event) {
-                $(this).find('.modal-title').html('Loading...');
-                {% if NIGHT_MODE %}
-                    $(this).find('.modal-body').html('<img src="{% static "structures/img/Spinner-1s-64px-dark.gif" %}">');
-                {% else %}
-                    $(this).find('.modal-body').html('<img src="{% static "structures/img/Spinner-1s-64px-light.gif" %}">');
-                {% endif %}
+                draw_spinner($(this));
 
                 const button = $(event.relatedTarget);
                 const ajax_url = button.data('ajax_url');
@@ -246,12 +254,7 @@
             });
 
             $('#modalPocoDetails').on('show.bs.modal', function(event) {
-                $(this).find('.modal-title').html('Loading...');
-                {% if NIGHT_MODE %}
-                    $(this).find('.modal-body').html('<img src="{% static "structures/img/Spinner-1s-64px-dark.gif" %}">');
-                {% else %}
-                    $(this).find('.modal-body').html('<img src="{% static "structures/img/Spinner-1s-64px-light.gif" %}">');
-                {% endif %}
+                draw_spinner($(this));
 
                 const button = $(event.relatedTarget);
                 const ajax_url = button.data('ajax_url');
@@ -268,12 +271,7 @@
             });
 
             $('#modalStarbaseDetail').on('show.bs.modal', function(event) {
-                $(this).find('.modal-title').html('Loading...');
-                {% if NIGHT_MODE %}
-                    $(this).find('.modal-body').html('<img src="{% static "structures/img/Spinner-1s-64px-dark.gif" %}">');
-                {% else %}
-                    $(this).find('.modal-body').html('<img src="{% static "structures/img/Spinner-1s-64px-light.gif" %}">');
-                {% endif %}
+                draw_spinner($(this));
 
                 const button = $(event.relatedTarget);
                 const ajax_url = button.data('ajax_url');

@@ -23,11 +23,11 @@
             {% endif %}
             <li role="presentation"><a href="#summary" aria-controls="summary" role="tab" data-toggle="tab">{% trans "Summary" %}</a></li>
             <script id="active-tab" type="application/javascript">
-                let activeTab = 'structures';
+                let defaultTabId = 'structures';
             </script>
         {% else%}
             <script id="active-tab" type="application/javascript">
-                let activeTab = 'pocos';
+                let defaultTabId = 'pocos';
             </script>
         {% endif %}
         <li role="presentation"><a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">{% translate "Customs Offices" %}</a></li>
@@ -59,38 +59,32 @@
 {% block extra_javascript %}
     {% include 'bundles/datatables-js.html' %}
     {% include 'bundles/filterdropdown-js.html' %}
+    <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
 
     <script type="application/javascript">
         $(document).ready(function () {
-            var dataTablesPageLength = {{ data_tables_page_length }};
-            var dataTablesPaging = ("{{ data_tables_paging }}" == 'True');
+            const COOKIE_LAST_TAB_ID = "structures_last_tab_id"
+            const COOKIE_LAST_TAB_HOURS = 2
 
-            // sum numbers in column and write result in footer row
-            // Args:
-            // - api: current api object
-            // - columnIdx: Index number of columns to sum, starts with 0
-            // - format: format of output. either 'number' or 'isk'
-            function dataTableFooterSumColumn(api, columnIdx) {
-                // Remove the formatting to get integer data for summation
-                const intVal = function (i) {
-                    return typeof i === 'string' ?
-                        i.replace(/[\$,]/g, '') * 1 :
-                        typeof i === 'number' ?
-                            i : 0;
-                };
+            let dataTablesPageLength = {{ data_tables_page_length }};
+            let dataTablesPaging = ("{{ data_tables_paging }}" == 'True');
 
-                const columnTotal = api
-                    .column(columnIdx)
-                    .data()
-                    .reduce(function (a, b) {
-                            return intVal(a) + intVal(b);
-                        },
-                        0
-                    );
-                $(api.column(columnIdx).footer()).html(
-                    columnTotal.toLocaleString('en-US', {maximumFractionDigits: 0})
-                );
+            /* show last selected tab or default */
+            let tabId = "{{show_tab}}"
+            if (tabId != "") {
+                setCookie(COOKIE_LAST_TAB_ID, tabId, 1)
             }
+            else {
+                tabId = getCookie(COOKIE_LAST_TAB_ID)
+                if (tabId == "") tabId = defaultTabId
+            }
+            $('a[href="#' + tabId + '"]').tab("show")
+
+            /* remember last selected tab */
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                const selectedTabId = $(e.target).attr("href").substr(1)
+                setCookie(COOKIE_LAST_TAB_ID, selectedTabId, COOKIE_LAST_TAB_HOURS)
+            });
 
             /* structures */
             $('#tab_structures').DataTable({
@@ -292,7 +286,6 @@
                     cache: false
                 },
                 columns: [
-                    { data: 'type_icon' },
                     { data: 'region' },
                     {
                         data: 'solar_system_html',
@@ -302,39 +295,41 @@
                         }
                     },
                     { data: 'planet' },
-                    { data: 'planet_type_icon' },
                     { data: 'planet_type_name' },
                     { data: 'has_access_html' },
                     { data: 'tax' },
                     /* hidden columns */
-                    { data: 'solar_system' },
                     { data: 'space_type' },
+                    { data: 'region' },
+                    { data: 'solar_system' },
+                    { data: 'planet_type_name' },
                     { data: 'has_access_str' },
                 ],
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
                 columnDefs: [
-                    { "sortable": false, "targets": [0, 4] },
-                    { "visible": false, "targets": [ 8, 9, 10 ] },
+                    { "visible": false, "targets": [ 6, 7, 8, 9, 10 ] },
                 ],
                 order: [ [1, "asc"], [3, "asc"] ],
                 filterDropDown:
                 {
                     columns: [
                         {
-                            idx: 9,
+                            idx: 6,
                             title: "{% translate 'Space Type' %}"
                         },
                         {
-                            idx: 1
+                            idx: 7,
+                            title: "{% translate 'Region' %}"
                         },
                         {
                             idx: 8,
                             title: "{% translate 'Solar System' %}"
                         },
                         {
-                            idx: 5
+                            idx: 9,
+                            title: "{% translate 'Planet Type' %}"
                         },
                         {
                             idx: 10,
@@ -533,9 +528,6 @@
                     }
                 },
             });
-
-
-            $('#structure-tabs a[href="#' + activeTab + '"]').tab('show')
 
         });
     </script>

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.7.0] - 2023-11-04
+
+### Changed
+
+- The last visited tab will remains selected when returning to page again
+- Overhaul of all structures page
+- Overhaul of jump structures page
+- Overhaul of summary page
+- Overhaul of poco page
+
+### Fixed
+
+- Icons too small on all structures page
+- Icons too small on summary page
+- Icons too small on poco page
+
 ## [2.6.2] - 2023-10-31
 
 ### Changed

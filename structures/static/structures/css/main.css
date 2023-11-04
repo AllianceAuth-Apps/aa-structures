@@ -145,7 +145,22 @@
         vertical-align: top;
     }
 
-    #tab_jump_gates tbody td:nth-child(7) {
+    #tab_jump_gates tbody td:nth-child(1) {
+        white-space: nowrap;
+        min-width: 12em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(2) {
+        white-space: nowrap;
+        min-width: 9em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(3) {
+        white-space: nowrap;
+        min-width: 15em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(6) {
         text-align: right;
     }
 

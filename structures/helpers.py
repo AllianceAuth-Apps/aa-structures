@@ -44,7 +44,7 @@ def get_or_create_esi_obj(model_class: type, *args, **kwargs) -> Any:
     return obj
 
 
-def icon_with_two_lines_html(
+def icon_with_paragraph_html(
     icon_url: str, primary_text: str, secondary_text: str = ""
 ) -> str:
     """Return HTML for a 2-line paragraph with a floating icon on the left."""

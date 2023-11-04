@@ -17,7 +17,7 @@ from django.utils import translation
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from esi.decorators import token_required
-from eveuniverse.core import eveimageserver
+from eveuniverse.core import dotlan, eveimageserver
 from eveuniverse.models import EveType, EveTypeDogmaAttribute
 
 from allianceauth.authentication.models import CharacterOwnership
@@ -25,8 +25,9 @@ from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.allianceauth import notify_admins
 from app_utils.logging import LoggerAddTag
+from app_utils.views import link_html
 
-from structures.helpers import icon_with_two_lines_html
+from structures.helpers import icon_with_paragraph_html
 
 from . import __title__, tasks
 from .app_settings import (
@@ -610,9 +611,12 @@ def structure_summary_data(request) -> JsonResponse:
         corporation_icon_url = eveimageserver.corporation_logo_url(
             corporation_id, size=64
         )
-        owner_display_html = icon_with_two_lines_html(
+        owner_link = link_html(
+            dotlan.corporation_url(corporation_name), corporation_name
+        )
+        owner_display_html = icon_with_paragraph_html(
             icon_url=corporation_icon_url,
-            primary_text=corporation_name,
+            primary_text=owner_link,
             secondary_text=alliance_ticker,
         )
         owner_html = {

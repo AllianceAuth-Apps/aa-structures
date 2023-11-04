@@ -13,9 +13,9 @@ from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+from eveuniverse.core import dotlan
 from eveuniverse.models import EvePlanet
 
-from allianceauth.eveonline.evelinks import dotlan
 from app_utils.datetime import DATETIME_FORMAT, timeuntil_str
 from app_utils.views import (
     BootstrapStyle,
@@ -29,7 +29,7 @@ from app_utils.views import (
 
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
 from structures.constants import EveGroupId, EveTypeId
-from structures.helpers import icon_with_two_lines_html
+from structures.helpers import icon_with_paragraph_html
 from structures.models import EveSpaceType, Structure, StructureItem, StructureService
 
 
@@ -80,7 +80,7 @@ class _AbstractStructureListSerializer(ABC):
             dotlan.corporation_url(corporation.corporation_name),
             corporation.corporation_name,
         )
-        owner_display_html = icon_with_two_lines_html(
+        owner_display_html = icon_with_paragraph_html(
             icon_url=corporation.logo_url(size=self.ICON_RENDER_SIZE),
             primary_text=owner_link,
             secondary_text=secondary_text,
@@ -132,7 +132,7 @@ class _AbstractStructureListSerializer(ABC):
 
         # type
         type_link = link_html(structure_type.profile_url, structure_type.name)
-        type_html = icon_with_two_lines_html(
+        type_html = icon_with_paragraph_html(
             icon_url=structure_type.icon_url(size=self.ICON_RENDER_SIZE),
             primary_text=type_link,
             secondary_text=row["group_name"],
@@ -508,7 +508,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             planet_name = planet_type_name = "?"
             icon_url = ""
 
-        planet_plus_icon_html = icon_with_two_lines_html(
+        planet_plus_icon_html = icon_with_paragraph_html(
             icon_url=structure.eve_type.icon_url(size=self.ICON_RENDER_SIZE),
             primary_text=planet_name,
         )
@@ -516,7 +516,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             "display": planet_plus_icon_html,
             "sort": planet_name,
         }
-        planet_type_plus_icon_html = icon_with_two_lines_html(
+        planet_type_plus_icon_html = icon_with_paragraph_html(
             icon_url=icon_url, primary_text=planet_type_name
         )
         row["planet_type_plus_icon"] = {

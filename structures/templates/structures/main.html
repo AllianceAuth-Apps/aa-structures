@@ -121,7 +121,7 @@
                             sort: 'value'
                         }
                     },
-                    { data: 'structure_name' },
+                    { data: 'structure_name_and_tags' },
                     { data: 'services' },
                     {
                         data: 'fuel_and_power',
@@ -418,6 +418,7 @@
             });
 
             /* jump gates */
+            let jump_gate_idx_start = 7;
             $('#tab_jump_gates').DataTable({
                 ajax: {
                     url: "{% url 'structures:jump_gates_list_data' %}",
@@ -439,7 +440,14 @@
                             sort: 'value'
                         }
                     },
-                    { data: 'structure_name' },
+                    {
+                        data: 'type',
+                        render: {
+                            _: 'display',
+                            sort: 'value'
+                        }
+                    },
+                    { data: 'structure_name_and_tags' },
                     {
                         data: 'fuel_and_power',
                         render: {
@@ -466,43 +474,43 @@
                 pageLength: dataTablesPageLength,
                 order: [[1, "asc"]],
                 columnDefs: [
-                    { "visible": false, "targets": [ 6, 7, 8, 9, 10, 11, 12 ] },
+                    { "visible": false, "targets": [ 7, 8, 9, 10, 11, 12, 13 ] },
                 ],
                 filterDropDown:
                 {
                    columns: [
                         {
-                            idx: 6,
+                            idx: jump_gate_idx_start,
                             title: "{% translate 'Alliance' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 7,
+                            idx: jump_gate_idx_start + 1,
                             title: "{% translate 'Corporation' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 8,
+                            idx: jump_gate_idx_start + 2,
                             title: "{% translate 'Region' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: 9,
+                            idx: jump_gate_idx_start + 3,
                             title: "{% translate 'Solar System' %}",
                             maxWidth: "14em"
                         },
                         {
-                            idx: 10,
+                            idx: jump_gate_idx_start + 4,
                             title: "{% translate 'Reinforced?' %}",
                             maxWidth: "13em"
                         },
                         {
-                            idx: 11,
+                            idx: jump_gate_idx_start + 5,
                             title: "{% translate 'Power Mode' %}",
                             maxWidth: "12em"
                         },
                         {
-                            idx: 12,
+                            idx: jump_gate_idx_start + 6,
                             title: "{% translate 'State' %}",
                             maxWidth: "6em"
                         },

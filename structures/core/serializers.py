@@ -157,12 +157,16 @@ class _AbstractStructureListSerializer(ABC):
         # poco
         row["is_poco"] = structure.is_poco
 
-    def _add_name(self, structure: Structure, row: dict, check_tags: bool = True):
-        row["structure_name"] = escape(structure.name)
+    def _add_name_and_tags(
+        self, structure: Structure, row: dict, check_tags: bool = True
+    ):
+        structure_name_html = escape(structure.name)
         tags = []
         if check_tags and structure.tags.exists():
             tags += [x.html for x in structure.tags.all()]
-            row["structure_name"] += format_html("<br>{}", mark_safe(" ".join(tags)))
+            structure_name_html += format_html("<br>{}", mark_safe(" ".join(tags)))
+
+        row["structure_name_and_tags"] = structure_name_html
 
     def _add_services(self, structure: Structure, row: dict):
         if row["is_poco"] or row["is_starbase"]:
@@ -405,7 +409,7 @@ class StructureListSerializer(_AbstractStructureListSerializer):
         self._add_owner(structure, row)
         self._add_location(structure, row)
         self._add_type(structure, row)
-        self._add_name(structure, row)
+        self._add_name_and_tags(structure, row)
         self._add_services(structure, row)
         self._add_reinforcement_infos(structure, row)
         self._add_fuel_and_power(structure, row)
@@ -431,7 +435,8 @@ class JumpGatesListSerializer(_AbstractStructureListSerializer):
         row = super().serialize_object(structure)
         self._add_owner(structure, row)
         self._add_location(structure, row)
-        self._add_name(structure, row, check_tags=False)
+        self._add_type(structure, row)
+        self._add_name_and_tags(structure, row, check_tags=False)
         self._add_jump_fuel_level(structure, row)
         self._add_fuel_and_power(structure, row)
         self._add_reinforcement_infos(structure, row)

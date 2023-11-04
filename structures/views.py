@@ -613,7 +613,6 @@ def structure_summary_data(request) -> JsonResponse:
         owner_display_html = icon_with_two_lines_html(
             icon_url=corporation_icon_url,
             primary_text=corporation_name,
-            primary_url="#",
             secondary_text=alliance_ticker,
         )
         owner_html = {

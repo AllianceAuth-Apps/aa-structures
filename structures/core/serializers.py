@@ -76,10 +76,13 @@ class _AbstractStructureListSerializer(ABC):
             update_warning_html = ""
 
         secondary_text = format_html("{}{}", alliance_ticker, update_warning_html)
+        owner_link = link_html(
+            dotlan.corporation_url(corporation.corporation_name),
+            corporation.corporation_name,
+        )
         owner_display_html = icon_with_two_lines_html(
             icon_url=corporation.logo_url(size=self.ICON_RENDER_SIZE),
-            primary_text=corporation.corporation_name,
-            primary_url=dotlan.corporation_url(corporation.corporation_name),
+            primary_text=owner_link,
             secondary_text=secondary_text,
         )
         row["owner"] = {
@@ -106,7 +109,7 @@ class _AbstractStructureListSerializer(ABC):
             location_name = row["solar_system_name"]
 
         location_html = format_html(
-            '<a href="{}">{}</a><br><em>{}</em>',
+            '<a href="{}">{}</a><br>{}',
             solar_system_url,
             no_wrap_html(location_name),
             no_wrap_html(row["region_name"]),
@@ -128,10 +131,10 @@ class _AbstractStructureListSerializer(ABC):
             row["is_starbase"] = None
 
         # type
+        type_link = link_html(structure_type.profile_url, structure_type.name)
         type_html = icon_with_two_lines_html(
             icon_url=structure_type.icon_url(size=self.ICON_RENDER_SIZE),
-            primary_text=structure_type.name,
-            primary_url=structure_type.profile_url,
+            primary_text=type_link,
             secondary_text=row["group_name"],
         )
         row["type"] = {"display": type_html, "value": structure_type.name}
@@ -479,9 +482,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
 
         constellation_name = structure.eve_solar_system.eve_constellation.name
         region_name = structure.eve_solar_system.eve_constellation.eve_region.name
-        constellation_html = format_html(
-            "{}<br><em>{}</em>", constellation_name, region_name
-        )
+        constellation_html = format_html("{}<br>{}", constellation_name, region_name)
 
         row["constellation_html"] = {
             "display": constellation_html,

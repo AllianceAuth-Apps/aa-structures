@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from django.utils.html import format_html
 from django.utils.timezone import now
 
-from app_utils.views import link_html, no_wrap_html
+from app_utils.views import no_wrap_html
 
 
 def hours_until_deadline(
@@ -45,17 +45,14 @@ def get_or_create_esi_obj(model_class: type, *args, **kwargs) -> Any:
 
 
 def icon_with_two_lines_html(
-    icon_url: str, primary_text: str, primary_url: str = "", secondary_text: str = ""
+    icon_url: str, primary_text: str, secondary_text: str = ""
 ) -> str:
     """Return HTML for a 2-line paragraph with a floating icon on the left."""
     icon_html = format_html(('<img src="{}" class="floating-icon">'), icon_url)
-    primary_text_html = (
-        link_html(primary_url, primary_text) if primary_url else primary_text
-    )
     type_html = format_html(
-        "<p>{}{}<br><em>{}</em></p>",
+        "<p>{}{}<br>{}</p>",
         icon_html,
-        no_wrap_html(primary_text_html),
+        no_wrap_html(primary_text),
         no_wrap_html(secondary_text),
     )
     return type_html

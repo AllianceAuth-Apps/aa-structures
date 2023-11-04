@@ -1,6 +1,10 @@
 @media all {
 
     /* General */
+    h3 {
+        margin-top: 0px;
+    }
+
     .floating-icon {
         float: left;
         width: 48px;

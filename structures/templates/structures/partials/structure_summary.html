@@ -1,7 +1,11 @@
 {% load i18n %}
 {% load bootstrap %}
 
+<!-- Summary -->
 <div role="tabpanel" class="tab-pane" id="summary">
+
+    <h3>{% translate 'Summary' %}</h3>
+
     <div class="table-responsive">
         <table id="tab_summary" style="width: 100%" class="table table-striped table-compact">
             <thead>
@@ -11,10 +15,10 @@
                         {% translate "Alliance" %}
                     </th>
                     <th>{% translate "Citadels" %}</th>
-                    <th>{% translate "Engineering Complexes" %}</th>
+                    <th>{% translate "Engineering<br>Complexes" %}</th>
                     <th>{% translate "Refineries" %}</th>
                     <th>{% translate "Other Upwell" %}</th>
-                    <th>{% translate "Customs Offices" %}</th>
+                    <th>{% translate "Customs<br>Offices" %}</th>
                     <th>{% translate "Starbases" %}</th>
                     <th>{% translate "Total" %}</th>
                 </tr>

@@ -21,7 +21,6 @@ from app_utils.views import (
     BootstrapStyle,
     bootstrap_label_html,
     format_html_lazy,
-    image_html,
     link_html,
     no_wrap_html,
     yesno_str,
@@ -38,7 +37,6 @@ class _AbstractStructureListSerializer(ABC):
     """Converting a list of structure objects into a dict for JSON."""
 
     ICON_RENDER_SIZE = 64
-    ICON_OUTPUT_SIZE = 40
 
     def __init__(self, queryset: models.QuerySet, request=None):
         self.queryset = queryset
@@ -60,9 +58,6 @@ class _AbstractStructureListSerializer(ABC):
     def serialize_object(self, structure: Structure) -> dict:
         """Serialize one objects into a dict."""
         return {"id": structure.id}
-
-    def _icon_html(self, url) -> str:  # TODO: Try to remove
-        return image_html(url, size=self.ICON_OUTPUT_SIZE)
 
     def _add_owner(self, structure: Structure, row: dict):
         corporation = structure.owner.corporation

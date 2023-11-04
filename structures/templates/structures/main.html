@@ -107,7 +107,13 @@
                             sort: 'value'
                         }
                     },
-                    { data: 'location' },
+                    {
+                        data: 'location',
+                        render: {
+                            _: 'display',
+                            sort: 'value'
+                        }
+                    },
                     {
                         data: 'type',
                         render: {
@@ -126,7 +132,6 @@
                     },
                     { data: 'reinforcement' },
                     { data: 'state_details' },
-                    { data: 'core_status' },
                     { data: 'details' },
 
                     /* hidden */
@@ -145,60 +150,60 @@
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
                 columnDefs: [
-                    { "sortable": false, "targets": [3, 8, 9] },
-                    { "visible": false, "targets": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19] }
+                    { "sortable": false, "targets": [7, 8] },
+                    { "visible": false, "targets": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18] }
                 ],
-                order: [[1, "asc"], [5, "asc"]],
+                order: [[1, "asc"], [3, "asc"]],
                 filterDropDown:
                 {
                     columns: [
                         {
-                            idx: 10,
+                            idx: 9,
                             title: "{% translate 'Alliance' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 11,
+                            idx: 10,
                             title: "{% translate 'Corporation' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 12,
+                            idx: 11,
                             title: "{% translate 'Region' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: 13,
+                            idx: 12,
                             title: "{% translate 'Solar System' %}",
                             maxWidth: "14em"
                         },
                         {
-                            idx: 14,
+                            idx: 13,
                             title: "{% translate 'Category' %}",
                             maxWidth: "10em"
                         },
                         {
-                            idx: 15,
+                            idx: 14,
                             title: "{% translate 'Group' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: 16,
+                            idx: 15,
                             title: "{% translate 'Reinforced?' %}",
                             maxWidth: "13em"
                         },
                         {
-                            idx: 17,
+                            idx: 16,
                             title: "{% translate 'State' %}",
                             maxWidth: "6em"
                         },
                         {
-                            idx: 18,
+                            idx: 17,
                             title: "{% translate 'Power Mode' %}",
                             maxWidth: "12em"
                         },
                         {
-                            idx: 19,
+                            idx: 18,
                             title: "{% translate 'Core?' %}",
                             maxWidth: "6em"
                         }
@@ -427,7 +432,13 @@
                             sort: 'value'
                         }
                     },
-                    { data: 'location' },
+                    {
+                        data: 'location',
+                        render: {
+                            _: 'display',
+                            sort: 'value'
+                        }
+                    },
                     { data: 'structure_name' },
                     {
                         data: 'fuel_and_power',
@@ -440,6 +451,7 @@
                         data: 'jump_fuel_quantity',
                         render: $.fn.dataTable.render.number(',', '.', 0)
                     },
+                    { data: 'state_details' },
                     /* hidden */
                     { data: 'alliance_name' },
                     { data: 'corporation_name' },
@@ -447,47 +459,54 @@
                     { data: 'solar_system_name' },
                     { data: 'is_reinforced_str' },
                     { data: 'power_mode_str' },
+                    { data: 'state_str' },
                 ],
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
                 order: [[1, "asc"]],
                 columnDefs: [
-                    { "visible": false, "targets": [ 5, 6, 7, 8, 9, 10 ] },
+                    { "visible": false, "targets": [ 6, 7, 8, 9, 10, 11, 12 ] },
                 ],
                 filterDropDown:
                 {
                    columns: [
                         {
-                            idx: 5,
+                            idx: 6,
                             title: "{% translate 'Alliance' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 6,
+                            idx: 7,
                             title: "{% translate 'Corporation' %}",
                             maxWidth: "11em"
                         },
                         {
-                            idx: 7,
+                            idx: 8,
                             title: "{% translate 'Region' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: 8,
+                            idx: 9,
                             title: "{% translate 'Solar System' %}",
                             maxWidth: "14em"
                         },
                         {
-                            idx: 9,
+                            idx: 10,
                             title: "{% translate 'Reinforced?' %}",
                             maxWidth: "13em"
                         },
                         {
-                            idx: 10,
+                            idx: 11,
                             title: "{% translate 'Power Mode' %}",
                             maxWidth: "12em"
-                        }
+                        },
+                        {
+                            idx: 12,
+                            title: "{% translate 'State' %}",
+                            maxWidth: "6em"
+                        },
+
                     ],
                     autoSize: false,
                     bootstrap: true

@@ -630,5 +630,5 @@ def jump_gates_list_data(request) -> JsonResponse:
     jump_gates = Structure.objects.visible_for_user(request.user).filter(
         eve_type_id=EveTypeId.JUMP_GATE
     )
-    serializer = JumpGatesListSerializer(queryset=jump_gates)
+    serializer = JumpGatesListSerializer(queryset=jump_gates, request=request)
     return JsonResponse({"data": serializer.to_list()})

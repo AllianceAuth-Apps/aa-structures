@@ -14,7 +14,7 @@
 
     #tab_structures tbody td:nth-child(1) {
         white-space: nowrap;
-        min-width: 11em;
+        min-width: 12em;
     }
 
     #tab_structures tbody td:nth-child(2) {
@@ -83,4 +83,10 @@
         vertical-align: top;
     }
 
+    .floating-icon {
+        float: left;
+        width: 48px;
+        height: 48px;
+        margin-right: 0.75em;
+    }
 }

@@ -60,22 +60,14 @@ class _AbstractStructureListSerializer(ABC):
         """Serialize one objects into a dict."""
         return {"id": structure.id}
 
-    def _icon_html(self, url) -> str:
+    def _icon_html(self, url) -> str:  # TODO: Try to remove
         return image_html(url, size=self.ICON_OUTPUT_SIZE)
 
     def _icon_with_two_lines_html(
         self, icon_url: str, primary_text: str, primary_url: str, secondary_text: str
     ) -> str:
         """Return HTML for a 2-line paragraph with a floating icon on the left."""
-        icon_html = format_html(
-            (
-                '<img src="{}" style="float: left; width: {}px; height: {}px; '
-                'margin-right: 0.75em;">'
-            ),
-            icon_url,
-            self.ICON_OUTPUT_SIZE,
-            self.ICON_OUTPUT_SIZE,
-        )
+        icon_html = format_html(('<img src="{}" class="floating-icon">'), icon_url)
         type_html = format_html(
             "<p>{}{}<br><em>{}</em></p>",
             icon_html,
@@ -84,7 +76,7 @@ class _AbstractStructureListSerializer(ABC):
         )
         return type_html
 
-    def _add_owner(self, structure, row):
+    def _add_owner(self, structure: Structure, row: dict):
         corporation = structure.owner.corporation
         if corporation.alliance:
             alliance_name = corporation.alliance.alliance_name
@@ -116,7 +108,7 @@ class _AbstractStructureListSerializer(ABC):
         )
         row["corporation_name"] = corporation.corporation_name
 
-    def _add_location(self, structure, row):
+    def _add_location(self, structure: Structure, row: dict):
         solar_system = structure.eve_solar_system
 
         # location
@@ -129,14 +121,16 @@ class _AbstractStructureListSerializer(ABC):
             location_name = structure.eve_planet.name
         else:
             location_name = row["solar_system_name"]
-        row["location"] = format_html(
+
+        location_html = format_html(
             '<a href="{}">{}</a><br><em>{}</em>',
             solar_system_url,
             no_wrap_html(location_name),
             no_wrap_html(row["region_name"]),
         )
+        row["location"] = {"display": location_html, "value": location_name}
 
-    def _add_type(self, structure, row):
+    def _add_type(self, structure: Structure, row: dict):
         structure_type = structure.eve_type
 
         # category
@@ -163,14 +157,14 @@ class _AbstractStructureListSerializer(ABC):
         # poco
         row["is_poco"] = structure.is_poco
 
-    def _add_name(self, structure, row, check_tags=True):
+    def _add_name(self, structure: Structure, row: dict, check_tags: bool = True):
         row["structure_name"] = escape(structure.name)
         tags = []
         if check_tags and structure.tags.exists():
             tags += [x.html for x in structure.tags.all()]
             row["structure_name"] += format_html("<br>{}", mark_safe(" ".join(tags)))
 
-    def _add_services(self, structure, row):
+    def _add_services(self, structure: Structure, row: dict):
         if row["is_poco"] or row["is_starbase"]:
             row["services"] = "-"
             return
@@ -190,7 +184,7 @@ class _AbstractStructureListSerializer(ABC):
             else "-"
         )
 
-    def _add_reinforcement_infos(self, structure, row):
+    def _add_reinforcement_infos(self, structure: Structure, row: dict):
         row["is_reinforced"] = structure.is_reinforced
         row["is_reinforced_str"] = yesno_str(structure.is_reinforced)
         if structure.is_starbase:
@@ -201,7 +195,7 @@ class _AbstractStructureListSerializer(ABC):
             else:
                 row["reinforcement"] = ""
 
-    def _add_fuel_and_power(self, structure, row):
+    def _add_fuel_and_power(self, structure: Structure, row: dict):
         fuel_expires_display, fuel_expires_timestamp = self._calc_fuel_infos(structure)
         last_online_at_display = self._calc_online_infos(structure)
 
@@ -214,7 +208,7 @@ class _AbstractStructureListSerializer(ABC):
         }
         row["power_mode_str"] = structure.get_power_mode_display()
 
-    def _calc_fuel_infos(self, structure):
+    def _calc_fuel_infos(self, structure: Structure):
         if structure.is_poco:
             fuel_expires_display = "-"
             fuel_expires_timestamp = None
@@ -307,48 +301,56 @@ class _AbstractStructureListSerializer(ABC):
 
         return last_online_at_display
 
-    def _add_state(self, structure, row, request):
-        def cap_first(text: str) -> str:
-            return text[0].upper() + text[1::]
+    def _add_state_and_core(self, structure: Structure, row: dict, request):
+        state_str, state_details = self._calc_state_infos(structure, request)
+        core_status, has_core = self._calc_core_infos(structure)
 
-        row["state_str"] = (
-            cap_first(structure.get_state_display()) if not structure.is_poco else "-"
-        )
-        row["state_details"] = row["state_str"]
+        row["state_str"] = state_str
+        row["state_details"] = format_html("{}<br>{}", state_details, core_status)
+        row["core_status_str"] = yesnonone_str(has_core)
+
+    def _calc_state_infos(self, structure: Structure, request):
+        if structure.is_poco:
+            return "-", "-"
+
+        state_str = structure.get_state_display().capitalize()
+        state_details = format_html(state_str)
         if structure.state_timer_end:
-            row["state_details"] += format_html(
+            state_details += format_html(
                 "<br>{}",
                 no_wrap_html(structure.state_timer_end.strftime(DATETIME_FORMAT)),
             )
+
         if (
             request.user.has_perm("structures.view_all_unanchoring_status")
             and structure.unanchors_at
         ):
-            row["state_details"] += format_html(
+            state_details += format_html(
                 "<br>Unanchoring until {}",
                 no_wrap_html(structure.unanchors_at.strftime(DATETIME_FORMAT)),
             )
 
-    def _add_core_status(self, structure, row):
-        if structure.is_upwell_structure:
-            if structure.has_core is True:
-                has_core = True
-                core_status = '<i class="fas fa-check" title="Core present"></i>'
-            elif structure.has_core is False:
-                has_core = False
-                core_status = (
-                    '<i class="fas fa-times text-danger title="Core absent"></i>'
-                )
-            else:
-                has_core = None
-                core_status = '<i class="fas fa-question" title="Status unknown"></i>'
+        return state_str, state_details
+
+    def _calc_core_infos(self, structure: Structure):
+        if not structure.is_upwell_structure or structure.is_jump_gate:
+            return "", None
+
+        if structure.has_core is True:
+            has_core = True
+            core_status = ""
+
+        elif structure.has_core is False:
+            has_core = False
+            core_status = bootstrap_label_html("Core missing", BootstrapStyle.DANGER)
+
         else:
             has_core = None
-            core_status = "-"
-        row["core_status"] = core_status
-        row["core_status_str"] = yesnonone_str(has_core)
+            core_status = bootstrap_label_html("No core status", BootstrapStyle.WARNING)
 
-    def _add_details_widget(self, structure, row, request):
+        return core_status, has_core
+
+    def _add_details_widget(self, structure: Structure, row: dict, request):
         """Add details widget when applicable"""
         if structure.has_fitting and request.user.has_perm(
             "structures.view_structure_fit"
@@ -407,8 +409,7 @@ class StructureListSerializer(_AbstractStructureListSerializer):
         self._add_services(structure, row)
         self._add_reinforcement_infos(structure, row)
         self._add_fuel_and_power(structure, row)
-        self._add_state(structure, row, self._request)
-        self._add_core_status(structure, row)
+        self._add_state_and_core(structure, row, self._request)
         self._add_details_widget(structure, row, self._request)
         return row
 
@@ -434,9 +435,10 @@ class JumpGatesListSerializer(_AbstractStructureListSerializer):
         self._add_jump_fuel_level(structure, row)
         self._add_fuel_and_power(structure, row)
         self._add_reinforcement_infos(structure, row)
+        self._add_state_and_core(structure, row, self._request)
         return row
 
-    def _add_jump_fuel_level(self, structure, row):
+    def _add_jump_fuel_level(self, structure: Structure, row: dict):
         row["jump_fuel_quantity"] = structure.jump_fuel_quantity_2
 
 
@@ -468,12 +470,12 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         self._add_has_access_and_tax(structure, row, self.main_character)
         return row
 
-    def _add_type(self, structure, row):
+    def _add_type(self, structure: Structure, row: dict):
         row["type_icon"] = self._icon_html(
             structure.eve_type.icon_url(size=self.ICON_RENDER_SIZE)
         )
 
-    def _add_solar_system(self, structure, row):
+    def _add_solar_system(self, structure: Structure, row: dict):
         if structure.eve_solar_system.is_low_sec:
             space_badge_type = "warning"
         elif structure.eve_solar_system.is_high_sec:
@@ -497,7 +499,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         row["region"] = structure.eve_solar_system.eve_constellation.eve_region.name
         row["space_type"] = space_type.value
 
-    def _add_planet(self, structure, row):
+    def _add_planet(self, structure: Structure, row: dict):
         if structure.eve_planet:
             planet_type_name = self.extract_planet_type_name(structure.eve_planet)
             planet_name = structure.eve_planet.name
@@ -511,7 +513,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         row["planet_type_icon"] = planet_type_icon
         row["planet_type_name"] = planet_type_name
 
-    def _add_has_access_and_tax(self, structure, row, main_character):
+    def _add_has_access_and_tax(self, structure: Structure, row: dict, main_character):
         tax = None
         has_access = None
         if main_character:

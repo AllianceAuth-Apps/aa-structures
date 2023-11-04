@@ -461,16 +461,10 @@ class PocoListSerializer(_AbstractStructureListSerializer):
 
     def serialize_object(self, structure: Structure) -> dict:
         row = super().serialize_object(structure)
-        self._add_type(structure, row)
         self._add_solar_system(structure, row)
         self._add_planet(structure, row)
         self._add_has_access_and_tax(structure, row, self.main_character)
         return row
-
-    def _add_type(self, structure: Structure, row: dict):
-        row["type_icon"] = self._icon_html(
-            structure.eve_type.icon_url(size=self.ICON_RENDER_SIZE)
-        )
 
     def _add_solar_system(self, structure: Structure, row: dict):
         if structure.eve_solar_system.is_low_sec:
@@ -480,6 +474,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         else:
             space_badge_type = "danger"
         space_type = EveSpaceType.from_solar_system(structure.eve_solar_system)
+
         solar_system_html = format_html(
             "{}<br>{}",
             link_html(
@@ -488,26 +483,35 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             ),
             bootstrap_label_html(text=space_type.value, label=space_badge_type),
         )
+        region_name = structure.eve_solar_system.eve_constellation.eve_region.name
+
+        row["region_plus_icon"] = icon_with_two_lines_html(
+            icon_url=structure.eve_type.icon_url(size=self.ICON_RENDER_SIZE),
+            primary_text=region_name,
+        )
         row["solar_system_html"] = {
             "display": solar_system_html,
             "sort": structure.eve_solar_system.name,
         }
         row["solar_system"] = structure.eve_solar_system.name
-        row["region"] = structure.eve_solar_system.eve_constellation.eve_region.name
+        row["region"] = region_name
         row["space_type"] = space_type.value
 
     def _add_planet(self, structure: Structure, row: dict):
         if structure.eve_planet:
             planet_type_name = self.extract_planet_type_name(structure.eve_planet)
             planet_name = structure.eve_planet.name
-            planet_type_icon = self._icon_html(
-                structure.eve_planet.eve_type.icon_url(size=self.ICON_RENDER_SIZE)
+            icon_url = structure.eve_planet.eve_type.icon_url(
+                size=self.ICON_RENDER_SIZE
             )
         else:
             planet_name = planet_type_name = "?"
-            planet_type_icon = ""
+            icon_url = ""
+
         row["planet"] = planet_name
-        row["planet_type_icon"] = planet_type_icon
+        row["planet_type_plus_icon"] = icon_with_two_lines_html(
+            icon_url=icon_url, primary_text=planet_type_name
+        )
         row["planet_type_name"] = planet_type_name
 
     def _add_has_access_and_tax(self, structure: Structure, row: dict, main_character):

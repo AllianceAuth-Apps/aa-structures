@@ -29,7 +29,7 @@ from app_utils.views import (
 )
 
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
-from structures.constants import EveTypeId
+from structures.constants import EveGroupId, EveTypeId
 from structures.helpers import icon_with_two_lines_html
 from structures.models import EveSpaceType, Structure, StructureItem, StructureService
 
@@ -325,7 +325,11 @@ class _AbstractStructureListSerializer(ABC):
         return state_str, state_details
 
     def _calc_core_infos(self, structure: Structure):
-        if not structure.is_upwell_structure or structure.is_jump_gate:
+        if structure.eve_type.eve_group_id not in {
+            EveGroupId.CITADEL,
+            EveGroupId.ENGINEERING_COMPLEX,
+            EveGroupId.REFINERY,
+        }:
             return "", None
 
         if structure.has_core is True:

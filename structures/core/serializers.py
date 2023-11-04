@@ -475,25 +475,29 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             space_badge_type = "danger"
         space_type = EveSpaceType.from_solar_system(structure.eve_solar_system)
 
+        solar_system_name = structure.eve_solar_system.name
         solar_system_html = format_html(
             "{}<br>{}",
-            link_html(
-                dotlan.solar_system_url(structure.eve_solar_system.name),
-                structure.eve_solar_system.name,
-            ),
+            link_html(dotlan.solar_system_url(solar_system_name), solar_system_name),
             bootstrap_label_html(text=space_type.value, label=space_badge_type),
         )
-        region_name = structure.eve_solar_system.eve_constellation.eve_region.name
 
-        row["region_plus_icon"] = icon_with_two_lines_html(
-            icon_url=structure.eve_type.icon_url(size=self.ICON_RENDER_SIZE),
-            primary_text=region_name,
+        constellation_name = structure.eve_solar_system.eve_constellation.name
+        region_name = structure.eve_solar_system.eve_constellation.eve_region.name
+        constellation_html = format_html(
+            "{}<br><em>{}</em>", constellation_name, region_name
         )
+
+        row["constellation_html"] = {
+            "display": constellation_html,
+            "sort": constellation_name,
+        }
         row["solar_system_html"] = {
             "display": solar_system_html,
-            "sort": structure.eve_solar_system.name,
+            "sort": solar_system_name,
         }
-        row["solar_system"] = structure.eve_solar_system.name
+        row["solar_system"] = solar_system_name
+        row["constellation"] = constellation_name
         row["region"] = region_name
         row["space_type"] = space_type.value
 
@@ -508,10 +512,21 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             planet_name = planet_type_name = "?"
             icon_url = ""
 
-        row["planet"] = planet_name
-        row["planet_type_plus_icon"] = icon_with_two_lines_html(
+        planet_plus_icon_html = icon_with_two_lines_html(
+            icon_url=structure.eve_type.icon_url(size=self.ICON_RENDER_SIZE),
+            primary_text=planet_name,
+        )
+        row["planet_plus_icon"] = {
+            "display": planet_plus_icon_html,
+            "sort": planet_name,
+        }
+        planet_type_plus_icon_html = icon_with_two_lines_html(
             icon_url=icon_url, primary_text=planet_type_name
         )
+        row["planet_type_plus_icon"] = {
+            "display": planet_type_plus_icon_html,
+            "sort": planet_type_name,
+        }
         row["planet_type_name"] = planet_type_name
 
     def _add_has_access_and_tax(self, structure: Structure, row: dict, main_character):
@@ -539,6 +554,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         else:
             has_access_html = '<i class="fas fa-question" title="Unknown"></i>'
             has_access_str = "?"
-        row["has_access_html"] = has_access_html
+
+        row["has_access_html"] = {"display": has_access_html, "sort": has_access_str}
         row["has_access_str"] = has_access_str
         row["tax"] = f"{tax * 100:.0f} %" if tax else "?"

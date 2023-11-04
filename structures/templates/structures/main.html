@@ -289,6 +289,7 @@
             });
 
             /* pocos */
+            let pocos_idx_start = 6;
             $('#tab_pocos').DataTable({
                 ajax: {
                     url: "{% url 'structures:poco_list_data' %}",
@@ -296,7 +297,20 @@
                     cache: false
                 },
                 columns: [
-                    { data: 'region_plus_icon' },
+                    {
+                        data: 'planet_plus_icon',
+                        render: {
+                            _: 'display',
+                            sort: 'sort'
+                        }
+                    },
+                    {
+                        data: 'planet_type_plus_icon',
+                        render: {
+                            _: 'display',
+                            sort: 'sort'
+                        }
+                    },
                     {
                         data: 'solar_system_html',
                         render: {
@@ -304,45 +318,62 @@
                             sort: 'sort'
                         }
                     },
-                    { data: 'planet' },
-                    { data: 'planet_type_plus_icon' },
-                    { data: 'has_access_html' },
+                    {
+                        data: 'constellation_html',
+                        render: {
+                            _: 'display',
+                            sort: 'sort'
+                        }
+                    },
+                    {
+                        data: 'has_access_html',
+                        render: {
+                            _: 'display',
+                            sort: 'sort'
+                        }
+                    },
                     { data: 'tax' },
                     /* hidden columns */
+                    { data: 'planet_type_name' },
                     { data: 'space_type' },
                     { data: 'region' },
+                    { data: 'constellation' },
                     { data: 'solar_system' },
-                    { data: 'planet_type_name' },
                     { data: 'has_access_str' },
                 ],
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
                 columnDefs: [
-                    { "visible": false, "targets": [ 6, 7, 8, 9, 10 ] },
+                    { "visible": false, "targets": [ 6, 7, 8, 9, 10, 11 ] },
                 ],
-                order: [ [1, "asc"], [3, "asc"] ],
+                order: [ [0, "asc"] ],
                 filterDropDown:
                 {
                     columns: [
                         {
-                            idx: 6,
+                            idx: pocos_idx_start,
+                            title: "{% translate 'Planet Type' %}"
+                        },
+
+                        {
+                            idx: pocos_idx_start + 1,
                             title: "{% translate 'Space Type' %}"
                         },
                         {
-                            idx: 7,
+                            idx: pocos_idx_start + 2,
                             title: "{% translate 'Region' %}"
                         },
                         {
-                            idx: 8,
+                            idx: pocos_idx_start + 3,
+                            title: "{% translate 'Constellation' %}"
+                        },
+                        {
+                            idx: pocos_idx_start + 4,
                             title: "{% translate 'Solar System' %}"
                         },
                         {
-                            idx: 9,
-                            title: "{% translate 'Planet Type' %}"
-                        },
-                        {
-                            idx: 10,
+                            idx: pocos_idx_start + 5,
                             title: "{% translate 'Access?' %}"
                         },
                     ],

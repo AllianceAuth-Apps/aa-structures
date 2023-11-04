@@ -1,13 +1,15 @@
 @media all {
+
+    /* Structures */
     #tab_structures thead th {
         text-align: left;
-        vertical-align: middle;
+        vertical-align: top;
         white-space: nowrap;
     }
 
     #tab_structures tbody td {
         text-align: left;
-        vertical-align: middle;
+        vertical-align: top;
     }
 
     #tab_structures tbody td:nth-child(1) {
@@ -34,6 +36,8 @@
         background-color: rgb(70, 69, 69) !important;
         color: rgb(255, 255, 255) !important;
     }
+
+    /* Summary */
 
     #tab_summary tbody td:nth-child(4) {
         text-align: right;
@@ -66,4 +70,17 @@
     #tab_jump_gates tbody td:nth-child(7) {
         text-align: right;
     }
+
+    /* Jump Gates */
+    #tab_jump_gates thead th {
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    #tab_jump_gates tbody td {
+        text-align: left;
+        vertical-align: top;
+    }
+
 }

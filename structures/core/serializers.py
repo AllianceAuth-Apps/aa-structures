@@ -201,10 +201,24 @@ class _AbstractStructureListSerializer(ABC):
             else:
                 row["reinforcement"] = ""
 
-    def _add_fuel_infos(self, structure, row):
+    def _add_fuel_and_power(self, structure, row):
+        fuel_expires_display, fuel_expires_timestamp = self._calc_fuel_infos(structure)
+        last_online_at_display = self._calc_online_infos(structure)
+
+        display = format_html(
+            "{}<br>{}", no_wrap_html(fuel_expires_display), last_online_at_display
+        )
+        row["fuel_and_power"] = {
+            "display": display,
+            "fuel_expires_at": fuel_expires_timestamp,
+        }
+        row["power_mode_str"] = structure.get_power_mode_display()
+
+    def _calc_fuel_infos(self, structure):
         if structure.is_poco:
             fuel_expires_display = "-"
             fuel_expires_timestamp = None
+
         elif structure.is_low_power:
             fuel_expires_display = format_html_lazy(
                 bootstrap_label_html(
@@ -212,6 +226,7 @@ class _AbstractStructureListSerializer(ABC):
                 )
             )
             fuel_expires_timestamp = None
+
         elif structure.is_abandoned:
             fuel_expires_display = format_html_lazy(
                 bootstrap_label_html(
@@ -219,6 +234,7 @@ class _AbstractStructureListSerializer(ABC):
                 )
             )
             fuel_expires_timestamp = None
+
         elif structure.is_maybe_abandoned:
             fuel_expires_display = format_html_lazy(
                 bootstrap_label_html(
@@ -226,6 +242,7 @@ class _AbstractStructureListSerializer(ABC):
                 )
             )
             fuel_expires_timestamp = None
+
         elif structure.fuel_expires_at:
             fuel_expires_timestamp = structure.fuel_expires_at.isoformat()
             if STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE:
@@ -246,46 +263,39 @@ class _AbstractStructureListSerializer(ABC):
         else:
             fuel_expires_display = "-"
             fuel_expires_timestamp = None
-        row["fuel_expires_at"] = {
-            "display": no_wrap_html(fuel_expires_display),
-            "timestamp": fuel_expires_timestamp,
-        }
+        return fuel_expires_display, fuel_expires_timestamp
 
-    def _add_online_infos(self, structure, row):
-        row["power_mode_str"] = structure.get_power_mode_display()
+    def _calc_online_infos(self, structure: Structure):
         if structure.is_poco:
-            last_online_at_display = "-"
-            last_online_at_timestamp = None
+            return "-"
+
         elif structure.is_full_power:
             last_online_at_display = format_html_lazy(
                 bootstrap_label_html(
                     structure.get_power_mode_display(), BootstrapStyle.SUCCESS
                 )
             )
-            last_online_at_timestamp = None
         elif structure.is_maybe_abandoned:
             last_online_at_display = format_html_lazy(
                 bootstrap_label_html(
                     structure.get_power_mode_display(), BootstrapStyle.WARNING
                 )
             )
-            last_online_at_timestamp = None
+
         elif structure.is_abandoned:
             last_online_at_display = format_html_lazy(
                 bootstrap_label_html(
                     structure.get_power_mode_display(), BootstrapStyle.DANGER
                 )
             )
-            last_online_at_timestamp = None
+
         elif structure.last_online_at:
-            last_online_at_timestamp = structure.last_online_at.isoformat()
             if STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE:
                 last_online_at_display = timeuntil_str(
                     now() - structure.last_online_at, show_seconds=False
                 )
                 if not last_online_at_display:
                     last_online_at_display = "?"
-                    last_online_at_timestamp = None
                 else:
                     last_online_at_display = "- " + last_online_at_display
             else:
@@ -294,11 +304,8 @@ class _AbstractStructureListSerializer(ABC):
                 )
         else:
             last_online_at_display = "-"
-            last_online_at_timestamp = None
-        row["last_online_at"] = {
-            "display": no_wrap_html(last_online_at_display),
-            "timestamp": last_online_at_timestamp,
-        }
+
+        return last_online_at_display
 
     def _add_state(self, structure, row, request):
         def cap_first(text: str) -> str:
@@ -399,8 +406,7 @@ class StructureListSerializer(_AbstractStructureListSerializer):
         self._add_name(structure, row)
         self._add_services(structure, row)
         self._add_reinforcement_infos(structure, row)
-        self._add_fuel_infos(structure, row)
-        self._add_online_infos(structure, row)
+        self._add_fuel_and_power(structure, row)
         self._add_state(structure, row, self._request)
         self._add_core_status(structure, row)
         self._add_details_widget(structure, row, self._request)
@@ -426,9 +432,8 @@ class JumpGatesListSerializer(_AbstractStructureListSerializer):
         self._add_location(structure, row)
         self._add_name(structure, row, check_tags=False)
         self._add_jump_fuel_level(structure, row)
-        self._add_fuel_infos(structure, row)
+        self._add_fuel_and_power(structure, row)
         self._add_reinforcement_infos(structure, row)
-        self._add_online_infos(structure, row)
         return row
 
     def _add_jump_fuel_level(self, structure, row):

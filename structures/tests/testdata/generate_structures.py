@@ -5,9 +5,9 @@ import inspect
 import os
 import sys
 
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 myauth_dir = (
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(currentdir))))
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_dir))))
     + "/myauth"
 )
 sys.path.insert(0, myauth_dir)
@@ -17,8 +17,6 @@ from random import randrange
 
 import django
 from django.apps import apps
-from django.db import transaction
-from django.utils.timezone import now
 
 # init and setup django project
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myauth.settings.local")
@@ -27,18 +25,16 @@ django.setup()
 if not apps.is_installed("structures"):
     raise RuntimeError("The app structures is not installed")
 
+from tqdm import tqdm
+
+from django.db import transaction
+from django.utils.timezone import now
 from esi.clients import esi_client_factory
+from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
-from structures.models import (
-    EveSolarSystem,
-    EveType,
-    Owner,
-    Structure,
-    StructureService,
-    StructureTag,
-)
+from structures.models import Owner, Structure, StructureService, StructureTag
 
 # TODO: Add data for assets, e.g. fittings
 
@@ -47,7 +43,7 @@ print(
     "scripts generates large amount of random structures for load testing "
 )
 
-amount = 20
+amount = 50
 
 # random pick of most active corporations on zKillboard in Jan 2020
 corporation_ids = [
@@ -62,7 +58,7 @@ corporation_ids = [
     98514543,
     98013740,
 ]
-structure_type_ids = [35825, 35826, 35827, 35832, 35832, 35834, 35835, 35836]
+structure_type_ids = [35825, 35826, 35827, 35832, 35832, 35834, 35835, 35836, 35841]
 solar_system_ids = [30000142, 30001445, 30002355, 30004046, 30003833, 30045338]
 services = [
     "Clone Bay",
@@ -107,9 +103,8 @@ print("Connecting to ESI ...")
 client = esi_client_factory()
 
 # generating data
-print("Creating base data ...")
 owners = list()
-for corporation_id in corporation_ids:
+for corporation_id in tqdm(corporation_ids, desc="Creating owners"):
     try:
         corporation = client.Corporation.get_corporations_corporation_id(
             corporation_id=corporation_id
@@ -148,10 +143,9 @@ for name in tag_names:
     tags.append(tag)
 
 # creating structures
-print("Creating {} structures ...".format(amount))
 Structure.objects.filter(owner__in=owners).delete()
 with transaction.atomic():
-    for i in range(1, amount + 1):
+    for i in tqdm(range(1, amount + 1), desc="Creating structures"):
         state = get_random(
             [
                 Structure.State.SHIELD_VULNERABLE,
@@ -178,6 +172,7 @@ with transaction.atomic():
         else:
             fuel_expires_at = None
             last_online_at = now() - timedelta(days=get_random([1, 2, 3, 10]))
+
         structure = Structure.objects.create(
             id=1000000000001 + i,
             owner=get_random(owners),

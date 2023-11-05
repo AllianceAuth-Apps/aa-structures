@@ -169,9 +169,13 @@ class _AbstractStructureListSerializer(ABC):
         fuel_expires_display, fuel_expires_timestamp = self._calc_fuel_infos(structure)
         last_online_at_display = self._calc_online_infos(structure)
 
-        display = format_html(
-            "{}<br>{}", no_wrap_html(fuel_expires_display), last_online_at_display
-        )
+        if not fuel_expires_display == "-" and not last_online_at_display == "-":
+            display = format_html(
+                "{}<br>{}", no_wrap_html(fuel_expires_display), last_online_at_display
+            )
+        else:
+            display = fuel_expires_display
+
         row["fuel_and_power"] = {
             "display": display,
             "fuel_expires_at": fuel_expires_timestamp,

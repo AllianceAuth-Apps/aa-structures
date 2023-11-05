@@ -159,13 +159,6 @@ class _AbstractStructureListSerializer(ABC):
     def _add_reinforcement_infos(self, structure: Structure, row: dict):
         row["is_reinforced"] = structure.is_reinforced
         row["is_reinforced_str"] = yesno_str(structure.is_reinforced)
-        if structure.is_starbase:
-            row["reinforcement"] = "-"
-        else:
-            if structure.reinforce_hour is not None:
-                row["reinforcement"] = f"{structure.reinforce_hour:02d}:00"
-            else:
-                row["reinforcement"] = ""
 
     def _add_fuel_and_power(self, structure: Structure, row: dict):
         fuel_expires_display, fuel_expires_timestamp = self._calc_fuel_infos(structure)

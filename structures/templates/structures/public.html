@@ -42,6 +42,12 @@
                 </div>
 
             </div>
+
+            <p class="text-muted">
+                {% translate "Data can be outdated by up to 1 hour due to API caching" %}
+                • {% translate "Last updated" %} {{ last_updated|naturaltime|default:"?" }}
+            </p>
+
         </div>
     </div>
 {% endblock %}
@@ -102,7 +108,13 @@
                             sort: 'sort'
                         }
                     },
-                    { data: 'tax' },
+                    {
+                        data: 'tax',
+                        render: {
+                            _: 'display',
+                            sort: 'sort'
+                        }
+                    },
 
                     /* hidden columns */
                     { data: 'planet_type_name' },

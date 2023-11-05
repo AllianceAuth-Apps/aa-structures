@@ -31,7 +31,7 @@ from app_utils.views import (
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
 from structures.constants import EveGroupId, EveTypeId
 from structures.helpers import icon_with_paragraph_html
-from structures.models import EveSpaceType, Structure, StructureItem
+from structures.models import EveSpaceType, PocoDetails, Structure, StructureItem
 
 
 class _AbstractStructureListSerializer(ABC):
@@ -508,31 +508,57 @@ class PocoListSerializer(_AbstractStructureListSerializer):
     def _add_has_access_and_tax(
         self, structure: Structure, row: dict, character: EveCharacter
     ):
-        tax = None
-        has_access = None
+        access_info = None
         if character:
             try:
-                details = structure.poco_details
+                details: PocoDetails = structure.poco_details
             except (AttributeError, ObjectDoesNotExist):
                 pass
             else:
-                tax = details.tax_for_character(character)
-                has_access = details.has_character_access(character)
+                access_info = details.determine_access_and_tax_for_character(character)
 
-        if has_access is True:
-            has_access_html = (
-                '<i class="fas fa-check text-success" title="Has access"></i>'
-            )
-            has_access_str = _("yes")
-        elif has_access is False:
-            has_access_html = (
-                '<i class="fas fa-times text-danger" title="No access"></i>'
+        dubious_access_text = _(
+            "Access and tax for characters, which are not a member of "
+            "the owner corporation or it's alliance may not be accurate."
+        )
+
+        if not access_info.has_access:
+            has_access_html = format_html_lazy(
+                '<i class="fas fa-times text-danger text-tooltip" title="{}"></i>',
+                _("No access"),
             )
             has_access_str = _("no")
+
+        elif access_info.has_access:
+            if access_info.is_confident:
+                has_access_html = format_html_lazy(
+                    '<i class="fas fa-check text-success text-tooltip" title="{}"></i>',
+                    _("Has access"),
+                )
+                has_access_str = _("yes")
+
+            else:
+                has_access_html = format_html_lazy(
+                    '<i class="fas fa-question text-tooltip" title="{}"></i>',
+                    dubious_access_text,
+                )
+                has_access_str = "?"
+
+        if access_info.has_access and access_info.tax_rate is not None:
+            tax = access_info.tax_rate * 100
+            tax_str = f"{tax:.0f} %"
+            if not access_info.is_confident:
+                tax_html = format_html_lazy(
+                    '<span class="text-tooltip" title="{}">{}</span>',
+                    dubious_access_text,
+                    tax_str,
+                )
+            else:
+                tax_html = tax_str
         else:
-            has_access_html = '<i class="fas fa-question" title="Unknown"></i>'
-            has_access_str = "?"
+            tax = None
+            tax_html = "?"
 
         row["has_access_html"] = {"display": has_access_html, "sort": has_access_str}
         row["has_access_str"] = has_access_str
-        row["tax"] = f"{tax * 100:.0f} %" if tax else "?"
+        row["tax"] = {"display": tax_html, "sort": tax}

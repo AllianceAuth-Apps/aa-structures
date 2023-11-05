@@ -71,6 +71,7 @@ def _add_common_context(context: dict = None) -> dict:
     new_context = {
         "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
         "data_tables_paging": STRUCTURES_PAGING_ENABLED,
+        "last_updated": Owner.objects.structures_last_updated(),
     }
     if context:
         new_context.update(context)
@@ -134,7 +135,6 @@ def main(request):
         "tags_filter_form": form,
         "tags_exist": StructureTag.objects.exists(),
         "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
-        "last_updated": Owner.objects.structures_last_updated(),
     }
     return render(request, "structures/structures.html", _add_common_context(context))
 

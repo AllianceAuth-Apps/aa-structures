@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show owners on public poco page
 - Tags now also works for jump gates list
 - The last visited structures tab will remains selected when returning to page again
+- Poco list will show access and tax for neutrals for character not member of the owner corporation or alliance
 
 ### Fixed
 

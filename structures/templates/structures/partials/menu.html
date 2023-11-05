@@ -24,7 +24,7 @@
                 {% if perms.structures.view_corporation_structures or perms.structures.view_alliance_structures or perms.structures.view_all_structures %}
                     <li class="{% navactive request 'structures:main' %}">
                         <a href="{% url 'structures:main' %}">
-                            {% translate 'Structures Lists' %}
+                            {% translate 'Structure List' %}
                         </a>
                     </li>
                 {% endif %}

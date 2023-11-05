@@ -1,7 +1,7 @@
 """Models related to Structure."""
 
 import datetime as dt
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -99,6 +99,14 @@ class PocoDetails(models.Model):
             except KeyError:
                 return cls.NONE
 
+    class PocoCharacterAccessInfo(NamedTuple):
+        """Access information to a poco for a character."""
+
+        character_id: int
+        has_access: bool
+        is_confident: bool
+        tax_rate: float
+
     alliance_tax_rate = models.FloatField(null=True, default=None)
     allow_access_with_standings = models.BooleanField()
     allow_alliance_access = models.BooleanField()
@@ -130,33 +138,52 @@ class PocoDetails(models.Model):
         """Return reinforce exit start as string."""
         return f"{self.reinforce_exit_start}:00"
 
-    def tax_for_character(self, character: EveCharacter) -> Optional[float]:
-        """Return the effective tax for this character or None if unknown."""
+    def determine_access_and_tax_for_character(
+        self, character: EveCharacter
+    ) -> "PocoCharacterAccessInfo":
+        """Return access and tax information for a character."""
         owner_corporation = self.structure.owner.corporation
         if character.corporation_id == owner_corporation.corporation_id:
-            return self.corporation_tax_rate
+            has_access = True
+            is_confident = True
 
-        if (
-            owner_corporation.alliance
+        elif (
+            character.alliance_id
+            and owner_corporation.alliance
             and owner_corporation.alliance.alliance_id == character.alliance_id
         ):
-            return self.alliance_tax_rate
+            has_access = self.allow_alliance_access
+            is_confident = True
 
-        return None
+        else:
+            has_access = (
+                self.allow_access_with_standings
+                and self.neutral_standing_tax_rate is not None
+            )
+            is_confident = False
 
-    def has_character_access(self, character: EveCharacter) -> Optional[bool]:
-        """Return Tru if this has access else False."""
-        owner_corporation = self.structure.owner.corporation
-        if character.corporation_id == owner_corporation.corporation_id:
-            return True
+        if not has_access:
+            tax_rate = None
 
-        if (
-            owner_corporation.alliance
-            and owner_corporation.alliance.alliance_id == character.alliance_id
-        ):
-            return self.allow_alliance_access
+        else:
+            if character.corporation_id == owner_corporation.corporation_id:
+                tax_rate = self.corporation_tax_rate
 
-        return None
+            elif (
+                owner_corporation.alliance
+                and owner_corporation.alliance.alliance_id == character.alliance_id
+            ):
+                tax_rate = self.alliance_tax_rate
+
+            elif self.allow_access_with_standings and self.neutral_standing_tax_rate:
+                tax_rate = self.neutral_standing_tax_rate
+
+            return self.PocoCharacterAccessInfo(
+                character_id=character.character_id,
+                has_access=has_access,
+                is_confident=is_confident,
+                tax_rate=tax_rate,
+            )
 
     def standing_level_access_map(self) -> dict:
         """Return map of access per standing level with standing level names as key."""

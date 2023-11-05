@@ -31,7 +31,7 @@ from app_utils.views import (
 
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
 from structures.constants import EveGroupId, EveTypeId
-from structures.helpers import icon_with_paragraph_html
+from structures.helpers import floating_icon_with_text_html
 from structures.models import EveSpaceType, PocoDetails, Structure, StructureItem
 
 
@@ -77,17 +77,16 @@ class _AbstractStructureListSerializer(ABC):
         else:
             update_warning_html = ""
 
-        secondary_text = format_html(
+        alliance_text = format_html(
             "<em>{}</em> {}", alliance_ticker, update_warning_html
         )
         owner_link = link_html(
             dotlan.corporation_url(corporation.corporation_name),
             corporation.corporation_name,
         )
-        owner_display_html = icon_with_paragraph_html(
-            icon_url=corporation.logo_url(size=self.ICON_RENDER_SIZE),
-            primary_text=owner_link,
-            secondary_text=secondary_text,
+        owner_display_html = floating_icon_with_text_html(
+            corporation.logo_url(size=self.ICON_RENDER_SIZE),
+            [owner_link, alliance_text],
         )
         row["owner"] = {
             "display": owner_display_html,
@@ -135,11 +134,10 @@ class _AbstractStructureListSerializer(ABC):
             row["is_starbase"] = None
 
         # type
-        type_link = link_html(structure_type.profile_url, structure_type.name)
-        type_html = icon_with_paragraph_html(
-            icon_url=structure_type.icon_url(size=self.ICON_RENDER_SIZE),
-            primary_text=type_link,
-            secondary_text=format_html("<em>{}</em>", row["group_name"]),
+        type_link_html = link_html(structure_type.profile_url, structure_type.name)
+        type_html = floating_icon_with_text_html(
+            structure_type.icon_url(size=self.ICON_RENDER_SIZE),
+            [type_link_html, format_html("<em>{}</em>", row["group_name"])],
         )
         row["type"] = {"display": type_html, "value": structure_type.name}
         row["type_name"] = structure_type.name
@@ -498,10 +496,8 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             planet_name = planet_type_name = "?"
             icon_url = ""
 
-        planet_plus_icon_html = icon_with_paragraph_html(
-            icon_url=icon_url,
-            primary_text=planet_name,
-            secondary_text=format_html("<em>{}</em>", planet_type_name),
+        planet_plus_icon_html = floating_icon_with_text_html(
+            icon_url, [planet_name, format_html("<em>{}</em>", planet_type_name)]
         )
 
         row["planet_plus_icon"] = {

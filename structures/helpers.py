@@ -1,10 +1,11 @@
 """Helpers for Structures."""
 
 import datetime as dt
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 from urllib.parse import urlparse
 
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
 
@@ -42,15 +43,14 @@ def get_or_create_esi_obj(model_class: type, *args, **kwargs) -> Any:
     return obj
 
 
-def icon_with_paragraph_html(
-    icon_url: str, primary_text: str, secondary_text: str = ""
-) -> str:
-    """Return HTML for a 2-line paragraph with a floating icon on the left."""
+def floating_icon_with_text_html(
+    icon_url: str, lines: List[Union[str, SafeText]]
+) -> SafeText:
+    """Return HTML for a multi-line paragraph with a floating icon on the left.
+
+    HTML in lines will not be escaped if they are marked as safe.
+    """
     icon_html = format_html(('<img src="{}" class="floating-icon">'), icon_url)
-    type_html = format_html(
-        "<p>{}{}<br>{}</p>",
-        icon_html,
-        primary_text,
-        secondary_text,
-    )
-    return type_html
+    text_html = format_html_join(mark_safe("<br>"), "{}", ((line,) for line in lines))
+    result_html = format_html("<p>{}{}</p>", icon_html, text_html)
+    return result_html

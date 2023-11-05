@@ -27,7 +27,7 @@ from app_utils.allianceauth import notify_admins
 from app_utils.logging import LoggerAddTag
 from app_utils.views import link_html
 
-from structures.helpers import icon_with_paragraph_html
+from structures.helpers import floating_icon_with_text_html
 
 from . import __title__, tasks
 from .app_settings import (
@@ -703,10 +703,8 @@ def structure_summary_data(request) -> JsonResponse:
         owner_link = link_html(
             dotlan.corporation_url(corporation_name), corporation_name
         )
-        owner_display_html = icon_with_paragraph_html(
-            icon_url=corporation_icon_url,
-            primary_text=owner_link,
-            secondary_text=alliance_ticker,
+        owner_display_html = floating_icon_with_text_html(
+            corporation_icon_url, [owner_link, alliance_ticker]
         )
         owner_html = {"display": owner_display_html, "value": corporation_name}
         alliance_name_str = (

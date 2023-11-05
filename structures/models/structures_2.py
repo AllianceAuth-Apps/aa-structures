@@ -163,10 +163,9 @@ class PocoDetails(models.Model):
             )
             is_confident = False
 
-        if not has_access:
-            tax_rate = None
+        tax_rate = None
 
-        else:
+        if has_access:
             if character.corporation_id == owner_corporation.corporation_id:
                 tax_rate = self.corporation_tax_rate
 

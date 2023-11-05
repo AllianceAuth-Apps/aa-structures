@@ -107,6 +107,10 @@ class PocoDetails(models.Model):
         is_confident: bool
         tax_rate: float
 
+    structure = models.OneToOneField(
+        Structure, on_delete=models.CASCADE, related_name="poco_details"
+    )
+
     alliance_tax_rate = models.FloatField(null=True, default=None)
     allow_access_with_standings = models.BooleanField()
     allow_alliance_access = models.BooleanField()
@@ -119,9 +123,6 @@ class PocoDetails(models.Model):
     reinforce_exit_start = models.PositiveIntegerField()
     standing_level = models.IntegerField(
         choices=StandingLevel.choices, default=StandingLevel.NONE
-    )
-    structure = models.OneToOneField(
-        Structure, on_delete=models.CASCADE, related_name="poco_details"
     )
     terrible_standing_tax_rate = models.FloatField(null=True, default=None)
 

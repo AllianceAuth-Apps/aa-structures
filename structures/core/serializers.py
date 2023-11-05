@@ -4,6 +4,7 @@
 
 import re
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -47,7 +48,7 @@ class _AbstractStructureListSerializer(ABC):
         """Return True if this query returns any data, else False."""
         return self.queryset.exists()
 
-    def count(self) -> bool:
+    def count(self) -> int:
         """Return number of objects in this query."""
         return self.queryset.count()
 
@@ -283,7 +284,7 @@ class _AbstractStructureListSerializer(ABC):
         if structure.is_poco:
             return "-", "-"
 
-        state_str = structure.get_state_display().capitalize()
+        state_str = structure.get_state_display().capitalize()  # type: ignore
         state_details = format_html(state_str)
         if structure.state_timer_end:
             state_details += format_html(
@@ -303,7 +304,7 @@ class _AbstractStructureListSerializer(ABC):
         return state_str, state_details
 
     def _calc_core_infos(self, structure: Structure):
-        if structure.eve_type.eve_group_id not in {
+        if structure.eve_type.eve_group_id not in {  # type: ignore
             EveGroupId.CITADEL,
             EveGroupId.ENGINEERING_COMPLEX,
             EveGroupId.REFINERY,
@@ -337,7 +338,8 @@ class _AbstractStructureListSerializer(ABC):
                 f'title="{_("Show fitting")}">'
                 '<i class="fas fa-search"></i></button>'
             )
-        elif structure.has_poco_details:
+
+        elif structure.has_poco_details:  # type: ignore
             ajax_url = reverse("structures:poco_details", args=[structure.id])
             row["details"] = format_html(
                 '<button type="button" class="btn btn-default" '
@@ -346,7 +348,8 @@ class _AbstractStructureListSerializer(ABC):
                 f'title="{_("Show details")}">'
                 '<i class="fas fa-search"></i></button>'
             )
-        elif structure.has_starbase_detail:
+
+        elif structure.has_starbase_detail:  # type: ignore
             ajax_url = reverse("structures:starbase_detail", args=[structure.id])
             row["details"] = format_html(
                 '<button type="button" class="btn btn-default" '
@@ -413,12 +416,15 @@ class JumpGatesListSerializer(_AbstractStructureListSerializer):
         return row
 
     def _add_jump_fuel_level(self, structure: Structure, row: dict):
-        row["jump_fuel_quantity"] = structure.jump_fuel_quantity_2
+        row["jump_fuel_quantity"] = structure.jump_fuel_quantity_2  # type: ignore
 
 
 class PocoListSerializer(_AbstractStructureListSerializer):
     def __init__(
-        self, queryset: models.QuerySet, request=None, character: EveCharacter = None
+        self,
+        queryset: models.QuerySet,
+        request=None,
+        character: Optional[EveCharacter] = None,
     ):
         super().__init__(queryset, request=request)
         self.queryset = self.queryset.select_related(
@@ -506,58 +512,69 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         row["planet_name"] = planet_name
 
     def _add_has_access_and_tax(
-        self, structure: Structure, row: dict, character: EveCharacter
+        self, structure: Structure, row: dict, character: Optional[EveCharacter]
     ):
         access_info = None
         if character:
             try:
-                details: PocoDetails = structure.poco_details
+                details: PocoDetails = structure.poco_details  # type: ignore
             except (AttributeError, ObjectDoesNotExist):
                 pass
             else:
                 access_info = details.determine_access_and_tax_for_character(character)
 
-        dubious_access_text = _(
-            "Access and tax for characters, which are not a member of "
-            "the owner corporation or it's alliance may not be accurate."
-        )
-
-        if not access_info.has_access:
+        has_access_html = ""
+        has_access_str = "?"
+        tax = None
+        tax_html = "?"
+        if not access_info:
             has_access_html = format_html_lazy(
-                '<i class="fas fa-times text-danger text-tooltip" title="{}"></i>',
-                _("No access"),
+                '<i class="fas fa-question" title="{}"></i>',
+                _("Unknown if character has access"),
             )
-            has_access_str = _("no")
 
-        elif access_info.has_access:
-            if access_info.is_confident:
-                has_access_html = format_html_lazy(
-                    '<i class="fas fa-check text-success text-tooltip" title="{}"></i>',
-                    _("Has access"),
-                )
-                has_access_str = _("yes")
-
-            else:
-                has_access_html = format_html_lazy(
-                    '<i class="fas fa-question text-tooltip" title="{}"></i>',
-                    dubious_access_text,
-                )
-                has_access_str = "?"
-
-        if access_info.has_access and access_info.tax_rate is not None:
-            tax = access_info.tax_rate * 100
-            tax_str = f"{tax:.0f} %"
-            if not access_info.is_confident:
-                tax_html = format_html_lazy(
-                    '<span class="text-tooltip" title="{}">{}</span>',
-                    dubious_access_text,
-                    tax_str,
-                )
-            else:
-                tax_html = tax_str
         else:
-            tax = None
-            tax_html = "?"
+            dubious_access_text = _(
+                "Access and tax for characters, which are not a member of "
+                "the owner corporation or it's alliance may not be accurate."
+            )
+
+            if not access_info.has_access:
+                has_access_html = format_html_lazy(
+                    '<i class="fas fa-times text-danger text-tooltip" title="{}"></i>',
+                    _("No access"),
+                )
+                has_access_str = _("no")
+
+            elif access_info.has_access:
+                if access_info.is_confident:
+                    has_access_html = format_html_lazy(
+                        '<i class="fas fa-check text-success text-tooltip" title="{}"></i>',
+                        _("Has access"),
+                    )
+                    has_access_str = _("yes")
+
+                else:
+                    has_access_html = format_html_lazy(
+                        '<i class="fas fa-question text-tooltip" title="{}"></i>',
+                        dubious_access_text,
+                    )
+                    has_access_str = "?"
+
+            if access_info.has_access and access_info.tax_rate is not None:
+                tax = access_info.tax_rate * 100
+                tax_str = f"{tax:.0f} %"
+                if not access_info.is_confident:
+                    tax_html = format_html_lazy(
+                        '<span class="text-tooltip" title="{}">{}</span>',
+                        dubious_access_text,
+                        tax_str,
+                    )
+                else:
+                    tax_html = tax_str
+            else:
+                tax = None
+                tax_html = "?"
 
         row["has_access_html"] = {"display": has_access_html, "sort": has_access_str}
         row["has_access_str"] = has_access_str

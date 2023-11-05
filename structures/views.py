@@ -629,7 +629,8 @@ def poco_list_data(request, character_id: int) -> JsonResponse:
     serializer = PocoListSerializer(
         queryset=pocos, request=request, character=character
     )
-    return JsonResponse({"data": serializer.to_list()})
+    data = serializer.to_list()
+    return JsonResponse({"data": data})
 
 
 # Statistics

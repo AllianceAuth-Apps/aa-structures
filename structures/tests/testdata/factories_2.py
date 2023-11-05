@@ -26,6 +26,7 @@ from structures.models import (
     Notification,
     Owner,
     OwnerCharacter,
+    PocoDetails,
     Structure,
     StructureTag,
     Webhook,
@@ -266,6 +267,29 @@ class PocoFactory(StructureFactory):
     @factory.lazy_attribute
     def eve_type(self):
         return EveType.objects.get(name="Customs Office")
+
+
+class PocoDetailsFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[PocoDetails]
+):
+    class Meta:
+        model = PocoDetails
+
+    structure = factory.SubFactory(PocoFactory)
+
+    alliance_tax_rate = 0.02
+    allow_access_with_standings = True
+    allow_alliance_access = True
+    bad_standing_tax_rate = 0.1
+    corporation_tax_rate = 0.01
+    excellent_standing_tax_rate = 0.02
+    good_standing_tax_rate = 0.03
+    terrible_standing_tax_rate = None
+    neutral_standing_tax_rate = 0.04
+    reinforce_exit_end = 21
+    reinforce_exit_start = 18
+
+    standing_level = PocoDetails.StandingLevel.BAD
 
 
 class JumpGateFactory(StructureFactory):

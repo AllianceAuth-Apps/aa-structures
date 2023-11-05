@@ -18,9 +18,10 @@ from app_utils.testing import create_user_from_evecharacter, json_response_to_py
 
 from structures import views
 from structures.constants import EveTypeId
-from structures.models import Owner, PocoDetails, Structure, StructureItem, Webhook
+from structures.models import Owner, Structure, StructureItem, Webhook
 
 from .testdata.factories import create_owner_from_user, create_poco, create_starbase
+from .testdata.factories_2 import PocoDetailsFactory
 from .testdata.helpers import (
     create_structures,
     load_entities,
@@ -748,13 +749,14 @@ class TestStatus(TestCase):
         self.assertEqual(response.status_code, 500)
 
 
-class TestPocoList(TestCase):
+class TestPocoListData(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         load_eveuniverse()
         create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
+        cls.character_id = 1001
+        cls.user, cls.owner = set_owner_character(character_id=cls.character_id)
         cls.user = AuthUtils.add_permission_to_user_by_name(
             "structures.basic_access", cls.user
         )
@@ -765,21 +767,20 @@ class TestPocoList(TestCase):
 
     def test_should_return_correct_data_for_poco(self):
         # given
-        request = self.factory.get(reverse("structures:poco_list_data"))
+        request = self.factory.get("/")
         request.user = self.user
         self.owner.are_pocos_public = True
         self.owner.save()
-        PocoDetails.objects.create(
-            structure_id=1200000000003,
+        structure = Structure.objects.get(id=1200000000003)
+        PocoDetailsFactory(
+            structure=structure,
             alliance_tax_rate=0.02,
             allow_access_with_standings=True,
             allow_alliance_access=True,
             corporation_tax_rate=0.01,
-            reinforce_exit_end=21,
-            reinforce_exit_start=18,
         )
         # when
-        response = views.poco_list_data(request)
+        response = views.poco_list_data(request, self.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -790,16 +791,16 @@ class TestPocoList(TestCase):
         self.assertEqual(obj["planet_type_name"], "Barren")
         self.assertEqual(obj["space_type"], "lowsec")
         self.assertEqual(obj["has_access_str"], "yes")
-        self.assertEqual(obj["tax"], "1 %")
+        self.assertEqual(obj["tax"]["sort"], 1.0)
 
     def test_should_return_all_pocos(self):
         # given
-        request = self.factory.get(reverse("structures:poco_list_data"))
+        request = self.factory.get("/")
         request.user = self.user
         self.owner.are_pocos_public = True
         self.owner.save()
         # when
-        response = views.poco_list_data(request)
+        response = views.poco_list_data(request, self.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -810,12 +811,12 @@ class TestPocoList(TestCase):
 
     def test_should_return_no_pocos(self):
         # given
-        request = self.factory.get(reverse("structures:poco_list_data"))
+        request = self.factory.get("/")
         request.user = self.user
         self.owner.are_pocos_public = False
         self.owner.save()
         # when
-        response = views.poco_list_data(request)
+        response = views.poco_list_data(request, self.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)

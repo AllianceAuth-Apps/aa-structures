@@ -245,6 +245,8 @@ def structure_details(request, structure_id: int):
         if assets_grouped["ammo_hold"]
         else 0
     )
+    fighters_total = _calc_fighters_total(fighter_tubes, assets_grouped)
+
     services = structure.services_ordered
     services_count = len(services)
 
@@ -265,8 +267,9 @@ def structure_details(request, structure_id: int):
             high_slots + med_slots + low_slots + rig_slots + service_slots
         ),
         "fuel_blocks_total": fuel_blocks_total,
-        "fighters_total": _calc_fighters_total(fighter_tubes, assets_grouped),
+        "fighters_total": fighters_total,
         "ammo_total": ammo_total,
+        "ammo_and_fighter_total": ammo_total + fighters_total,
         "last_updated": structure.owner.assets_last_update_at,
         "services": services,
         "services_count": services_count,

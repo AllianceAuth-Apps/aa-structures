@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Overhaul of jump structures page
 - Overhaul of summary page
 - Overhaul of poco page
+- Moved services information to structure details window
+- Combined ammo and fighter tabs in structure details window
+- Various performance improvements
 
 ### Fixed
 

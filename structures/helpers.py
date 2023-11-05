@@ -7,8 +7,6 @@ from urllib.parse import urlparse
 from django.utils.html import format_html
 from django.utils.timezone import now
 
-from app_utils.views import no_wrap_html
-
 
 def hours_until_deadline(
     deadline: dt.datetime, start: Optional[dt.datetime] = None
@@ -52,7 +50,7 @@ def icon_with_paragraph_html(
     type_html = format_html(
         "<p>{}{}<br>{}</p>",
         icon_html,
-        no_wrap_html(primary_text),
-        no_wrap_html(secondary_text),
+        primary_text,
+        secondary_text,
     )
     return type_html

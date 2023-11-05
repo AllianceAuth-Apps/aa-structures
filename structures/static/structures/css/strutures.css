@@ -1,0 +1,71 @@
+@media all {
+
+    #tab_structures thead th {
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    #tab_structures tbody td {
+        text-align: left;
+        vertical-align: top;
+    }
+
+    #tab_structures tbody td:nth-child(1) {
+        white-space: nowrap;
+        min-width: 12em;
+    }
+
+    #tab_structures tbody td:nth-child(2) {
+        white-space: nowrap;
+        min-width: 9em;
+    }
+
+    #tab_structures tbody td:nth-child(3) {
+        white-space: nowrap;
+        min-width: 15em;
+    }
+
+    .template-light-mode .list-group-item-custom {
+        background-color: rgb(236, 240, 241) !important;
+        color: rgb(0, 0, 0) !important;
+    }
+
+    .template-dark-mode .list-group-item-custom {
+        background-color: rgb(70, 69, 69) !important;
+        color: rgb(255, 255, 255) !important;
+    }
+
+
+
+    /* Jump Gates */
+    #tab_jump_gates thead th {
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    #tab_jump_gates tbody td {
+        text-align: left;
+        vertical-align: top;
+    }
+
+    #tab_jump_gates tbody td:nth-child(1) {
+        white-space: nowrap;
+        min-width: 12em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(2) {
+        white-space: nowrap;
+        min-width: 9em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(3) {
+        white-space: nowrap;
+        min-width: 15em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(6) {
+        text-align: right;
+    }
+}

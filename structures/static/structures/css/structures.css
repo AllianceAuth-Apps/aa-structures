@@ -12,18 +12,15 @@
     }
 
     #tab_structures tbody td:nth-child(1) {
-        white-space: nowrap;
-        min-width: 12em;
+        min-width: 13em;
     }
 
     #tab_structures tbody td:nth-child(2) {
-        white-space: nowrap;
-        min-width: 9em;
+        min-width: 10em;
     }
 
     #tab_structures tbody td:nth-child(3) {
-        white-space: nowrap;
-        min-width: 15em;
+        min-width: 14em;
     }
 
     .template-light-mode .list-group-item-custom {
@@ -35,7 +32,6 @@
         background-color: rgb(70, 69, 69) !important;
         color: rgb(255, 255, 255) !important;
     }
-
 
 
     /* Jump Gates */
@@ -51,18 +47,15 @@
     }
 
     #tab_jump_gates tbody td:nth-child(1) {
-        white-space: nowrap;
-        min-width: 12em;
+        min-width: 13em;
     }
 
     #tab_jump_gates tbody td:nth-child(2) {
-        white-space: nowrap;
-        min-width: 9em;
+        min-width: 10em;
     }
 
     #tab_jump_gates tbody td:nth-child(3) {
-        white-space: nowrap;
-        min-width: 15em;
+        min-width: 14em;
     }
 
     #tab_jump_gates tbody td:nth-child(6) {

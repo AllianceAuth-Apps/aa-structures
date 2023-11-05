@@ -82,7 +82,7 @@ class TestStructureListData(TestCase):
         self.assertEqual(obj["details"], "")
 
 
-class TestStructureList(TestCase):
+class TestStatistics(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -90,21 +90,13 @@ class TestStructureList(TestCase):
         load_eveuniverse()
         create_structures()
 
-    def test_should_have_access_to_main_view(self):
-        # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        # when
-        request = self.factory.get(reverse("structures:main"))
-        request.user = user
-        response = views.main(request)
-        # then
-        self.assertEqual(response.status_code, 200)
-
     def test_should_return_summary_data(self):
         # given
         user, _ = set_owner_character(character_id=1001)
         user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
+        user = AuthUtils.add_permission_to_user_by_name(
+            "structures.view_all_structures", user
+        )
         # when
         request = self.factory.get(reverse("structures:structure_summary_data"))
         request.user = user
@@ -122,6 +114,19 @@ class TestStructureList(TestCase):
         self.assertEqual(obj["poco_count"], 4)
         self.assertEqual(obj["starbase_count"], 3)
         self.assertEqual(obj["total"], 9)
+
+    def test_should_return_no_summary_data_without_permission(self):
+        # given
+        user, _ = set_owner_character(character_id=1001)
+        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
+        # when
+        request = self.factory.get(reverse("structures:structure_summary_data"))
+        request.user = user
+        response = views.structure_summary_data(request)
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        self.assertFalse(data)
 
 
 class TestStructureListSpecial(TestCase):

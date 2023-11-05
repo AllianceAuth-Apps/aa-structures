@@ -70,15 +70,24 @@ def default_if_none(value, default=None):
 @permission_required("structures.basic_access")
 def index(request):
     """Redirect from index view to main."""
-    url = reverse("structures:main")
-    if STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED:
-        params = {
-            QUERY_PARAM_TAGS: ",".join(
-                [x.name for x in StructureTag.objects.filter(is_default=True)]
-            )
-        }
-        params_encoded = urlencode(params)
-        url += f"?{params_encoded}"
+
+    if (
+        request.user.has_perm("structures.view_corporation_structures")
+        or request.user.has_perm("structures.view_alliance_structures")
+        or request.user.has_perm("structures.view_all_structures")
+    ):
+        url = reverse("structures:main")
+        if STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED:
+            params = {
+                QUERY_PARAM_TAGS: ",".join(
+                    [x.name for x in StructureTag.objects.filter(is_default=True)]
+                )
+            }
+            params_encoded = urlencode(params)
+            url += f"?{params_encoded}"
+    else:
+        url = reverse("structures:public")
+
     return redirect(url)
 
 
@@ -577,7 +586,8 @@ def poco_list_data(request) -> JsonResponse:
 def structure_summary_data(request) -> JsonResponse:
     """View returning data for structure summary page."""
     summary_qs = (
-        Structure.objects.values(
+        Structure.objects.visible_for_user(request.user)
+        .values(
             corporation_id=F("owner__corporation__corporation_id"),
             corporation_name=F("owner__corporation__corporation_name"),
             alliance_name=F("owner__corporation__alliance__alliance_name"),

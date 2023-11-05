@@ -9,8 +9,11 @@ from structures.helpers import (
     datetime_almost_equal,
     get_or_create_esi_obj,
     hours_until_deadline,
+    icon_with_paragraph_html,
     is_absolute_url,
 )
+
+ICON_URL = "https://images.evetech.net/types/670/icon?size=64"
 
 
 class TestDatetimeAlmostEqual(TestCase):
@@ -82,3 +85,16 @@ class TestGetOrCreateEsiObj(TestCase):
         obj_2 = get_or_create_esi_obj(EveType, id=obj.id)
         # then
         self.assertEqual(obj, obj_2)
+
+
+class TestIconWithParagraphHtml(TestCase):
+    def test_should_create_html(self):
+        # when
+        result = icon_with_paragraph_html(icon_url=ICON_URL, primary_text="Alpha")
+        # then
+        expected = (
+            '<p><img src="https://images.evetech.net/types/670/icon?size=64" '
+            'class="floating-icon"><span class="text-nowrap">Alpha</span><br>'
+            '<span class="text-nowrap"></span></p>'
+        )
+        self.assertEqual(result, expected)

@@ -634,10 +634,7 @@ def structure_summary_data(request) -> JsonResponse:
             primary_text=owner_link,
             secondary_text=alliance_ticker,
         )
-        owner_html = {
-            "display": owner_display_html,
-            "value": corporation_name,
-        }
+        owner_html = {"display": owner_display_html, "value": corporation_name}
         alliance_name_str = (
             f"{alliance_name} [{alliance_ticker}]" if alliance_ticker else alliance_name
         )
@@ -646,6 +643,7 @@ def structure_summary_data(request) -> JsonResponse:
             {
                 "id": int(corporation_id),
                 "owner": owner_html,
+                "corporation_name": corporation_name,
                 "alliance_name": alliance_name_str,
                 "citadel_count": row["citadel_count"],
                 "ec_count": row["ec_count"],

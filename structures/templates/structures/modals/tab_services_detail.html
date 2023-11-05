@@ -1,0 +1,13 @@
+{% load i18n %}
+{% load structures %}
+
+<ul class="list-group">
+    {% for name, state in services %}
+        <li class="list-group-item">
+            <p class="list-group-item-text">
+                {{ name }}
+                <span class="pull-right">{{ state }}</span>
+            </p>
+        </li>
+    {% endfor %}
+</ul>

@@ -2,8 +2,6 @@
 {% load evelinks %}
 {% load structures %}
 
-{% list_title "General" %}
-
 <ul class="list-group">
     {% list_item _("Name") structure.name|default:"-" %}
     {% list_item _("Type") structure.eve_type.name url=structure.eve_type.profile_url %}
@@ -19,12 +17,4 @@
     {% if not structure.is_poco %}
         {% list_item _("State") structure.get_state_display %}
     {% endif %}
-</ul>
-
-{% list_title "Services" %}
-
-<ul class="list-group">
-    {% for name, state in services %}
-        {% list_item name state %}
-    {% endfor %}
 </ul>

@@ -111,7 +111,7 @@
             });
 
             /* structures */
-            let structures_idx_start = 9;
+            let structures_idx_start = 8;
             $('#tab_structures').DataTable({
                 ajax: {
                     url: "{% url 'structures:structure_list_data' %}?tags={{ active_tags|join:',' }}",
@@ -141,7 +141,6 @@
                         }
                     },
                     { data: 'structure_name_and_tags' },
-                    { data: 'services' },
                     {
                         data: 'fuel_and_power',
                         render: {
@@ -170,7 +169,7 @@
                 pageLength: dataTablesPageLength,
                 columnDefs: [
                     { "sortable": false, "targets": [7, 8] },
-                    { "visible": false, "targets": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18] }
+                    { "visible": false, "targets": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17] }
                 ],
                 order: [[1, "asc"], [3, "asc"]],
                 filterDropDown:

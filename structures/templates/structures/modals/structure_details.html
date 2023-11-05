@@ -22,6 +22,12 @@
             </a>
         </li>
         <li role="presentation">
+            <a href="#tab-structure-services" aria-controls="fuel" role="tab" data-toggle="tab">
+                {% translate "Services" %} <small>({{ services_count|default:"-"|intcomma }})</small>
+            </a>
+        </li>
+
+        <li role="presentation">
             <a href="#tab-structure-fuel" aria-controls="fuel" role="tab" data-toggle="tab">
                 {% translate "Fuel" %} <small>({{ fuel_blocks_total|default:"-"|intcomma }})</small>
             </a>
@@ -47,6 +53,10 @@
     <div class="tab-content">
         <div role="tabpanel" class="tab-pane active" id="tab-structure-general">
             {% include "structures/modals/tab_general_detail.html" %}
+        </div>
+
+        <div role="tabpanel" class="tab-pane" id="tab-structure-services">
+            {% include "structures/modals/tab_services_detail.html" %}
         </div>
 
         <div role="tabpanel" class="tab-pane" id="tab-structure-fuel">

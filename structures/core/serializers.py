@@ -30,7 +30,7 @@ from app_utils.views import (
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
 from structures.constants import EveGroupId, EveTypeId
 from structures.helpers import icon_with_paragraph_html
-from structures.models import EveSpaceType, Structure, StructureItem, StructureService
+from structures.models import EveSpaceType, Structure, StructureItem
 
 
 class _AbstractStructureListSerializer(ABC):
@@ -153,26 +153,6 @@ class _AbstractStructureListSerializer(ABC):
             structure_name_html += format_html("<br>{}", mark_safe(" ".join(tags)))
 
         row["structure_name_and_tags"] = structure_name_html
-
-    def _add_services(self, structure: Structure, row: dict):
-        if row["is_poco"] or row["is_starbase"]:
-            row["services"] = "-"
-            return
-        services = []
-        for service in structure.services.all():
-            service_name_html = no_wrap_html(
-                format_html("<small>{}</small>", service.name)
-            )
-            if service.state == StructureService.State.OFFLINE:
-                service_name_html = format_html("<del>{}</del>", service_name_html)
-            services.append({"name": service.name, "html": service_name_html})
-        row["services"] = (
-            "<br>".join(
-                map(lambda x: x["html"], sorted(services, key=lambda x: x["name"]))
-            )
-            if services
-            else "-"
-        )
 
     def _add_reinforcement_infos(self, structure: Structure, row: dict):
         row["is_reinforced"] = structure.is_reinforced
@@ -400,7 +380,6 @@ class StructureListSerializer(_AbstractStructureListSerializer):
         self._add_location(structure, row)
         self._add_type(structure, row)
         self._add_name_and_tags(structure, row)
-        self._add_services(structure, row)
         self._add_reinforcement_infos(structure, row)
         self._add_fuel_and_power(structure, row)
         self._add_state_and_core(structure, row, self._request)

@@ -252,6 +252,8 @@ def structure_details(request, structure_id):
             )
         services.append((service.name, state_html))
 
+    services_count = len(services)
+
     context = {
         "fitting": assets,
         "slots": _generate_slot_image_urls(structure),
@@ -273,6 +275,7 @@ def structure_details(request, structure_id):
         "ammo_total": ammo_total,
         "last_updated": structure.owner.assets_last_update_at,
         "services": services,
+        "services_count": services_count,
     }
     return render(request, "structures/modals/structure_details.html", context)
 

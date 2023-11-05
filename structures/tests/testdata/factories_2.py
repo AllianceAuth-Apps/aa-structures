@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import List, Optional
+from typing import Generic, List, Optional, TypeVar
 
 import factory
 import factory.fuzzy
@@ -31,6 +31,14 @@ from structures.models import (
     Webhook,
 )
 
+T = TypeVar("T")
+
+
+class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
+    def __call__(cls, *args, **kwargs) -> T:
+        return super().__call__(*args, **kwargs)
+
+
 # eve universe (within structures)
 
 
@@ -40,7 +48,9 @@ def datetime_to_esi(my_dt: dt.datetime) -> str:
     return utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-class EveEntityFactory(factory.django.DjangoModelFactory):
+class EveEntityFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveEntity]
+):
     class Meta:
         model = EveEntity
         django_get_or_create = ("id", "name")
@@ -79,7 +89,9 @@ class EveEntityAllianceFactory(EveEntityFactory):
 # Structures objects
 
 
-class FuelAlertConfigFactory(factory.django.DjangoModelFactory):
+class FuelAlertConfigFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[FuelAlertConfig]
+):
     class Meta:
         model = FuelAlertConfig
 
@@ -88,7 +100,9 @@ class FuelAlertConfigFactory(factory.django.DjangoModelFactory):
     repeat = 12
 
 
-class JumpFuelAlertConfigFactory(factory.django.DjangoModelFactory):
+class JumpFuelAlertConfigFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[JumpFuelAlertConfig]
+):
     class Meta:
         model = JumpFuelAlertConfig
 
@@ -116,7 +130,9 @@ class UserMainDefaultOwnerFactory(UserMainFactory):
     ]
 
 
-class WebhookFactory(factory.django.DjangoModelFactory):
+class WebhookFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Webhook]
+):
     class Meta:
         model = Webhook
         django_get_or_create = ("name",)
@@ -134,7 +150,7 @@ class OwnerCharacterFactory(factory.django.DjangoModelFactory):
     notifications_last_used_at = factory.LazyFunction(now)
 
 
-class OwnerFactory(factory.django.DjangoModelFactory):
+class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Owner]):
     class Meta:
         model = Owner
         django_get_or_create = ("corporation",)
@@ -176,7 +192,9 @@ class OwnerFactory(factory.django.DjangoModelFactory):
             obj.webhooks.add(WebhookFactory())
 
 
-class StructureFactory(factory.django.DjangoModelFactory):
+class StructureFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Structure]
+):
     class Meta:
         model = Structure
         django_get_or_create = ("id",)
@@ -256,7 +274,9 @@ class JumpGateFactory(StructureFactory):
         return EveType.objects.get(name="Ansiblex Jump Gate")
 
 
-class StructureTagFactory(factory.django.DjangoModelFactory):
+class StructureTagFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[StructureTag]
+):
     class Meta:
         model = StructureTag
         django_get_or_create = ("name",)
@@ -265,7 +285,9 @@ class StructureTagFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("sentence")
 
 
-class NotificationFactory(factory.django.DjangoModelFactory):
+class NotificationFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Notification]
+):
     class Meta:
         model = Notification
         exclude = ("text_from_dict",)
@@ -303,7 +325,9 @@ class NotificationFactory(factory.django.DjangoModelFactory):
         return kwargs
 
 
-class GeneratedNotificationFactory(factory.django.DjangoModelFactory):
+class GeneratedNotificationFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[GeneratedNotification]
+):
     class Meta:
         model = GeneratedNotification
 
@@ -332,7 +356,7 @@ class GeneratedNotificationFactory(factory.django.DjangoModelFactory):
         obj.structures.add(starbase)
 
 
-class RawNotificationFactory(factory.DictFactory):
+class RawNotificationFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict]):
     """Create a raw notification as received from ESI."""
 
     class Meta:

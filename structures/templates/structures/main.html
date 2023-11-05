@@ -288,7 +288,7 @@
             });
 
             /* pocos */
-            let pocos_idx_start = 7;
+            let pocos_idx_start = 6;
             $('#tab_pocos').DataTable({
                 ajax: {
                     url: "{% url 'structures:poco_list_data' %}",
@@ -298,13 +298,6 @@
                 columns: [
                     {
                         data: 'planet_plus_icon',
-                        render: {
-                            _: 'display',
-                            sort: 'sort'
-                        }
-                    },
-                    {
-                        data: 'planet_type_plus_icon',
                         render: {
                             _: 'display',
                             sort: 'sort'
@@ -354,7 +347,7 @@
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
                 columnDefs: [
-                    { "visible": false, "targets": [ 7, 8, 9, 10, 11, 12, 13, 14 ] },
+                    { "visible": false, "targets": [6, 7, 8, 9, 10, 11, 12, 13 ] },
                 ],
                 order: [ [0, "asc"] ],
                 filterDropDown:

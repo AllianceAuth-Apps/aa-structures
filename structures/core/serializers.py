@@ -75,7 +75,9 @@ class _AbstractStructureListSerializer(ABC):
         else:
             update_warning_html = ""
 
-        secondary_text = format_html("{}{}", alliance_ticker, update_warning_html)
+        secondary_text = format_html(
+            "<em>{}</em> {}", alliance_ticker, update_warning_html
+        )
         owner_link = link_html(
             dotlan.corporation_url(corporation.corporation_name),
             corporation.corporation_name,
@@ -109,7 +111,7 @@ class _AbstractStructureListSerializer(ABC):
             location_name = row["solar_system_name"]
 
         location_html = format_html(
-            '<a href="{}">{}</a><br>{}',
+            '<a href="{}">{}</a><br><em>{}</em>',
             solar_system_url,
             no_wrap_html(location_name),
             no_wrap_html(row["region_name"]),
@@ -135,7 +137,7 @@ class _AbstractStructureListSerializer(ABC):
         type_html = icon_with_paragraph_html(
             icon_url=structure_type.icon_url(size=self.ICON_RENDER_SIZE),
             primary_text=type_link,
-            secondary_text=row["group_name"],
+            secondary_text=format_html("<em>{}</em>", row["group_name"]),
         )
         row["type"] = {"display": type_html, "value": structure_type.name}
         row["type_name"] = structure_type.name
@@ -426,6 +428,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         self.queryset = self.queryset.select_related(
             "eve_planet",
             "eve_planet__eve_type",
+            "eve_planet__eve_type__eve_group",
             "eve_type",
             "eve_type__eve_group",
             "eve_solar_system",
@@ -467,7 +470,9 @@ class PocoListSerializer(_AbstractStructureListSerializer):
 
         constellation_name = structure.eve_solar_system.eve_constellation.name
         region_name = structure.eve_solar_system.eve_constellation.eve_region.name
-        constellation_html = format_html("{}<br>{}", constellation_name, region_name)
+        constellation_html = format_html(
+            "{}<br><em>{}</em>", constellation_name, region_name
+        )
 
         row["constellation_html"] = {
             "display": constellation_html,
@@ -494,19 +499,14 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             icon_url = ""
 
         planet_plus_icon_html = icon_with_paragraph_html(
-            icon_url=structure.eve_type.icon_url(size=self.ICON_RENDER_SIZE),
+            icon_url=icon_url,
             primary_text=planet_name,
+            secondary_text=format_html("<em>{}</em>", planet_type_name),
         )
+
         row["planet_plus_icon"] = {
             "display": planet_plus_icon_html,
             "sort": planet_name,
-        }
-        planet_type_plus_icon_html = icon_with_paragraph_html(
-            icon_url=icon_url, primary_text=planet_type_name
-        )
-        row["planet_type_plus_icon"] = {
-            "display": planet_type_plus_icon_html,
-            "sort": planet_type_name,
         }
         row["planet_type_name"] = planet_type_name
         row["planet_name"] = planet_name

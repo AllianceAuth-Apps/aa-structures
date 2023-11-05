@@ -960,29 +960,35 @@ class TestPocoDetails(NoSocketsTestCase):
             reinforce_exit_start=18,
         )
 
-    def test_should_return_tax_for_corporation_member(self):
+    def test_should_return_tax_and_access_for_corporation_member(self):
         # given
         my_character = EveCharacter.objects.get(character_id=1001)
         # when
-        result = self.details.tax_for_character(my_character)
+        result = self.details.determine_access_and_tax_for_character(my_character)
         # then
-        self.assertEqual(result, 0.01)
+        self.assertTrue(result.has_access)
+        self.assertTrue(result.is_confident)
+        self.assertEqual(result.tax_rate, 0.01)
 
-    def test_should_return_tax_for_alliance_member(self):
+    def test_should_return_tax_and_access_for_alliance_member(self):
         # given
         my_character = EveCharacter.objects.get(character_id=1003)
         # when
-        result = self.details.tax_for_character(my_character)
+        result = self.details.determine_access_and_tax_for_character(my_character)
         # then
-        self.assertEqual(result, 0.02)
+        self.assertTrue(result.has_access)
+        self.assertTrue(result.is_confident)
+        self.assertEqual(result.tax_rate, 0.02)
 
     def test_should_return_tax_for_unknown(self):
         # given
         my_character = EveCharacter.objects.get(character_id=1011)
         # when
-        result = self.details.tax_for_character(my_character)
+        result = self.details.determine_access_and_tax_for_character(my_character)
         # then
-        self.assertIsNone(result)
+        self.assertFalse(result.has_access)
+        self.assertFalse(result.is_confident)
+        self.assertIsNone(result.tax_rate)
 
     def test_should_return_standing_map_for_neutral_1(self):
         # given

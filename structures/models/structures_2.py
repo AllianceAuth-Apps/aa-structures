@@ -178,12 +178,12 @@ class PocoDetails(models.Model):
             elif self.allow_access_with_standings and self.neutral_standing_tax_rate:
                 tax_rate = self.neutral_standing_tax_rate
 
-            return self.PocoCharacterAccessInfo(
-                character_id=character.character_id,
-                has_access=has_access,
-                is_confident=is_confident,
-                tax_rate=tax_rate,
-            )
+        return self.PocoCharacterAccessInfo(
+            character_id=character.character_id,
+            has_access=has_access,
+            is_confident=is_confident,
+            tax_rate=tax_rate,
+        )
 
     def standing_level_access_map(self) -> dict:
         """Return map of access per standing level with standing level names as key."""

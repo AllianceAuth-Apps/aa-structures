@@ -32,4 +32,8 @@ urlpatterns = [
         views.starbase_detail,
         name="starbase_detail",
     ),
+    # public
+    path("public", views.public, name="public"),
+    # statistics
+    path("statistics", views.statistics, name="statistics"),
 ]

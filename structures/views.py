@@ -118,7 +118,7 @@ def main(request):
         "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
         "last_updated": Owner.objects.structures_last_updated(),
     }
-    return render(request, "structures/main.html", context)
+    return render(request, "structures/structures.html", context)
 
 
 @login_required
@@ -664,3 +664,23 @@ def jump_gates_list_data(request) -> JsonResponse:
     )
     serializer = JumpGatesListSerializer(queryset=jump_gates, request=request)
     return JsonResponse({"data": serializer.to_list()})
+
+
+@login_required
+@permission_required("structures.basic_access")
+def public(request) -> HttpResponse:
+    context = {
+        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
+        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
+    }
+    return render(request, "structures/public.html", context)
+
+
+@login_required
+@permission_required("structures.basic_access")
+def statistics(request) -> HttpResponse:
+    context = {
+        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
+        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
+    }
+    return render(request, "structures/statistics.html", context)

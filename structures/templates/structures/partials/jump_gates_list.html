@@ -3,61 +3,45 @@
 {% load static %}
 
 <!-- Jump Gates -->
-<div role="tabpanel" class="tab-pane" id="jump-gates">
 
-    <h3>{% translate 'Jump Gates' %}</h3>
+<h3>{% translate 'Jump Gates' %}</h3>
 
-    <div class="table-responsive">
-        <table id="tab_jump_gates" style="width: 100%" class="table table-striped table-compact">
-            <thead>
-                <tr>
-                    <th>
-                        {% translate "Owner" %}<br>
-                        {% translate "Alliance" %}
-                    </th>
-                    <th>
-                        {% translate "Location" %}<br>
-                        {% translate "Region" %}
-                    </th>
-                    <th>
-                        {% translate "Type" %}<br>
-                        {% translate "Group" %}
-                    </th>
-                    <th>
-                        {% translate "Name" %}<br>
-                        {% translate "Tags" %}
-                    </th>
+<div class="table-responsive">
+    <table id="tab_jump_gates" style="width: 100%" class="table table-striped table-compact">
+        <thead>
+            <tr>
+                <th>
+                    {% translate "Owner" %}<br>
+                    {% translate "Alliance" %}
+                </th>
+                <th>
+                    {% translate "Location" %}<br>
+                    {% translate "Region" %}
+                </th>
+                <th>
+                    {% translate "Type" %}<br>
+                    {% translate "Group" %}
+                </th>
+                <th>
+                    {% translate "Name" %}<br>
+                    {% translate "Tags" %}
+                </th>
 
-                    <th>
-                        {% translate "Fuel Expires" %}<br>
-                        {% translate "Last Online" %}
+                <th>
+                    {% translate "Fuel Expires" %}<br>
+                    {% translate "Last Online" %}
+                </th>
+                <th>
+                    {% translate "Liquid Ozone" %}<br>
+                    {% translate "(units)" %}
                     </th>
-                    <th>
-                        {% translate "Liquid Ozone" %}<br>
-                        {% translate "(units)" %}
-                        </th>
-                    <th>
-                        {% translate "State" %}
-                    </th>
-                </tr>
-            </thead>
-        </table>
-        <p class="text-muted">
-            {% translate "Reinforced structures (except POCOs) are highlighted in red" %}
-        </p>
-    </div>
-</div>
-
-<!-- Modals -->
-<div class="modal" id="modalUpwellDetails" tabindex="-1" role="dialog" aria-labelledby="{% translate 'modalUpwellDetails '%}">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content" id="modalUpwellDetailsContent">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title">Loading...</h4>
-            </div>
-            <div class="modal-body">
-            </div>
-        </div>
-    </div>
+                <th>
+                    {% translate "State" %}
+                </th>
+            </tr>
+        </thead>
+    </table>
+    <p class="text-muted">
+        {% translate "Reinforced structures (except POCOs) are highlighted in red" %}
+    </p>
 </div>

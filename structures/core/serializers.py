@@ -447,12 +447,12 @@ class PocoListSerializer(_AbstractStructureListSerializer):
     def serialize_object(self, structure: Structure) -> dict:
         row = super().serialize_object(structure)
         self._add_owner(structure, row)
-        self._add_solar_system(structure, row)
+        self._add_location(structure, row)
         self._add_planet(structure, row)
         self._add_has_access_and_tax(structure, row, self.character)
         return row
 
-    def _add_solar_system(self, structure: Structure, row: dict):
+    def _add_location(self, structure: Structure, row: dict):
         if structure.eve_solar_system.is_low_sec:
             space_badge_type = "warning"
         elif structure.eve_solar_system.is_high_sec:
@@ -483,7 +483,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             "sort": solar_system_name,
         }
         row["solar_system"] = solar_system_name
-        row["constellation"] = constellation_name
+        row["constellation"] = f"{region_name} - {constellation_name}"
         row["region"] = region_name
         row["space_type"] = space_type.value
 

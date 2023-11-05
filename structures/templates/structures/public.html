@@ -54,7 +54,14 @@
 
 {% block extra_javascript %}
     {% include 'bundles/datatables-js.html' %}
-    {% include 'bundles/filterdropdown-js.html' %}
+    <script
+        type="application/javascript"
+        src="{% static 'structures/vendor/datatables/plugins/dataTables.rowGroup.min.js' %}">
+    </script>
+    <script
+        type="application/javascript"
+        src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
+    </script>
     <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
 
     <script type="application/javascript">
@@ -117,10 +124,10 @@
                     },
 
                     /* hidden columns */
+                    { data: 'constellation' },
                     { data: 'planet_type_name' },
                     { data: 'space_type' },
                     { data: 'region' },
-                    { data: 'constellation' },
                     { data: 'solar_system' },
                     { data: 'corporation_name' },
                     { data: 'alliance_name' },
@@ -132,26 +139,30 @@
                 columnDefs: [
                     { "visible": false, "targets": [6, 7, 8, 9, 10, 11, 12, 13 ] },
                 ],
-                order: [ [0, "asc"] ],
+                order: [ [8, "asc"], [9, "asc"], [0, "asc"] ],
+                rowGroup: {
+                    dataSrc: 'constellation',
+                    className: 'table-group'
+                },
                 filterDropDown:
                 {
                     columns: [
                         {
                             idx: pocos_idx_start,
-                            title: "{% translate 'Planet Type' %}"
+                            title: "{% translate 'Constellation' %}",
+                            maxWidth: "11em"
                         },
-
                         {
                             idx: pocos_idx_start + 1,
-                            title: "{% translate 'Space Type' %}"
+                            title: "{% translate 'Planet Type' %}"
                         },
                         {
                             idx: pocos_idx_start + 2,
-                            title: "{% translate 'Region' %}"
+                            title: "{% translate 'Space Type' %}"
                         },
                         {
                             idx: pocos_idx_start + 3,
-                            title: "{% translate 'Constellation' %}"
+                            title: "{% translate 'Region' %}"
                         },
                         {
                             idx: pocos_idx_start + 4,
@@ -183,6 +194,11 @@
 
 {% block extra_css %}
     {% include 'bundles/datatables-css.html' %}
+
+    <link
+        rel="stylesheet"
+        href="{% static 'memberaudit/vendor/datatables/plugins/rowGroup.dataTables.min.css' %}"
+        type="text/css">
 
     <link rel="stylesheet" href="{% static 'structures/css/global.css' %}" type="text/css" media="screen">
     <link rel="stylesheet" href="{% static 'structures/css/main.css' %}" type="text/css" media="screen">

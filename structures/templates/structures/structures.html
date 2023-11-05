@@ -102,7 +102,10 @@
 
 {% block extra_javascript %}
     {% include 'bundles/datatables-js.html' %}
-    {% include 'bundles/filterdropdown-js.html' %}
+    <script
+        type="application/javascript"
+        src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
+    </script>
     <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
 
     <script type="application/javascript">

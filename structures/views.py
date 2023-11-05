@@ -45,7 +45,14 @@ from .core.serializers import (
     StructureListSerializer,
 )
 from .forms import TagsFilterForm
-from .models import Owner, Structure, StructureItem, StructureTag, Webhook
+from .models import (
+    Owner,
+    Structure,
+    StructureItem,
+    StructureService,
+    StructureTag,
+    Webhook,
+)
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -232,6 +239,19 @@ def structure_details(request, structure_id):
         if assets_grouped["ammo_hold"]
         else 0
     )
+    services_qs = structure.services.all().order_by("name")
+    services = []
+    for service in services_qs:
+        if service.state == StructureService.State.ONLINE:
+            state_html = format_html(
+                '<span class="text-success">{}</span>', service.get_state_display()
+            )
+        else:
+            state_html = format_html(
+                '<span class="text-danger">{}</span>', service.get_state_display()
+            )
+        services.append((service.name, state_html))
+
     context = {
         "fitting": assets,
         "slots": _generate_slot_image_urls(structure),
@@ -252,6 +272,7 @@ def structure_details(request, structure_id):
         "fighters_total": _calc_fighters_total(fighter_tubes, assets_grouped),
         "ammo_total": ammo_total,
         "last_updated": structure.owner.assets_last_update_at,
+        "services": services,
     }
     return render(request, "structures/modals/structure_details.html", context)
 

@@ -288,7 +288,7 @@
             });
 
             /* pocos */
-            let pocos_idx_start = 6;
+            let pocos_idx_start = 7;
             $('#tab_pocos').DataTable({
                 ajax: {
                     url: "{% url 'structures:poco_list_data' %}",
@@ -325,6 +325,13 @@
                         }
                     },
                     {
+                        data: 'owner',
+                        render: {
+                            _: 'display',
+                            sort: 'value'
+                        }
+                    },
+                    {
                         data: 'has_access_html',
                         render: {
                             _: 'display',
@@ -332,19 +339,22 @@
                         }
                     },
                     { data: 'tax' },
+
                     /* hidden columns */
                     { data: 'planet_type_name' },
                     { data: 'space_type' },
                     { data: 'region' },
                     { data: 'constellation' },
                     { data: 'solar_system' },
+                    { data: 'corporation_name' },
+                    { data: 'alliance_name' },
                     { data: 'has_access_str' },
                 ],
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
                 columnDefs: [
-                    { "visible": false, "targets": [ 6, 7, 8, 9, 10, 11 ] },
+                    { "visible": false, "targets": [ 7, 8, 9, 10, 11, 12, 13, 14 ] },
                 ],
                 order: [ [0, "asc"] ],
                 filterDropDown:
@@ -373,6 +383,16 @@
                         },
                         {
                             idx: pocos_idx_start + 5,
+                            title: "{% translate 'Corporation' %}",
+                            maxWidth: "11em"
+                        },
+                        {
+                            idx: pocos_idx_start + 6,
+                            title: "{% translate 'Alliance' %}",
+                            maxWidth: "11em"
+                        },
+                        {
+                            idx: pocos_idx_start + 7,
                             title: "{% translate 'Access?' %}"
                         },
                     ],

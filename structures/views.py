@@ -58,9 +58,6 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 QUERY_PARAM_TAGS = "tags"
 
-# TODO: Consolidate two date columns into one
-# TODO: Change icons to new style on POCO page
-
 
 def default_if_none(value, default=None):
     """Return default if a value is None."""
@@ -570,7 +567,7 @@ def poco_list_data(request) -> JsonResponse:
     pocos = Structure.objects.filter(
         eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL,
         owner__are_pocos_public=True,
-    ).select_related("eve_planet__eve_type__eve_group")
+    ).select_related("eve_planet__eve_type__eve_group", "owner__")
     serializer = PocoListSerializer(queryset=pocos, request=request)
     return JsonResponse({"data": serializer.to_list()})
 

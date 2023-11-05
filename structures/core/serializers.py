@@ -373,7 +373,7 @@ class StructureListSerializer(_AbstractStructureListSerializer):
     def __init__(self, queryset: models.QuerySet, request=None):
         super().__init__(queryset, request=request)
         self.queryset = (
-            self.queryset.prefetch_related("tags", "services")
+            self.queryset.prefetch_related("tags")
             .annotate_has_poco_details()
             .annotate_has_starbase_detail()
         )
@@ -432,6 +432,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
             "eve_solar_system__eve_constellation__eve_region",
             "poco_details",
             "owner__corporation",
+            "owner__corporation__alliance",
         )
         if not request:
             raise ValueError("request can not be None")
@@ -442,6 +443,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
 
     def serialize_object(self, structure: Structure) -> dict:
         row = super().serialize_object(structure)
+        self._add_owner(structure, row)
         self._add_solar_system(structure, row)
         self._add_planet(structure, row)
         self._add_has_access_and_tax(structure, row, self.main_character)

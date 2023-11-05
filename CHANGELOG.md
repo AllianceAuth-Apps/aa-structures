@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Moved services information to structure details window
 - Combined ammo and fighter tabs in structure details window
 - Various performance improvements
+- Show owners on public poco page
 
 ### Fixed
 

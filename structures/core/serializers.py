@@ -514,14 +514,12 @@ class PocoListSerializer(_AbstractStructureListSerializer):
     def _add_has_access_and_tax(
         self, structure: Structure, row: dict, character: Optional[EveCharacter]
     ):
-        access_info = None
         if character:
-            try:
-                details: PocoDetails = structure.poco_details  # type: ignore
-            except (AttributeError, ObjectDoesNotExist):
-                pass
-            else:
-                access_info = details.determine_access_and_tax_for_character(character)
+            access_info = self._determine_access_and_tax_for_character(
+                structure, character
+            )
+        else:
+            access_info = None
 
         has_access_html = ""
         has_access_str = "?"
@@ -556,7 +554,8 @@ class PocoListSerializer(_AbstractStructureListSerializer):
 
                 else:
                     has_access_html = format_html_lazy(
-                        '<i class="fas fa-question text-tooltip" title="{}"></i>',
+                        '<span class="text-tooltip" title="{}">'
+                        '(<i class="fas fa-check text-success text-tooltip"></i>)</span>',
                         dubious_access_text,
                     )
                     has_access_str = "?"
@@ -579,3 +578,13 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         row["has_access_html"] = {"display": has_access_html, "sort": has_access_str}
         row["has_access_str"] = has_access_str
         row["tax"] = {"display": tax_html, "sort": tax}
+
+    def _determine_access_and_tax_for_character(
+        self, structure, character
+    ) -> Optional[PocoDetails.PocoCharacterAccessInfo]:
+        try:
+            details: PocoDetails = structure.poco_details  # type: ignore
+        except (AttributeError, ObjectDoesNotExist):
+            return None
+
+        return details.determine_access_and_tax_for_character(character)

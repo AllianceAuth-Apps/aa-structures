@@ -602,6 +602,7 @@ def jump_gates_list_data(request) -> JsonResponse:
 @login_required
 @permission_required("structures.basic_access")
 def public(request) -> HttpResponse:
+    """Return view to render Public page."""
     characters = (
         EveCharacter.objects.filter(character_ownership__user=request.user)
         .order_by("character_name")
@@ -639,6 +640,7 @@ def poco_list_data(request, character_id: int) -> JsonResponse:
 @login_required
 @permission_required("structures.basic_access")
 def statistics(request) -> HttpResponse:
+    """Return view to render Statistics page."""
     context = _add_common_context()
     return render(request, "structures/statistics.html", context)
 

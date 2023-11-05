@@ -134,11 +134,17 @@ def main(request):
 @permission_required("structures.basic_access")
 def structure_list_data(request) -> JsonResponse:
     """Return structure list in JSON for AJAX call in structure_list view."""
-    tags_raw = request.GET.get(QUERY_PARAM_TAGS)
-    tags = tags_raw.split(",") if tags_raw else None
+    tags = _current_tags(request)
     structures = Structure.objects.visible_for_user(request.user, tags)
     serializer = StructureListSerializer(queryset=structures, request=request)
     return JsonResponse({"data": serializer.to_list()})
+
+
+def _current_tags(request):
+    """Return currently enabled tags."""
+    tags_raw = request.GET.get(QUERY_PARAM_TAGS)
+    tags = tags_raw.split(",") if tags_raw else None
+    return tags
 
 
 class FakeEveType:
@@ -669,7 +675,8 @@ def structure_summary_data(request) -> JsonResponse:
 
 def jump_gates_list_data(request) -> JsonResponse:
     """List of jump gates for DataTables."""
-    jump_gates = Structure.objects.visible_for_user(request.user).filter(
+    tags = _current_tags(request)
+    jump_gates = Structure.objects.visible_for_user(request.user, tags).filter(
         eve_type_id=EveTypeId.JUMP_GATE
     )
     serializer = JumpGatesListSerializer(queryset=jump_gates, request=request)

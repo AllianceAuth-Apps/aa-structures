@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- The last visited tab will remains selected when returning to page again
+- Switch to menu style navigation
 - Overhaul of all structures page
 - Overhaul of jump structures page
 - Overhaul of summary page
@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Combined ammo and fighter tabs in structure details window
 - Various performance improvements
 - Show owners on public poco page
+- Tags now also works for jump gates list
+- The last visited structures tab will remains selected when returning to page again
 
 ### Fixed
 

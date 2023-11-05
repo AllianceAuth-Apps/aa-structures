@@ -16,6 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from eveuniverse.core import dotlan
 from eveuniverse.models import EvePlanet
 
+from allianceauth.eveonline.models import EveCharacter
 from app_utils.datetime import DATETIME_FORMAT, timeuntil_str
 from app_utils.views import (
     BootstrapStyle,
@@ -416,7 +417,9 @@ class JumpGatesListSerializer(_AbstractStructureListSerializer):
 
 
 class PocoListSerializer(_AbstractStructureListSerializer):
-    def __init__(self, queryset: models.QuerySet, request=None):
+    def __init__(
+        self, queryset: models.QuerySet, request=None, character: EveCharacter = None
+    ):
         super().__init__(queryset, request=request)
         self.queryset = self.queryset.select_related(
             "eve_planet",
@@ -432,17 +435,15 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         )
         if not request:
             raise ValueError("request can not be None")
-        try:
-            self.main_character = request.user.profile.main_character
-        except (AttributeError, ObjectDoesNotExist):
-            self.main_character = None
+
+        self.character = character
 
     def serialize_object(self, structure: Structure) -> dict:
         row = super().serialize_object(structure)
         self._add_owner(structure, row)
         self._add_solar_system(structure, row)
         self._add_planet(structure, row)
-        self._add_has_access_and_tax(structure, row, self.main_character)
+        self._add_has_access_and_tax(structure, row, self.character)
         return row
 
     def _add_solar_system(self, structure: Structure, row: dict):
@@ -504,17 +505,19 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         row["planet_type_name"] = planet_type_name
         row["planet_name"] = planet_name
 
-    def _add_has_access_and_tax(self, structure: Structure, row: dict, main_character):
+    def _add_has_access_and_tax(
+        self, structure: Structure, row: dict, character: EveCharacter
+    ):
         tax = None
         has_access = None
-        if main_character:
+        if character:
             try:
                 details = structure.poco_details
             except (AttributeError, ObjectDoesNotExist):
                 pass
             else:
-                tax = details.tax_for_character(main_character)
-                has_access = details.has_character_access(main_character)
+                tax = details.tax_for_character(character)
+                has_access = details.has_character_access(character)
 
         if has_access is True:
             has_access_html = (

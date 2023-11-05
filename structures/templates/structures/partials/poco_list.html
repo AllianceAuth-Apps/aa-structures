@@ -25,10 +25,10 @@
                     {% translate "Owner" %}<br>
                     {% translate "Alliance" %}
                 </th>
-                <th class="text-tooltip" title="For your main character {{ request.user.profile.main_character|default:'?' }}">
+                <th class="text-tooltip" title="For your character {{ selected_character|default:'?' }}">
                     {% translate "Access?" %}
                 </th>
-                <th class="text-tooltip" title="For your main character {{ request.user.profile.main_character|default:'?' }}">
+                <th class="text-tooltip" title="For your character {{ selected_character|default:'?' }}">
                     {% translate "Tax" %}
                 </th>
             </tr>

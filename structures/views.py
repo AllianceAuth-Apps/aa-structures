@@ -66,6 +66,17 @@ def default_if_none(value, default=None):
     return value
 
 
+def _add_common_context(context: dict = None) -> dict:
+    """Add common context and return it."""
+    new_context = {
+        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
+        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
+    }
+    if context:
+        new_context.update(context)
+    return new_context
+
+
 @login_required
 @permission_required("structures.basic_access")
 def index(request):
@@ -122,12 +133,10 @@ def main(request):
         "active_tags": active_tags,
         "tags_filter_form": form,
         "tags_exist": StructureTag.objects.exists(),
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
         "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
         "last_updated": Owner.objects.structures_last_updated(),
     }
-    return render(request, "structures/structures.html", context)
+    return render(request, "structures/structures.html", _add_common_context(context))
 
 
 @login_required
@@ -577,14 +586,60 @@ def service_status(request):
     return HttpResponseServerError(_("service is down"))
 
 
-def poco_list_data(request) -> JsonResponse:
+def jump_gates_list_data(request) -> JsonResponse:
+    """List of jump gates for DataTables."""
+    tags = _current_tags(request)
+    jump_gates = Structure.objects.visible_for_user(request.user, tags).filter(
+        eve_type_id=EveTypeId.JUMP_GATE
+    )
+    serializer = JumpGatesListSerializer(queryset=jump_gates, request=request)
+    return JsonResponse({"data": serializer.to_list()})
+
+
+# Public
+
+
+@login_required
+@permission_required("structures.basic_access")
+def public(request) -> HttpResponse:
+    characters = (
+        EveCharacter.objects.filter(character_ownership__user=request.user)
+        .order_by("character_name")
+        .values("character_id", "character_name")
+    )
+    character_id = int(request.GET.get("character_id", 0))
+    if not character_id:
+        try:
+            character_id = request.user.profile.main_character.character_id
+        except AttributeError:
+            character_id = None
+
+    selected_character = get_object_or_404(EveCharacter, character_id=character_id)
+    context = {"characters": characters, "selected_character": selected_character}
+    return render(request, "structures/public.html", _add_common_context(context))
+
+
+def poco_list_data(request, character_id: int) -> JsonResponse:
     """List of public POCOs for DataTables."""
+    character = get_object_or_404(EveCharacter, character_id=character_id)
     pocos = Structure.objects.filter(
         eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL,
         owner__are_pocos_public=True,
     )
-    serializer = PocoListSerializer(queryset=pocos, request=request)
+    serializer = PocoListSerializer(
+        queryset=pocos, request=request, character=character
+    )
     return JsonResponse({"data": serializer.to_list()})
+
+
+# Statistics
+
+
+@login_required
+@permission_required("structures.basic_access")
+def statistics(request) -> HttpResponse:
+    context = _add_common_context()
+    return render(request, "structures/statistics.html", context)
 
 
 @login_required
@@ -671,33 +726,3 @@ def structure_summary_data(request) -> JsonResponse:
             }
         )
     return JsonResponse({"data": data})
-
-
-def jump_gates_list_data(request) -> JsonResponse:
-    """List of jump gates for DataTables."""
-    tags = _current_tags(request)
-    jump_gates = Structure.objects.visible_for_user(request.user, tags).filter(
-        eve_type_id=EveTypeId.JUMP_GATE
-    )
-    serializer = JumpGatesListSerializer(queryset=jump_gates, request=request)
-    return JsonResponse({"data": serializer.to_list()})
-
-
-@login_required
-@permission_required("structures.basic_access")
-def public(request) -> HttpResponse:
-    context = {
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
-    }
-    return render(request, "structures/public.html", context)
-
-
-@login_required
-@permission_required("structures.basic_access")
-def statistics(request) -> HttpResponse:
-    context = {
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
-    }
-    return render(request, "structures/statistics.html", context)

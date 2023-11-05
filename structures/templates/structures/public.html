@@ -5,6 +5,25 @@
 
 {% block details %}
 
+    <span class="pull-right">
+        <form class="form-inline">
+            <select
+                class="form-control"
+                name="character_id"
+                style="height: auto;"
+                onchange="this.form.submit()"
+                title="Character for calculating access and tax">
+                    {% for character in characters %}
+                        <option
+                            value="{{ character.character_id }}"
+                            {% if character.character_id == selected_character.character_id %} selected{% endif %}>
+                                {{ character.character_name }}
+                        </option>
+                    {% endfor %}
+            </select>
+        </form>
+    </span>
+
     <!-- Nav tabs -->
     <ul id="public-tabs" class="nav nav-tabs" role="tablist">
 
@@ -43,7 +62,7 @@
             let pocos_idx_start = 6;
             $('#tab_pocos').DataTable({
                 ajax: {
-                    url: "{% url 'structures:poco_list_data' %}",
+                    url: "{% url 'structures:poco_list_data' selected_character.character_id %}",
                     dataSrc: 'data',
                     cache: false
                 },

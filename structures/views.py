@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Prefetch, Q
 from django.http import HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -189,10 +189,10 @@ class Slot(IntEnum):
 
 @login_required
 @permission_required("structures.view_structure_fit")
-def structure_details(request, structure_id):
+def structure_details(request, structure_id: int):
     """Render structure details view."""
 
-    structure = get_object_or_404(
+    structure: Structure = get_object_or_404(
         Structure.objects.select_related(
             "owner",
             "owner__corporation",
@@ -202,10 +202,16 @@ def structure_details(request, structure_id):
             "eve_solar_system",
             "eve_solar_system__eve_constellation",
             "eve_solar_system__eve_constellation__eve_region",
+        ).prefetch_related(
+            Prefetch(
+                "services",
+                queryset=StructureService.objects.order_by("name"),
+                to_attr="services_ordered",
+            )
         ),
         id=structure_id,
     )
-    assets = structure.items.select_related("eve_type")
+    assets = structure.items.select_related("eve_type", "eve_type__eve_group")
     high_slots = _extract_slot_assets(assets, "HiSlot")
     med_slots = _extract_slot_assets(assets, "MedSlot")
     low_slots = _extract_slot_assets(assets, "LoSlot")
@@ -239,19 +245,7 @@ def structure_details(request, structure_id):
         if assets_grouped["ammo_hold"]
         else 0
     )
-    services_qs = structure.services.all().order_by("name")
-    services = []
-    for service in services_qs:
-        if service.state == StructureService.State.ONLINE:
-            state_html = format_html(
-                '<span class="text-success">{}</span>', service.get_state_display()
-            )
-        else:
-            state_html = format_html(
-                '<span class="text-danger">{}</span>', service.get_state_display()
-            )
-        services.append((service.name, state_html))
-
+    services = structure.services_ordered
     services_count = len(services)
 
     context = {

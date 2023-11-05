@@ -1,0 +1,5 @@
+{% if active_tags %}
+    {% for tag in active_tags %}
+        {{ tag.html }}
+    {% endfor %}
+{% endif %}

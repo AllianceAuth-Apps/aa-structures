@@ -4,7 +4,10 @@
 
 <!-- structure list -->
 
-<h3>{% translate 'All Structures' %}</h3>
+<h3>
+    {% translate 'All Structures' %}
+    {% include "structures/partials/active_tags.html" %}
+</h3>
 
 <div class="table-responsive">
 
@@ -41,14 +44,6 @@
         </thead>
     </table>
 
-    <p>
-        {% if active_tags %}
-            {% translate "Active Tags Filter" %}:&nbsp;
-            {% for tag in active_tags %}
-                {{ tag.html }}&#32;
-            {% endfor %}
-        {% endif %}
-    </p>
     <p class="text-muted">
         {% translate "Offlined services are shown as" %} <del>{% translate "service" %}</del>
         • {% translate "Reinforced structures (except POCOs) are highlighted in red" %}

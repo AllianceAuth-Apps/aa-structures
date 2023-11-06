@@ -28,6 +28,7 @@ from structures.models import (
     Owner,
     OwnerCharacter,
     PocoDetails,
+    StarbaseDetail,
     Structure,
     StructureItem,
     StructureTag,
@@ -273,6 +274,39 @@ class StarbaseFactory(StructureFactory):
     def eve_type(self):
         return EveType.objects.get(name="Caldari Control Tower")
 
+    @factory.post_generation
+    def starbase_detail(obj, create, extracted, **kwargs):
+        """Set this param to False to disable.
+
+        Set StarbaseDetails attributes with `starbase_detail__key=value`
+        """
+        if not create or extracted is False:
+            return
+
+        StructureDetailFactory(structure=obj, **kwargs)
+
+
+class StructureDetailFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[StarbaseDetail]
+):
+    class Meta:
+        model = StarbaseDetail
+
+    structure = factory.SubFactory(StarbaseFactory)
+
+    allow_alliance_members = False
+    allow_corporation_members = False
+    anchor_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
+    attack_if_at_war = False
+    attack_if_other_security_status_dropping = False
+    fuel_bay_take_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
+    fuel_bay_view_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
+    last_modified_at = factory.LazyFunction(now)
+    offline_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
+    online_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
+    unanchor_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
+    use_alliance_standings = False
+
 
 class PocoFactory(StructureFactory):
     class Params:
@@ -293,6 +327,17 @@ class PocoFactory(StructureFactory):
     @factory.lazy_attribute
     def eve_type(self):
         return EveType.objects.get(name="Customs Office")
+
+    @factory.post_generation
+    def poco_details(obj, create, extracted, **kwargs):
+        """Set this param to False to disable.
+
+        Set PocoDetails attributes with `poco_details__key=value`
+        """
+        if not create or extracted is False:
+            return
+
+        PocoDetailsFactory(structure=obj, **kwargs)
 
 
 class PocoDetailsFactory(

@@ -21,14 +21,12 @@ from app_utils.testing import create_user_from_evecharacter, json_response_to_py
 from structures import views
 from structures.models import Owner, Structure, Webhook
 
-from .testdata.factories import create_owner_from_user, create_poco, create_starbase
 from .testdata.factories_2 import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
     JumpGateFactory,
     OwnerFactory,
-    PocoDetailsFactory,
     PocoFactory,
     StarbaseFactory,
     StructureFactory,
@@ -868,7 +866,12 @@ class TestPocoListData(TestCase):
         cls.user = UserMainBasicFactory()
         cls.main = cls.user.profile.main_character
         owner = OwnerFactory(are_pocos_public=True)
-        cls.poco_public = PocoFactory(owner=owner, eve_planet_name="Amamake V")
+        cls.poco_public = PocoFactory(
+            owner=owner,
+            eve_planet_name="Amamake V",
+            poco_details__allow_access_with_standings=True,
+            poco_details__neutral_standing_tax_rate=0.01,
+        )
         cls.poco_non_public = PocoFactory()
 
     def test_should_return_public_pocos_only(self):
@@ -885,11 +888,6 @@ class TestPocoListData(TestCase):
 
     def test_should_return_correct_data_for_poco(self):
         # given
-        PocoDetailsFactory(
-            structure=self.poco_public,
-            allow_access_with_standings=True,
-            neutral_standing_tax_rate=0.01,
-        )
         request = self.factory.get("/")
         request.user = self.user
         # when
@@ -957,32 +955,25 @@ class TestDetailsModal(TestCase):
         super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
-        load_entities()
-        cls.user, _ = create_user_from_evecharacter(
-            1001, permissions=["structures.basic_access"]
-        )
-        cls.owner = create_owner_from_user(cls.user)
+        cls.user = UserMainDefaultFactory()
+        cls.owner = OwnerFactory(user=cls.user)
 
     def test_should_load_poco_detail(self):
         # given
-        structure = create_poco(owner=self.owner)
-        # when
-        request = self.factory.get(
-            reverse("structures:poco_details", args=[structure.id])
-        )
+        structure = PocoFactory(owner=self.owner)
+        request = self.factory.get("/")
         request.user = self.user
+        # when
         response = views.poco_details(request, structure.id)
         # then
         self.assertEqual(response.status_code, 200)
 
     def test_should_load_starbase_detail(self):
         # given
-        structure = create_starbase(owner=self.owner)
-        # when
-        request = self.factory.get(
-            reverse("structures:starbase_detail", args=[structure.id])
-        )
+        structure = StarbaseFactory(owner=self.owner)
+        request = self.factory.get("/")
         request.user = self.user
+        # when
         response = views.starbase_detail(request, structure.id)
         # then
         self.assertEqual(response.status_code, 200)

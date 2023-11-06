@@ -229,6 +229,10 @@ class StarbaseDetail(models.Model):
             }
             return my_map[name]
 
+    structure = models.OneToOneField(
+        Structure, on_delete=models.CASCADE, related_name="starbase_detail"
+    )
+
     allow_alliance_members = models.BooleanField()
     allow_corporation_members = models.BooleanField()
     anchor_role = models.CharField(max_length=2, choices=Role.choices)
@@ -243,9 +247,6 @@ class StarbaseDetail(models.Model):
     )
     offline_role = models.CharField(max_length=2, choices=Role.choices)
     online_role = models.CharField(max_length=2, choices=Role.choices)
-    structure = models.OneToOneField(
-        Structure, on_delete=models.CASCADE, related_name="starbase_detail"
-    )
     unanchor_role = models.CharField(max_length=2, choices=Role.choices)
     use_alliance_standings = models.BooleanField()
 

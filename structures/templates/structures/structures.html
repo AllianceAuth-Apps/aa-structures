@@ -10,17 +10,30 @@
     <span class="pull-right">
         {% if tags_exist %}
             {% if active_tags %}
-                <button type="button" class="btn btn-warning btn-tabs" data-toggle="modal" data-target="#modalTagsFilter">
-                {% translate "Tags Filter (Active)" %}
+                <button
+                    type="button"
+                    class="btn btn-warning btn-tabs"
+                    data-toggle="modal"
+                    data-target="#modalTagsFilter">
+                        {% translate "Tags Filter (Active)" %}
                 </button>
             {% else %}
-                <button type="button" class="btn btn-default btn-tabs" data-toggle="modal" data-target="#modalTagsFilter">
-                    {% translate "Tags Filter" %}
+                <button
+                    type="button"
+                    class="btn btn-default btn-tabs"
+                    data-toggle="modal"
+                    data-target="#modalTagsFilter">
+                        {% translate "Tags Filter" %}
                 </button>
             {% endif %}
         {% else %}
-            <button type="button" class="btn btn-default btn-tabs" data-toggle="modal" data-target="#modalTagsFilter" disabled="disabled">
-                {% translate "Tags Filter" %}
+            <button
+                type="button"
+                class="btn btn-default btn-tabs"
+                data-toggle="modal"
+                data-target="#modalTagsFilter"
+                disabled="disabled">
+                    {% translate "Tags Filter" %}
             </button>
         {% endif %}
     </span>

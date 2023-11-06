@@ -856,7 +856,7 @@ class TestPocoListData(TestCase):
             corporation_tax_rate=0.01,
         )
         # when
-        response = views.poco_list_data(request, self.character_id)
+        response = views.public_poco_list_data(request, self.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -876,7 +876,7 @@ class TestPocoListData(TestCase):
         self.owner.are_pocos_public = True
         self.owner.save()
         # when
-        response = views.poco_list_data(request, self.character_id)
+        response = views.public_poco_list_data(request, self.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -892,7 +892,7 @@ class TestPocoListData(TestCase):
         self.owner.are_pocos_public = False
         self.owner.save()
         # when
-        response = views.poco_list_data(request, self.character_id)
+        response = views.public_poco_list_data(request, self.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)

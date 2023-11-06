@@ -28,7 +28,9 @@
     <ul id="public-tabs" class="nav nav-tabs" role="tablist">
 
         <li role="presentation" class="active">
-            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">{% translate "Customs Offices" %}</a>
+            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">
+                {% translate "Customs Offices" %} <small>({{ pocos_count|default:"-" }})</small>
+            </a>
         </li>
 
     </ul>
@@ -75,7 +77,7 @@
             let pocos_idx_start = 6;
             $('#tab_pocos').DataTable({
                 ajax: {
-                    url: "{% url 'structures:poco_list_data' selected_character.character_id %}",
+                    url: "{% url 'structures:public_poco_list_data' selected_character.character_id %}",
                     dataSrc: 'data',
                     cache: false
                 },

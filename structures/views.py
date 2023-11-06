@@ -650,23 +650,33 @@ def public(request: HttpRequest) -> HttpResponse:
         except AttributeError:
             character_id = None
 
+    pocos_count = _public_pocos_query().count()
     selected_character = get_object_or_404(EveCharacter, character_id=character_id)
-    context = {"characters": characters, "selected_character": selected_character}
+    context = {
+        "characters": characters,
+        "selected_character": selected_character,
+        "pocos_count": pocos_count,
+    }
     return render(request, "structures/public.html", _add_common_context(context))
 
 
-def poco_list_data(request: HttpRequest, character_id: int) -> JsonResponse:
+def public_poco_list_data(request: HttpRequest, character_id: int) -> JsonResponse:
     """List of public POCOs for DataTables."""
     character = get_object_or_404(EveCharacter, character_id=character_id)
-    pocos = Structure.objects.filter(
-        eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL,
-        owner__are_pocos_public=True,
-    )
+    pocos = _public_pocos_query()
     serializer = PocoListSerializer(
         queryset=pocos, request=request, character=character
     )
     data = serializer.to_list()
     return JsonResponse({"data": data})
+
+
+def _public_pocos_query():
+    pocos = Structure.objects.filter(
+        eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL,
+        owner__are_pocos_public=True,
+    )
+    return pocos
 
 
 # Statistics

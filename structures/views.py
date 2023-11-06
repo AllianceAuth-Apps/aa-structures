@@ -134,6 +134,7 @@ def structure_list(request: HttpRequest):
     structures_count = _structures_query(request, "structures", tags).count()
     pocos_count = _structures_query(request, "pocos", tags).count()
     starbases_count = _structures_query(request, "starbases", tags).count()
+    jump_gates_count = _structures_query(request, "jump_gates", tags).count()
 
     context = {
         "active_tags": tags,
@@ -143,6 +144,7 @@ def structure_list(request: HttpRequest):
         "structures_count": structures_count,
         "pocos_count": pocos_count,
         "starbases_count": starbases_count,
+        "jump_gates_count": jump_gates_count,
     }
     return render(request, "structures/structures.html", _add_common_context(context))
 
@@ -173,6 +175,8 @@ def _structures_query(request, variant, tags):
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
         )
+    elif variant == "jump_gates":
+        structures_qs = structures_qs.filter(eve_type=EveTypeId.JUMP_GATE)
     elif variant == "all":
         pass
     else:

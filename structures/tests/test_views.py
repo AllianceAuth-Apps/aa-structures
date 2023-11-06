@@ -56,9 +56,9 @@ class TestStructureListData(TestCase):
         )
         structure = Structure.objects.get(id=1000000000001)
         # when
-        request = self.factory.get(reverse("structures:structure_list_data"))
+        request = self.factory.get("/")
         request.user = user
-        response = views.structure_list_data(request)
+        response = views.structure_list_data(request, "all")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -137,9 +137,9 @@ class TestStructureListSpecial(TestCase):
         user, _ = create_user_from_evecharacter(character_id=1001)
         user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
         # when
-        request = RequestFactory().get(reverse("structures:main"))
+        request = RequestFactory().get(reverse("structures:structure_list"))
         request.user = user
-        response = views.main(request)
+        response = views.structure_list(request)
         # then
         self.assertEqual(response.status_code, 200)
 
@@ -156,9 +156,9 @@ class TestStructureListDataPermissions(TestCase):
         """helper method:  makes the request to the view
         and returns response as dict for the given user
         """
-        request = self.factory.get(reverse("structures:structure_list_data"))
+        request = self.factory.get("/")
         request.user = user
-        response = views.structure_list_data(request)
+        response = views.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
         return json_response_to_dict(response)
 
@@ -335,11 +335,9 @@ class TestStructureListFilters(TestCase):
 
     def test_list_filter_by_tag_1(self):
         # no filter
-        request = self.factory.get(
-            "{}".format(reverse("structures:structure_list_data"))
-        )
+        request = self.factory.get("/")
         request.user = self.user
-        response = views.structure_list_data(request)
+        response = views.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
@@ -361,61 +359,47 @@ class TestStructureListFilters(TestCase):
         )
 
         # filter for tag_c
-        request = self.factory.get(
-            "{}?tags=tag_c".format(reverse("structures:structure_list_data"))
-        )
+        request = self.factory.get("/?tags=tag_c")
         request.user = self.user
-        response = views.structure_list_data(request)
+        response = views.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
         self.assertSetEqual(set(data.keys()), {1000000000002, 1000000000003})
 
         # filter for tag_b
-        request = self.factory.get(
-            "{}?tags=tag_b".format(reverse("structures:structure_list_data"))
-        )
+        request = self.factory.get("/?tags=tag_b")
         request.user = self.user
-        response = views.structure_list_data(request)
+        response = views.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
         self.assertSetEqual(set(data.keys()), {1000000000003})
 
         # filter for tag_c, tag_b
-        request = self.factory.get(
-            "{}?tags=tag_c,tag_b".format(reverse("structures:structure_list_data"))
-        )
+        request = self.factory.get("/?tags=tag_c,tag_b")
         request.user = self.user
-        response = views.structure_list_data(request)
+        response = views.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
         self.assertSetEqual(set(data.keys()), {1000000000002, 1000000000003})
 
     def test_call_with_raw_tags(self):
-        request = self.factory.get(
-            "{}?tags=tag_c,tag_b".format(reverse("structures:main"))
-        )
+        request = self.factory.get("/?tags=tag_c,tag_b")
         request.user = self.user
-        response = views.main(request)
+        response = views.structure_list(request)
         self.assertEqual(response.status_code, 200)
 
     def test_set_tags_filter(self):
-        request = self.factory.post(
-            reverse("structures:main"),
-            data={
-                "tag_b": True,
-                "tag_c": True,
-            },
-        )
+        request = self.factory.post("/", data={"tag_b": True, "tag_c": True})
         request.user = self.user
-        response = views.main(request)
+        response = views.structure_list(request)
         self.assertEqual(response.status_code, 302)
         parts = urlparse(response.url)
         path = parts[2]
         query_dict = parse_qs(parts[4])
-        self.assertEqual(path, reverse("structures:main"))
+        self.assertEqual(path, reverse("structures:structure_list"))
         self.assertIn("tags", query_dict)
         params = query_dict["tags"][0].split(",")
         self.assertSetEqual(set(params), {"tag_c", "tag_b"})
@@ -438,9 +422,9 @@ class TestStructurePowerModes(TestCase):
         )
 
     def display_data_for_structure(self, structure_id: int):
-        request = self.factory.get(reverse("structures:structure_list_data"))
+        request = self.factory.get("/")
         request.user = self.user
-        response = views.structure_list_data(request)
+        response = views.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_python(response)["data"]

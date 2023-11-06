@@ -22,8 +22,8 @@
             <ul class="nav navbar-nav">
 
                 {% if perms.structures.view_corporation_structures or perms.structures.view_alliance_structures or perms.structures.view_all_structures %}
-                    <li class="{% navactive request 'structures:main' %}">
-                        <a href="{% url 'structures:main' %}">
+                    <li class="{% navactive request 'structures:structure_list' %}">
+                        <a href="{% url 'structures:structure_list' %}">
                             {% translate 'Structure List' %}
                         </a>
                     </li>

@@ -5,7 +5,7 @@
 <!-- structure list -->
 
 <h3>
-    {% translate 'All Structures' %}
+    {% translate 'Upwell Structures' %}
     {% include "structures/partials/structures/active_tags.html" %}
 </h3>
 
@@ -48,45 +48,4 @@
         {% translate "Offlined services are shown as" %} <del>{% translate "service" %}</del>
         • {% translate "Reinforced structures (except POCOs) are highlighted in red" %}
     </p>
-</div>
-
-
-<!-- Modals -->
-<div class="modal" id="modalUpwellDetails" tabindex="-1" role="dialog" aria-labelledby="{% translate 'modalUpwellDetails '%}">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content" id="modalUpwellDetailsContent">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title">Loading...</h4>
-            </div>
-            <div class="modal-body">
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal" id="modalPocoDetails" tabindex="-1" role="dialog" aria-labelledby="modalPocoDetails">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content" id="modalPocoDetailsContent">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title">Loading...</h4>
-            </div>
-            <div class="modal-body">
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal" id="modalStarbaseDetail" tabindex="-1" role="dialog" aria-labelledby="modalStarbaseDetail">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content" id="modalStarbaseDetailContent">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title">Loading...</h4>
-            </div>
-            <div class="modal-body">
-            </div>
-        </div>
-    </div>
 </div>

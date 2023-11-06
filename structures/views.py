@@ -10,13 +10,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db.models import Count, F, Prefetch, Q
-from django.http import HttpResponse, HttpResponseServerError, JsonResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import translation
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from esi.decorators import token_required
+from esi.models import Token
 from eveuniverse.core import dotlan, eveimageserver
 from eveuniverse.models import EveType, EveTypeDogmaAttribute
 
@@ -80,7 +81,7 @@ def _add_common_context(context: dict = None) -> dict:
 
 @login_required
 @permission_required("structures.basic_access")
-def index(request):
+def index(request: HttpRequest):
     """Redirect from index view to main."""
 
     if (
@@ -88,7 +89,7 @@ def index(request):
         or request.user.has_perm("structures.view_alliance_structures")
         or request.user.has_perm("structures.view_all_structures")
     ):
-        url = reverse("structures:main")
+        url = reverse("structures:structure_list")
         if STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED:
             params = {
                 QUERY_PARAM_TAGS: ",".join(
@@ -105,8 +106,8 @@ def index(request):
 
 @login_required
 @permission_required("structures.basic_access")
-def main(request):
-    """Main view"""
+def structure_list(request: HttpRequest):
+    """Render structure list view."""
     active_tags = []
     if request.method == "POST":
         form = TagsFilterForm(data=request.POST)
@@ -115,7 +116,7 @@ def main(request):
                 if activated:
                     active_tags.append(get_object_or_404(StructureTag, name=name))
 
-            url = reverse("structures:main")
+            url = reverse("structures:structure_list")
             if active_tags:
                 params = {QUERY_PARAM_TAGS: ",".join([x.name for x in active_tags])}
                 params_encoded = urlencode(params)
@@ -141,11 +142,29 @@ def main(request):
 
 @login_required
 @permission_required("structures.basic_access")
-def structure_list_data(request) -> JsonResponse:
+def structure_list_data(request: HttpRequest, variant: str) -> JsonResponse:
     """Return structure list in JSON for AJAX call in structure_list view."""
     tags = _current_tags(request)
-    structures = Structure.objects.visible_for_user(request.user, tags)
-    serializer = StructureListSerializer(queryset=structures, request=request)
+    structures_qs = Structure.objects.visible_for_user(request.user, tags)
+
+    if variant == "structures":
+        structures_qs = structures_qs.filter(
+            eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
+        )
+    elif variant == "pocos":
+        structures_qs = structures_qs.filter(
+            eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
+        )
+    elif variant == "starbases":
+        structures_qs = structures_qs.filter(
+            eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
+        )
+    elif variant == "all":
+        pass
+    else:
+        raise NotImplementedError("Unknown variant")
+
+    serializer = StructureListSerializer(queryset=structures_qs, request=request)
     return JsonResponse({"data": serializer.to_list()})
 
 
@@ -210,7 +229,7 @@ class Slot(IntEnum):
 
 @login_required
 @permission_required("structures.view_structure_fit")
-def structure_details(request, structure_id: int):
+def structure_details(request: HttpRequest, structure_id: int):
     """Render structure details view."""
 
     structure: Structure = get_object_or_404(
@@ -383,7 +402,7 @@ def _patch_fighter_tube_quantities(fighter_tubes):
 
 @login_required
 @permission_required("structures.basic_access")
-def poco_details(request, structure_id):
+def poco_details(request: HttpRequest, structure_id):
     """Shows details modal for a POCO."""
 
     structure = get_object_or_404(
@@ -408,7 +427,7 @@ def poco_details(request, structure_id):
 
 @login_required
 @permission_required("structures.basic_access")
-def starbase_detail(request, structure_id):
+def starbase_detail(request: HttpRequest, structure_id: int):
     """Shows detail modal for a starbase."""
 
     structure = get_object_or_404(
@@ -470,7 +489,7 @@ def starbase_detail(request, structure_id):
 @login_required
 @permission_required("structures.add_structure_owner")
 @token_required(scopes=Owner.get_esi_scopes())  # type: ignore
-def add_structure_owner(request, token):
+def add_structure_owner(request: HttpRequest, token: Token):
     """View for adding or replacing a structure owner."""
     token_char = get_object_or_404(EveCharacter, character_id=token.character_id)
     try:
@@ -570,7 +589,7 @@ def add_structure_owner(request, token):
     return redirect("structures:index")
 
 
-def service_status(request):
+def service_status(request: HttpRequest):
     """Public view to 3rd party monitoring.
 
     This is view allows running a 3rd party monitoring on the status
@@ -586,7 +605,7 @@ def service_status(request):
     return HttpResponseServerError(_("service is down"))
 
 
-def jump_gates_list_data(request) -> JsonResponse:
+def jump_gates_list_data(request: HttpRequest) -> JsonResponse:
     """List of jump gates for DataTables."""
     tags = _current_tags(request)
     jump_gates = Structure.objects.visible_for_user(request.user, tags).filter(
@@ -601,7 +620,7 @@ def jump_gates_list_data(request) -> JsonResponse:
 
 @login_required
 @permission_required("structures.basic_access")
-def public(request) -> HttpResponse:
+def public(request: HttpRequest) -> HttpResponse:
     """Return view to render Public page."""
     characters = (
         EveCharacter.objects.filter(character_ownership__user=request.user)
@@ -620,7 +639,7 @@ def public(request) -> HttpResponse:
     return render(request, "structures/public.html", _add_common_context(context))
 
 
-def poco_list_data(request, character_id: int) -> JsonResponse:
+def poco_list_data(request: HttpRequest, character_id: int) -> JsonResponse:
     """List of public POCOs for DataTables."""
     character = get_object_or_404(EveCharacter, character_id=character_id)
     pocos = Structure.objects.filter(
@@ -639,7 +658,7 @@ def poco_list_data(request, character_id: int) -> JsonResponse:
 
 @login_required
 @permission_required("structures.basic_access")
-def statistics(request) -> HttpResponse:
+def statistics(request: HttpRequest) -> HttpResponse:
     """Return view to render Statistics page."""
     context = _add_common_context()
     return render(request, "structures/statistics.html", context)
@@ -647,7 +666,7 @@ def statistics(request) -> HttpResponse:
 
 @login_required
 @permission_required("structures.basic_access")
-def structure_summary_data(request) -> JsonResponse:
+def structure_summary_data(request: HttpRequest) -> JsonResponse:
     """View returning data for structure summary page."""
     summary_qs = (
         Structure.objects.visible_for_user(request.user)

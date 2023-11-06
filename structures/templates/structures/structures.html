@@ -371,6 +371,7 @@
             });
 
             /* pocos */
+            const pocosColumnDefsVisible = [4, 5, ...columnDefsVisible];
             $('#tab_pocos').DataTable({
                 ...defaultDef,
                 ...{
@@ -381,7 +382,7 @@
                     },
                     columnDefs: [
                         { "sortable": false, "targets": [5, 6] },
-                        { "visible": false, "targets": columnDefsVisible}
+                        { "visible": false, "targets": pocosColumnDefsVisible}
                     ],
                     order: [[1, "asc"], [3, "asc"]],
                     filterDropDown:

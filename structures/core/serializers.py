@@ -164,7 +164,7 @@ class _AbstractStructureListSerializer(ABC):
         fuel_expires_display, fuel_expires_timestamp = self._calc_fuel_infos(structure)
         last_online_at_display = self._calc_online_infos(structure)
 
-        if not fuel_expires_display == "-" and not last_online_at_display == "-":
+        if fuel_expires_display or last_online_at_display:
             display = format_html(
                 "{}<br>{}", no_wrap_html(fuel_expires_display), last_online_at_display
             )
@@ -179,7 +179,7 @@ class _AbstractStructureListSerializer(ABC):
 
     def _calc_fuel_infos(self, structure: Structure):
         if structure.is_poco:
-            fuel_expires_display = "-"
+            fuel_expires_display = ""
             fuel_expires_timestamp = None
 
         elif structure.is_low_power:
@@ -230,7 +230,7 @@ class _AbstractStructureListSerializer(ABC):
 
     def _calc_online_infos(self, structure: Structure):
         if structure.is_poco:
-            return "-"
+            return ""
 
         if structure.is_full_power:
             last_online_at_display = format_html_lazy(
@@ -259,14 +259,12 @@ class _AbstractStructureListSerializer(ABC):
                 )
                 if not last_online_at_display:
                     last_online_at_display = "?"
-                else:
-                    last_online_at_display = "- " + last_online_at_display
             else:
                 last_online_at_display = structure.last_online_at.strftime(
                     DATETIME_FORMAT
                 )
         else:
-            last_online_at_display = "-"
+            last_online_at_display = ""
 
         return last_online_at_display
 

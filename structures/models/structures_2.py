@@ -152,6 +152,7 @@ class PocoDetails(models.Model):
             character.alliance_id
             and owner_corporation.alliance
             and owner_corporation.alliance.alliance_id == character.alliance_id
+            and self.alliance_tax_rate is not None
         ):
             has_access = self.allow_alliance_access
             is_confident = True
@@ -175,7 +176,11 @@ class PocoDetails(models.Model):
             ):
                 tax_rate = self.alliance_tax_rate
 
-            elif self.allow_access_with_standings and self.neutral_standing_tax_rate:
+            elif (
+                self.allow_access_with_standings
+                and self.standing_level >= self.StandingLevel.NEUTRAL
+                and self.neutral_standing_tax_rate is not None
+            ):
                 tax_rate = self.neutral_standing_tax_rate
 
         return self.PocoCharacterAccessInfo(

@@ -213,14 +213,12 @@
                 setCookie(COOKIE_LAST_TAB_ID, selectedTabId, COOKIE_LAST_TAB_HOURS)
             });
 
-            /* structures */
-            let structures_idx_start = 7;
-            $('#tab_structures').DataTable({
-                ajax: {
-                    url: "{% url 'structures:structure_list_data' 'structures' %}?tags={{ active_tags|join:',' }}",
-                    dataSrc: 'data',
-                    cache: false
-                },
+            /* Datatable common definitions */
+            let lengthMenu = [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]];
+            let columnDefsvisible = {
+                "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15]
+            };
+            let defaultDef = {
                 columns: [
                     {
                         data: 'owner',
@@ -265,68 +263,81 @@
                     { data: 'power_mode_str' },
                     { data: 'core_status_str' }
                 ],
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                lengthMenu: lengthMenu,
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
-                columnDefs: [
-                    { "sortable": false, "targets": [5, 6] },
-                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15] }
-                ],
-                order: [[1, "asc"], [3, "asc"]],
-                filterDropDown:
-                {
-                    columns: [
-                        {
-                            idx: structures_idx_start,
-                            title: "{% translate 'Alliance' %}",
-                            maxWidth: "8em"
-                        },
-                        {
-                            idx: structures_idx_start + 1,
-                            title: "{% translate 'Corporation' %}",
-                            maxWidth: "9em"
-                        },
-                        {
-                            idx: structures_idx_start + 2,
-                            title: "{% translate 'Region' %}",
-                            maxWidth: "7em"
-                        },
-                        {
-                            idx: structures_idx_start + 3,
-                            title: "{% translate 'Solar System' %}",
-                            maxWidth: "14em"
-                        },
-                        {
-                            idx: structures_idx_start + 4,
-                            title: "{% translate 'Group' %}",
-                            maxWidth: "7em"
-                        },
-                        {
-                            idx: structures_idx_start + 5,
-                            title: "{% translate 'Reinforced?' %}"
-                        },
-                        {
-                            idx: structures_idx_start + 6,
-                            title: "{% translate 'State' %}",
-                            maxWidth: "6em"
-                        },
-                        {
-                            idx: structures_idx_start + 7,
-                            title: "{% translate 'Power Mode' %}",
-                            maxWidth: "12em"
-                        },
-                        {
-                            idx: structures_idx_start + 8,
-                            title: "{% translate 'Core?' %}",
-                            maxWidth: "6em"
-                        }
-                    ],
-                    autoSize: false,
-                    bootstrap: true
-                },
                 createdRow: function (row, data, dataIndex) {
                     if (data['is_reinforced']) {
                         $(row).addClass('danger');
+                    }
+                }
+            }
+            let structures_idx_start = 7;
+
+            /* structures */
+            $('#tab_structures').DataTable({
+                ...defaultDef,
+                ...{
+                    ajax: {
+                        url: "{% url 'structures:structure_list_data' 'structures' %}?tags={{ active_tags|join:',' }}",
+                        dataSrc: 'data',
+                        cache: false
+                    },
+                    columnDefs: [
+                        { "sortable": false, "targets": [5, 6] },
+                        columnDefsvisible
+                    ],
+                    order: [[1, "asc"], [3, "asc"]],
+                    filterDropDown:
+                    {
+                        columns: [
+                            {
+                                idx: structures_idx_start,
+                                title: "{% translate 'Alliance' %}",
+                                maxWidth: "8em"
+                            },
+                            {
+                                idx: structures_idx_start + 1,
+                                title: "{% translate 'Corporation' %}",
+                                maxWidth: "9em"
+                            },
+                            {
+                                idx: structures_idx_start + 2,
+                                title: "{% translate 'Region' %}",
+                                maxWidth: "7em"
+                            },
+                            {
+                                idx: structures_idx_start + 3,
+                                title: "{% translate 'Solar System' %}",
+                                maxWidth: "14em"
+                            },
+                            {
+                                idx: structures_idx_start + 4,
+                                title: "{% translate 'Group' %}",
+                                maxWidth: "7em"
+                            },
+                            {
+                                idx: structures_idx_start + 5,
+                                title: "{% translate 'Reinforced?' %}"
+                            },
+                            {
+                                idx: structures_idx_start + 6,
+                                title: "{% translate 'State' %}",
+                                maxWidth: "6em"
+                            },
+                            {
+                                idx: structures_idx_start + 7,
+                                title: "{% translate 'Power Mode' %}",
+                                maxWidth: "12em"
+                            },
+                            {
+                                idx: structures_idx_start + 8,
+                                title: "{% translate 'Core?' %}",
+                                maxWidth: "6em"
+                            }
+                        ],
+                        autoSize: false,
+                        bootstrap: true
                     }
                 }
             });
@@ -349,119 +360,60 @@
             });
 
             /* pocos */
-            let pocos_idx_start = 7;
             $('#tab_pocos').DataTable({
-                ajax: {
-                    url: "{% url 'structures:structure_list_data' 'pocos' %}?&tags={{ active_tags|join:',' }}",
-                    dataSrc: 'data',
-                    cache: false
-                },
-                columns: [
-                    {
-                        data: 'owner',
-                        render: {
-                            _: 'display',
-                            sort: 'value'
-                        }
+                ...defaultDef,
+                ...{
+                    ajax: {
+                        url: "{% url 'structures:structure_list_data' 'pocos' %}?&tags={{ active_tags|join:',' }}",
+                        dataSrc: 'data',
+                        cache: false
                     },
-                    {
-                        data: 'location',
-                        render: {
-                            _: 'display',
-                            sort: 'value'
-                        }
-                    },
-                    {
-                        data: 'type',
-                        render: {
-                            _: 'display',
-                            sort: 'value'
-                        }
-                    },
-                    { data: 'structure_name_and_tags' },
-                    {
-                        data: 'fuel_and_power',
-                        render: {
-                            _: 'display',
-                            sort: 'fuel_expires_at'
-                        }
-                    },
-                    { data: 'state_details' },
-                    { data: 'details' },
-
-                    /* hidden */
-                    { data: 'alliance_name' },
-                    { data: 'corporation_name' },
-                    { data: 'region_name' },
-                    { data: 'solar_system_name' },
-                    { data: 'group_name' },
-                    { data: 'is_reinforced_str' },
-                    { data: 'state_str' },
-                    { data: 'power_mode_str' },
-                    { data: 'core_status_str' }
-                ],
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                paging: dataTablesPaging,
-                pageLength: dataTablesPageLength,
-                columnDefs: [
-                    { "sortable": false, "targets": [5, 6] },
-                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15] }
-                ],
-                order: [[1, "asc"], [3, "asc"]],
-                filterDropDown:
-                {
-                    columns: [
-                        {
-                            idx: pocos_idx_start,
-                            title: "{% translate 'Alliance' %}",
-                            maxWidth: "8em"
-                        },
-                        {
-                            idx: pocos_idx_start + 1,
-                            title: "{% translate 'Corporation' %}",
-                            maxWidth: "9em"
-                        },
-                        {
-                            idx: pocos_idx_start + 2,
-                            title: "{% translate 'Region' %}",
-                            maxWidth: "7em"
-                        },
-                        {
-                            idx: pocos_idx_start + 3,
-                            title: "{% translate 'Solar System' %}",
-                            maxWidth: "14em"
-                        },
-                        {
-                            idx: pocos_idx_start + 5,
-                            title: "{% translate 'Group' %}",
-                            maxWidth: "7em"
-                        },
-                        {
-                            idx: pocos_idx_start + 6,
-                            title: "{% translate 'Reinforced?' %}",
-                        },
-                        {
-                            idx: pocos_idx_start + 7,
-                            title: "{% translate 'State' %}",
-                            maxWidth: "6em"
-                        },
-                        {
-                            idx: pocos_idx_start + 8,
-                            title: "{% translate 'Power Mode' %}",
-                            maxWidth: "12em"
-                        },
-                        {
-                            idx: pocos_idx_start + 9,
-                            title: "{% translate 'Core?' %}",
-                            maxWidth: "6em"
-                        }
+                    columnDefs: [
+                        { "sortable": false, "targets": [5, 6] },
+                        columnDefsvisible
                     ],
-                    autoSize: false,
-                    bootstrap: true
-                },
-                createdRow: function (row, data, dataIndex) {
-                    if (data['is_reinforced']) {
-                        $(row).addClass('danger');
+                    order: [[1, "asc"], [3, "asc"]],
+                    filterDropDown:
+                    {
+                        columns: [
+                            {
+                                idx: structures_idx_start,
+                                title: "{% translate 'Alliance' %}",
+                                maxWidth: "8em"
+                            },
+                            {
+                                idx: structures_idx_start + 1,
+                                title: "{% translate 'Corporation' %}",
+                                maxWidth: "9em"
+                            },
+                            {
+                                idx: structures_idx_start + 2,
+                                title: "{% translate 'Region' %}",
+                                maxWidth: "7em"
+                            },
+                            {
+                                idx: structures_idx_start + 3,
+                                title: "{% translate 'Solar System' %}",
+                                maxWidth: "14em"
+                            },
+                            {
+                                idx: structures_idx_start + 5,
+                                title: "{% translate 'Group' %}",
+                                maxWidth: "7em"
+                            },
+                            {
+                                idx: structures_idx_start + 6,
+                                title: "{% translate 'Reinforced?' %}",
+                            },
+                            {
+                                idx: structures_idx_start + 7,
+                                title: "{% translate 'State' %}",
+                                maxWidth: "6em"
+                            }
+
+                        ],
+                        autoSize: false,
+                        bootstrap: true
                     }
                 }
             });
@@ -484,119 +436,59 @@
             });
 
             /* starbases */
-            let starbases_idx_start = 7;
             $('#tab_starbases').DataTable({
-                ajax: {
-                    url: "{% url 'structures:structure_list_data' 'starbases' %}?&tags={{ active_tags|join:',' }}",
-                    dataSrc: 'data',
-                    cache: false
-                },
-                columns: [
-                    {
-                        data: 'owner',
-                        render: {
-                            _: 'display',
-                            sort: 'value'
-                        }
+                ...defaultDef,
+                ...{
+                    ajax: {
+                        url: "{% url 'structures:structure_list_data' 'starbases' %}?&tags={{ active_tags|join:',' }}",
+                        dataSrc: 'data',
+                        cache: false
                     },
-                    {
-                        data: 'location',
-                        render: {
-                            _: 'display',
-                            sort: 'value'
-                        }
-                    },
-                    {
-                        data: 'type',
-                        render: {
-                            _: 'display',
-                            sort: 'value'
-                        }
-                    },
-                    { data: 'structure_name_and_tags' },
-                    {
-                        data: 'fuel_and_power',
-                        render: {
-                            _: 'display',
-                            sort: 'fuel_expires_at'
-                        }
-                    },
-                    { data: 'state_details' },
-                    { data: 'details' },
-
-                    /* hidden */
-                    { data: 'alliance_name' },
-                    { data: 'corporation_name' },
-                    { data: 'region_name' },
-                    { data: 'solar_system_name' },
-                    { data: 'group_name' },
-                    { data: 'is_reinforced_str' },
-                    { data: 'state_str' },
-                    { data: 'power_mode_str' },
-                    { data: 'core_status_str' }
-                ],
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                paging: dataTablesPaging,
-                pageLength: dataTablesPageLength,
-                columnDefs: [
-                    { "sortable": false, "targets": [5, 6] },
-                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15] }
-                ],
-                order: [[1, "asc"], [3, "asc"]],
-                filterDropDown:
-                {
-                    columns: [
-                        {
-                            idx: starbases_idx_start,
-                            title: "{% translate 'Alliance' %}",
-                            maxWidth: "8em"
-                        },
-                        {
-                            idx: starbases_idx_start + 1,
-                            title: "{% translate 'Corporation' %}",
-                            maxWidth: "9em"
-                        },
-                        {
-                            idx: starbases_idx_start + 2,
-                            title: "{% translate 'Region' %}",
-                            maxWidth: "7em"
-                        },
-                        {
-                            idx: starbases_idx_start + 3,
-                            title: "{% translate 'Solar System' %}",
-                            maxWidth: "14em"
-                        },
-                        {
-                            idx: starbases_idx_start + 4,
-                            title: "{% translate 'Group' %}",
-                            maxWidth: "7em"
-                        },
-                        {
-                            idx: structures_idx_start + 5,
-                            title: "{% translate 'Reinforced?' %}"
-                        },
-                        {
-                            idx: starbases_idx_start + 6,
-                            title: "{% translate 'State' %}",
-                            maxWidth: "6em"
-                        },
-                        {
-                            idx: starbases_idx_start + 7,
-                            title: "{% translate 'Power Mode' %}",
-                            maxWidth: "12em"
-                        },
-                        {
-                            idx: starbases_idx_start + 8,
-                            title: "{% translate 'Core?' %}",
-                            maxWidth: "6em"
-                        }
+                    columnDefs: [
+                        { "sortable": false, "targets": [5, 6] },
+                        columnDefsvisible
                     ],
-                    autoSize: false,
-                    bootstrap: true
-                },
-                createdRow: function (row, data, dataIndex) {
-                    if (data['is_reinforced']) {
-                        $(row).addClass('danger');
+                    order: [[1, "asc"], [3, "asc"]],
+                    filterDropDown:
+                    {
+                        columns: [
+                            {
+                                idx: structures_idx_start,
+                                title: "{% translate 'Alliance' %}",
+                                maxWidth: "8em"
+                            },
+                            {
+                                idx: structures_idx_start + 1,
+                                title: "{% translate 'Corporation' %}",
+                                maxWidth: "9em"
+                            },
+                            {
+                                idx: structures_idx_start + 2,
+                                title: "{% translate 'Region' %}",
+                                maxWidth: "7em"
+                            },
+                            {
+                                idx: structures_idx_start + 3,
+                                title: "{% translate 'Solar System' %}",
+                                maxWidth: "14em"
+                            },
+                            {
+                                idx: structures_idx_start + 4,
+                                title: "{% translate 'Group' %}",
+                                maxWidth: "7em"
+                            },
+                            {
+                                idx: structures_idx_start + 5,
+                                title: "{% translate 'Reinforced?' %}"
+                            },
+                            {
+                                idx: structures_idx_start + 6,
+                                title: "{% translate 'State' %}",
+                                maxWidth: "6em"
+                            }
+                        ],
+                        autoSize: false,
+                        bootstrap: true
                     }
                 }
             });
@@ -670,7 +562,7 @@
                     { data: 'power_mode_str' },
                     { data: 'state_str' },
                 ],
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                lengthMenu: lengthMenu,
                 paging: dataTablesPaging,
                 pageLength: dataTablesPageLength,
                 order: [[1, "asc"]],

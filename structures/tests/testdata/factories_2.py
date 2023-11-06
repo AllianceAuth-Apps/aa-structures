@@ -165,6 +165,9 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
         model = Owner
         django_get_or_create = ("corporation",)
 
+    class Params:
+        user = None  # when specified will use corporation of users's main
+
     assets_last_update_at = factory.LazyFunction(now)
     character_ownership = None  # no longer used
     forwarding_last_update_at = factory.LazyFunction(now)
@@ -172,7 +175,14 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
     is_up = True
     notifications_last_update_at = factory.LazyFunction(now)
     structures_last_update_at = factory.LazyFunction(now)
-    corporation = factory.SubFactory(EveCorporationInfoFactory)
+
+    @factory.lazy_attribute
+    def corporation(self):
+        if self.user:
+            corporation = self.user.profile.main_character.corporation
+            if corporation:
+                return corporation
+        return EveCorporationInfoFactory()
 
     @factory.post_generation
     def characters(

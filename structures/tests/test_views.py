@@ -15,6 +15,7 @@ from allianceauth.eveonline.models import (
     EveCorporationInfo,
 )
 from allianceauth.tests.auth_utils import AuthUtils
+from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import create_user_from_evecharacter, json_response_to_python
 
 from structures import views
@@ -124,10 +125,8 @@ class TestStructureListDataFilterVariant(TestCase):
         super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
-        corporation = EveCorporationInfoFactory()
-        character = EveCharacterFactory(corporation=corporation)
-        cls.user = UserMainDefaultFactory(main_character__character=character)
-        owner = OwnerFactory(corporation=corporation)
+        cls.user = UserMainDefaultFactory()
+        owner = OwnerFactory(user=cls.user)
         cls.structure = StructureFactory(owner=owner)
         cls.poco = PocoFactory(owner=owner)
         cls.starbase = StarbaseFactory(owner=owner)
@@ -914,34 +913,40 @@ class TestStructureFittingModal(TestCase):
         super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
-        create_structures()
+        cls.character = EveCharacterFactory()
+        owner = OwnerFactory(corporation=cls.character.corporation)
+        cls.structure = StructureFactory(owner=owner)
 
     def test_should_have_access_to_fitting(self):
         # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_structure_fit", user
+        user = UserMainFactory(
+            main_character__character=self.character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_corporation_structures",
+                "structures.view_structure_fit",
+            ],
         )
-        # when
-        request = self.factory.get(
-            reverse("structures:structure_details", args=[1000000000001])
-        )
+        request = self.factory.get("/")
         request.user = user
-        response = views.structure_details(request, 1000000000001)
+        # when
+        response = views.structure_details(request, self.structure.id)
         # then
         self.assertEqual(response.status_code, 200)
 
     def test_should_not_have_access_to_fitting(self):
         # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        # when
-        request = self.factory.get(
-            reverse("structures:structure_details", args=[1000000000001])
+        user = UserMainFactory(
+            main_character__character=self.character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_corporation_structures",
+            ],
         )
+        request = self.factory.get("/")
         request.user = user
-        response = views.structure_details(request, 1000000000001)
+        # when
+        response = views.structure_details(request, self.structure.id)
         # then
         self.assertEqual(response.status_code, 302)
 

@@ -526,7 +526,7 @@
             const jump_gate_idx_start = 7;
             $('#tab_jump_gates').DataTable({
                 ajax: {
-                    url: "{% url 'structures:jump_gates_list_data' %}?tags={{ active_tags|join:',' }}",
+                    url: "{% url 'structures:structure_list_data' 'jump_gates' %}?&tags={{ active_tags|join:',' }}",
                     dataSrc: 'data',
                     cache: false
                 },

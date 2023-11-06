@@ -18,6 +18,7 @@ from app_utils.testdata_factories import (
     UserMainFactory,
 )
 
+from structures.constants import EveTypeId
 from structures.core.notification_types import NotificationType
 from structures.models import (
     FuelAlertConfig,
@@ -28,6 +29,7 @@ from structures.models import (
     OwnerCharacter,
     PocoDetails,
     Structure,
+    StructureItem,
     StructureTag,
     Webhook,
 )
@@ -209,6 +211,7 @@ class StructureFactory(
 
     class Params:
         eve_type_name = "Astrahus"
+        eve_solar_system_name = "Amamake"
 
     fuel_expires_at = factory.LazyAttribute(lambda obj: now() + dt.timedelta(days=3))
     has_fitting = False
@@ -227,7 +230,7 @@ class StructureFactory(
 
     @factory.lazy_attribute
     def eve_solar_system(self):
-        return EveSolarSystem.objects.order_by("?").first()
+        return EveSolarSystem.objects.get(name=self.eve_solar_system_name)
 
     @factory.lazy_attribute
     def id(self):
@@ -299,6 +302,46 @@ class JumpGateFactory(StructureFactory):
     @factory.lazy_attribute
     def eve_type(self):
         return EveType.objects.get(name="Ansiblex Jump Gate")
+
+    @factory.post_generation
+    def jump_fuel_quantity(obj, create, extracted, **kwargs):
+        """Set this param to False to disable."""
+        if not create or extracted is False:
+            return
+
+        StructureItemJumpFuelFactory(
+            structure=obj,
+            quantity=extracted or 1000,  # default
+        )
+
+
+class StructureItemFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[StructureItem]
+):
+    class Meta:
+        model = StructureItem
+        django_get_or_create = ("id",)
+
+    class Params:
+        eve_type_name = "Oxygen Fuel Block"
+
+    id = factory.Sequence(lambda n: 1900000000001 + n)
+    is_singleton = False
+    location_flag = StructureItem.LocationFlag.CARGO
+    quantity = 1
+
+    @factory.lazy_attribute
+    def eve_type(self):
+        return EveType.objects.get(name=self.eve_type_name)
+
+
+class StructureItemJumpFuelFactory(StructureItemFactory):
+    is_singleton = False
+    location_flag = StructureItem.LocationFlag.STRUCTURE_FUEL
+
+    @factory.lazy_attribute
+    def eve_type(self):
+        return EveType.objects.get(id=EveTypeId.LIQUID_OZONE)
 
 
 class StructureTagFactory(

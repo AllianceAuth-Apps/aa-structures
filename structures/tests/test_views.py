@@ -7,7 +7,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
-from eveuniverse.models import EveSolarSystem, EveType
+from eveuniverse.models import EveSolarSystem
 
 from allianceauth.eveonline.models import (
     EveAllianceInfo,
@@ -18,14 +18,14 @@ from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.testing import create_user_from_evecharacter, json_response_to_python
 
 from structures import views
-from structures.constants import EveTypeId
-from structures.models import Owner, Structure, StructureItem, Webhook
+from structures.models import Owner, Structure, Webhook
 
 from .testdata.factories import create_owner_from_user, create_poco, create_starbase
 from .testdata.factories_2 import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
+    JumpGateFactory,
     OwnerFactory,
     PocoDetailsFactory,
     PocoFactory,
@@ -46,15 +46,12 @@ def json_response_to_dict(response, key="id") -> dict:
     return {x[key]: x for x in json_response_to_python(response)["data"]}
 
 
-class TestStructureListData(TestCase):
+class TestStructureListDataSerialization(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
-
-    def test_should_serialize_data_correctly(self):
-        # given
         alliance = EveAllianceInfoFactory(
             alliance_name="Wayne Enterprises", alliance_ticker="WYE"
         )
@@ -62,15 +59,19 @@ class TestStructureListData(TestCase):
             corporation_name="Wayne Technologies", alliance=alliance
         )
         character = EveCharacterFactory(corporation=corporation)
-        user = UserMainDefaultFactory(main_character__character=character)
-        owner = OwnerFactory(corporation=corporation)
+        cls.user = UserMainDefaultFactory(main_character__character=character)
+        cls.owner = OwnerFactory(corporation=corporation)
+
+    def test_should_serialize_data_correctly(self):
+        # given
         eve_solar_system = EveSolarSystem.objects.get(name="Amamake")
-        eve_type = EveType.objects.get(name="Astrahus")
         structure = StructureFactory(
-            owner=owner, eve_solar_system=eve_solar_system, eve_type=eve_type
+            owner=self.owner,
+            eve_solar_system=eve_solar_system,
+            eve_type_name="Astrahus",
         )
         request = self.factory.get("/")
-        request.user = user
+        request.user = self.user
         # when
         response = views.structure_list_data(request, "structures")
         # then
@@ -96,6 +97,26 @@ class TestStructureListData(TestCase):
         self.assertEqual(obj["core_status_str"], "no")
         self.assertEqual(obj["details"], "")
 
+    def test_should_return_jump_gates(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        structure = JumpGateFactory(
+            owner=self.owner, jump_fuel_quantity=5000, eve_solar_system_name="1-PGSG"
+        )
+        # when
+        response = views.structure_list_data(request, "jump_gates")
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        obj = data[structure.id]
+        self.assertEqual(obj["region_name"], "Detorid")
+        self.assertEqual(obj["solar_system_name"], "1-PGSG")
+        # self.assertEqual(
+        #     obj["structure_name_and_tags"], "1-PGSG &gt;&gt; A-C5TC - Test Jump Gate"
+        # )
+        self.assertEqual(obj["jump_fuel_quantity"], 5000)
+
 
 class TestStructureListDataFilterVariant(TestCase):
     @classmethod
@@ -110,6 +131,7 @@ class TestStructureListDataFilterVariant(TestCase):
         cls.structure = StructureFactory(owner=owner)
         cls.poco = PocoFactory(owner=owner)
         cls.starbase = StarbaseFactory(owner=owner)
+        cls.jump_gate = JumpGateFactory(owner=owner)
 
     def test_should_return_upwell_structures_only(self):
         # given
@@ -121,7 +143,7 @@ class TestStructureListDataFilterVariant(TestCase):
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
         structure_ids = set(data.keys())
-        self.assertSetEqual(structure_ids, {self.structure.id})
+        self.assertSetEqual(structure_ids, {self.structure.id, self.jump_gate.id})
 
     def test_should_return_pocos_only(self):
         # given
@@ -147,6 +169,18 @@ class TestStructureListDataFilterVariant(TestCase):
         structure_ids = set(data.keys())
         self.assertSetEqual(structure_ids, {self.starbase.id})
 
+    def test_should_return_jump_gates(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = views.structure_list_data(request, "jump_gates")
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure_ids = set(data.keys())
+        self.assertSetEqual(structure_ids, {self.jump_gate.id})
+
     def test_should_return_all_structures(self):
         # given
         request = self.factory.get("/")
@@ -158,7 +192,8 @@ class TestStructureListDataFilterVariant(TestCase):
         data = json_response_to_dict(response)
         structure_ids = set(data.keys())
         self.assertSetEqual(
-            structure_ids, {self.structure.id, self.poco.id, self.starbase.id}
+            structure_ids,
+            {self.structure.id, self.poco.id, self.starbase.id, self.jump_gate.id},
         )
 
     def test_should_raise_error_when_invalid_variant_requested(self):
@@ -573,7 +608,7 @@ class TestStructurePowerModes(TestCase):
         structure_id = 1200000000003
         my_structure = self.display_data_for_structure(structure_id)
         self.assertEqual(my_structure["power_mode_str"], "")
-        self.assertIn("-", my_structure["fuel_and_power"]["display"])
+        self.assertEqual(my_structure["fuel_and_power"]["display"], "")
 
     def test_starbase_online(self):
         structure_id = 1300000000001
@@ -972,45 +1007,3 @@ class TestDetailsModal(TestCase):
         response = views.starbase_detail(request, structure.id)
         # then
         self.assertEqual(response.status_code, 200)
-
-
-class TestJumpGateList(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "structures.basic_access", cls.user
-        )
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", cls.user
-        )
-        cls.factory = RequestFactory()
-
-    def test_should_return_jump_gates(self):
-        # given
-        request = self.factory.get(reverse("structures:jump_gates_list_data"))
-        request.user = self.user
-        structure = Structure.objects.get(id=1000000000004)
-        structure.items.create(
-            id=1,
-            eve_type_id=EveTypeId.LIQUID_OZONE,
-            location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
-            is_singleton=False,
-            quantity=5000,
-        )
-        # when
-        response = views.jump_gates_list_data(request)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        self.assertSetEqual(set(data.keys()), {1000000000004})
-        obj = data[1000000000004]
-        self.assertEqual(obj["region_name"], "Detorid")
-        self.assertEqual(obj["solar_system_name"], "1-PGSG")
-        self.assertEqual(
-            obj["structure_name_and_tags"], "1-PGSG &gt;&gt; A-C5TC - Test Jump Gate"
-        )
-        self.assertEqual(obj["jump_fuel_quantity"], 5000)

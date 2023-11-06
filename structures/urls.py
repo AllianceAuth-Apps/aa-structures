@@ -21,9 +21,6 @@ urlpatterns = [
         views.public_poco_list_data,
         name="public_poco_list_data",
     ),
-    path(
-        "jump_gates_list_data", views.jump_gates_list_data, name="jump_gates_list_data"
-    ),
     path("service_status", views.service_status, name="service_status"),
     path(
         "<int:structure_id>/structure_details",

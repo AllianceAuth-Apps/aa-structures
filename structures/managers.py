@@ -8,7 +8,7 @@ from typing import Any, Optional, Set, Tuple
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
-from django.db.models import Case, Count, Exists, OuterRef, Q, Value, When
+from django.db.models import Case, Count, Exists, OuterRef, Q, Sum, Value, When
 from django.utils.timezone import now
 from esi.models import Token
 from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
@@ -294,6 +294,19 @@ class StructureQuerySet(models.QuerySet):
         return self.annotate(
             has_starbase_detail=Exists(
                 StarbaseDetail.objects.filter(structure_id=OuterRef("id"))
+            )
+        )
+
+    def annotate_jump_fuel_quantity(self) -> models.QuerySet:
+        from .models import StructureItem
+
+        return self.annotate(
+            jump_fuel_quantity_2=Sum(
+                "items__quantity",
+                filter=Q(
+                    items__eve_type=EveTypeId.LIQUID_OZONE,
+                    items__location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
+                ),
             )
         )
 

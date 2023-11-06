@@ -8,7 +8,7 @@ from typing import Optional
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import Q, Sum
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
@@ -30,9 +30,9 @@ from app_utils.views import (
 )
 
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
-from structures.constants import EveGroupId, EveTypeId
+from structures.constants import EveGroupId
 from structures.helpers import floating_icon_with_text_html
-from structures.models import EveSpaceType, PocoDetails, Structure, StructureItem
+from structures.models import EveSpaceType, PocoDetails, Structure
 
 
 class _AbstractStructureListSerializer(ABC):
@@ -40,7 +40,9 @@ class _AbstractStructureListSerializer(ABC):
 
     ICON_RENDER_SIZE = 64
 
-    def __init__(self, queryset: models.QuerySet, request=None):
+    def __init__(
+        self, queryset: models.QuerySet, request: Optional[HttpRequest] = None
+    ):
         self.queryset = queryset
         self._request = request
 
@@ -268,7 +270,9 @@ class _AbstractStructureListSerializer(ABC):
 
         return last_online_at_display
 
-    def _add_state_and_core(self, structure: Structure, row: dict, request):
+    def _add_state_and_core(
+        self, structure: Structure, row: dict, request: HttpRequest
+    ):
         state_str, state_details = self._calc_state_infos(structure, request)
         core_status, has_core = self._calc_core_infos(structure)
 
@@ -321,9 +325,17 @@ class _AbstractStructureListSerializer(ABC):
 
         return core_status, has_core
 
-    def _add_details_widget(self, structure: Structure, row: dict, request):
+    def _add_jump_fuel_level(self, structure: Structure, row: dict):
+        if hasattr(structure, "jump_fuel_quantity_2"):
+            row["jump_fuel_quantity"] = structure.jump_fuel_quantity_2  # type: ignore
+        else:
+            row["jump_fuel_quantity"] = None
+
+    def _add_details_widget(
+        self, structure: Structure, row: dict, request: HttpRequest
+    ):
         """Add details widget when applicable"""
-        if structure.has_fitting and request.user.has_perm(
+        if structure.has_fitting and request.user.has_perm(  # type: ignore
             "structures.view_structure_fit"
         ):
             ajax_url = reverse("structures:structure_details", args=[structure.id])
@@ -335,7 +347,7 @@ class _AbstractStructureListSerializer(ABC):
                 '<i class="fas fa-search"></i></button>'
             )
 
-        elif structure.has_poco_details:  # type: ignore
+        elif structure.is_poco:
             ajax_url = reverse("structures:poco_details", args=[structure.id])
             row["details"] = format_html(
                 '<button type="button" class="btn btn-default" '
@@ -345,7 +357,7 @@ class _AbstractStructureListSerializer(ABC):
                 '<i class="fas fa-search"></i></button>'
             )
 
-        elif structure.has_starbase_detail:  # type: ignore
+        elif structure.is_starbase:
             ajax_url = reverse("structures:starbase_detail", args=[structure.id])
             row["details"] = format_html(
                 '<button type="button" class="btn btn-default" '
@@ -365,13 +377,11 @@ class _AbstractStructureListSerializer(ABC):
 
 
 class StructureListSerializer(_AbstractStructureListSerializer):
-    def __init__(self, queryset: models.QuerySet, request=None):
+    def __init__(
+        self, queryset: models.QuerySet, request: Optional[HttpRequest] = None
+    ):
         super().__init__(queryset, request=request)
-        self.queryset = (
-            self.queryset.prefetch_related("tags")
-            .annotate_has_poco_details()
-            .annotate_has_starbase_detail()
-        )
+        self.queryset = self.queryset.prefetch_related("tags")
 
     def serialize_object(self, structure: Structure) -> dict:
         row = super().serialize_object(structure)
@@ -383,43 +393,15 @@ class StructureListSerializer(_AbstractStructureListSerializer):
         self._add_fuel_and_power(structure, row)
         self._add_state_and_core(structure, row, self._request)
         self._add_details_widget(structure, row, self._request)
-        return row
-
-
-class JumpGatesListSerializer(_AbstractStructureListSerializer):
-    def __init__(self, queryset: models.QuerySet, request=None):
-        super().__init__(queryset, request=request)
-        self.queryset = self.queryset.annotate(
-            jump_fuel_quantity_2=Sum(
-                "items__quantity",
-                filter=Q(
-                    items__eve_type=EveTypeId.LIQUID_OZONE,
-                    items__location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
-                ),
-            )
-        )
-
-    def serialize_object(self, structure: Structure) -> dict:
-        row = super().serialize_object(structure)
-        self._add_owner(structure, row)
-        self._add_location(structure, row)
-        self._add_type(structure, row)
-        self._add_name_and_tags(structure, row, check_tags=False)
         self._add_jump_fuel_level(structure, row)
-        self._add_fuel_and_power(structure, row)
-        self._add_reinforcement_infos(structure, row)
-        self._add_state_and_core(structure, row, self._request)
         return row
-
-    def _add_jump_fuel_level(self, structure: Structure, row: dict):
-        row["jump_fuel_quantity"] = structure.jump_fuel_quantity_2  # type: ignore
 
 
 class PocoListSerializer(_AbstractStructureListSerializer):
     def __init__(
         self,
         queryset: models.QuerySet,
-        request=None,
+        request: Optional[HttpRequest] = None,
         character: Optional[EveCharacter] = None,
     ):
         super().__init__(queryset, request=request)

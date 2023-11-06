@@ -40,11 +40,7 @@ from .app_settings import (
     STRUCTURES_SHOW_JUMP_GATES,
 )
 from .constants import EveAttributeId, EveCategoryId, EveGroupId, EveTypeId
-from .core.serializers import (
-    JumpGatesListSerializer,
-    PocoListSerializer,
-    StructureListSerializer,
-)
+from .core.serializers import PocoListSerializer, StructureListSerializer
 from .forms import TagsFilterForm
 from .models import (
     Owner,
@@ -167,20 +163,28 @@ def _structures_query(request, variant, tags):
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
         )
+
     elif variant == "pocos":
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
-        )
+        ).annotate_has_poco_details()
+
     elif variant == "starbases":
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
-        )
+        ).annotate_has_starbase_detail()
+
     elif variant == "jump_gates":
-        structures_qs = structures_qs.filter(eve_type=EveTypeId.JUMP_GATE)
+        structures_qs = structures_qs.filter(
+            eve_type=EveTypeId.JUMP_GATE
+        ).annotate_jump_fuel_quantity()
+
     elif variant == "all":
         pass
+
     else:
         raise NotImplementedError("Unknown variant")
+
     return structures_qs
 
 
@@ -619,16 +623,6 @@ def service_status(request: HttpRequest):
     if status_ok:
         return HttpResponse(_("service is up"))
     return HttpResponseServerError(_("service is down"))
-
-
-def jump_gates_list_data(request: HttpRequest) -> JsonResponse:
-    """List of jump gates for DataTables."""
-    tags = _current_tags(request)
-    jump_gates = Structure.objects.visible_for_user(request.user, tags).filter(
-        eve_type_id=EveTypeId.JUMP_GATE
-    )
-    serializer = JumpGatesListSerializer(queryset=jump_gates, request=request)
-    return JsonResponse({"data": serializer.to_list()})
 
 
 # Public

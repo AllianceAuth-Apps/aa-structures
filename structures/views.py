@@ -108,17 +108,17 @@ def index(request: HttpRequest):
 @permission_required("structures.basic_access")
 def structure_list(request: HttpRequest):
     """Render structure list view."""
-    active_tags = []
+    tags = []
     if request.method == "POST":
         form = TagsFilterForm(data=request.POST)
         if form.is_valid():
             for name, activated in form.cleaned_data.items():
                 if activated:
-                    active_tags.append(get_object_or_404(StructureTag, name=name))
+                    tags.append(get_object_or_404(StructureTag, name=name))
 
             url = reverse("structures:structure_list")
-            if active_tags:
-                params = {QUERY_PARAM_TAGS: ",".join([x.name for x in active_tags])}
+            if tags:
+                params = {QUERY_PARAM_TAGS: ",".join([x.name for x in tags])}
                 params_encoded = urlencode(params)
                 url += f"?{params_encoded}"
             return redirect(url)
@@ -126,16 +126,23 @@ def structure_list(request: HttpRequest):
         tags_raw = request.GET.get(QUERY_PARAM_TAGS)
         if tags_raw:
             tags_parsed = tags_raw.split(",")
-            active_tags = [
-                x for x in StructureTag.objects.all() if x.name in tags_parsed
+            tags = [
+                tag for tag in StructureTag.objects.all() if tag.name in tags_parsed
             ]
-        form = TagsFilterForm(initial={x.name: True for x in active_tags})
+        form = TagsFilterForm(initial={tag.name: True for tag in tags})
+
+    structures_count = _structures_query(request, "structures", tags).count()
+    pocos_count = _structures_query(request, "pocos", tags).count()
+    starbases_count = _structures_query(request, "starbases", tags).count()
 
     context = {
-        "active_tags": active_tags,
+        "active_tags": tags,
         "tags_filter_form": form,
         "tags_exist": StructureTag.objects.exists(),
         "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
+        "structures_count": structures_count,
+        "pocos_count": pocos_count,
+        "starbases_count": starbases_count,
     }
     return render(request, "structures/structures.html", _add_common_context(context))
 
@@ -145,6 +152,13 @@ def structure_list(request: HttpRequest):
 def structure_list_data(request: HttpRequest, variant: str) -> JsonResponse:
     """Return structure list in JSON for AJAX call in structure_list view."""
     tags = _current_tags(request)
+    structures_qs = _structures_query(request, variant, tags)
+
+    serializer = StructureListSerializer(queryset=structures_qs, request=request)
+    return JsonResponse({"data": serializer.to_list()})
+
+
+def _structures_query(request, variant, tags):
     structures_qs = Structure.objects.visible_for_user(request.user, tags)
 
     if variant == "structures":
@@ -163,9 +177,7 @@ def structure_list_data(request: HttpRequest, variant: str) -> JsonResponse:
         pass
     else:
         raise NotImplementedError("Unknown variant")
-
-    serializer = StructureListSerializer(queryset=structures_qs, request=request)
-    return JsonResponse({"data": serializer.to_list()})
+    return structures_qs
 
 
 def _current_tags(request):

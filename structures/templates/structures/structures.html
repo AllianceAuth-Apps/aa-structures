@@ -29,20 +29,28 @@
     <ul id="structure-tabs" class="nav nav-tabs" role="tablist">
 
         <li role="presentation">
-            <a href="#structures" aria-controls="structures" role="tab" data-toggle="tab">{% trans "Upwell Structures" %}</a>
+            <a href="#structures" aria-controls="structures" role="tab" data-toggle="tab">
+                {% trans "Upwell Structures" %} <small>({{ structures_count|default:"-" }})</small>
+            </a>
         </li>
 
         <li role="presentation">
-            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">{% trans "Customs Offices" %}</a>
+            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">
+                {% trans "Customs Offices" %} <small>({{ pocos_count|default:"-" }})</small>
+            </a>
         </li>
 
         <li role="presentation">
-            <a href="#starbases" aria-controls="starbases" role="tab" data-toggle="tab">{% trans "Starbases" %}</a>
+            <a href="#starbases" aria-controls="starbases" role="tab" data-toggle="tab">
+                {% trans "Starbases" %} <small>({{ starbases_count|default:"-" }})</small>
+            </a>
         </li>
 
         {% if show_jump_gates_tab %}
             <li role="presentation">
-                <a href="#jump-gates" aria-controls="jump-gates" role="tab" data-toggle="tab">{% trans "Jump Gates" %}</a>
+                <a href="#jump-gates" aria-controls="jump-gates" role="tab" data-toggle="tab">
+                    {% trans "Jump Gates" %} <small>({{ jump_gates_count|default:"-" }})</small>
+                </a>
             </li>
         {% endif %}
 

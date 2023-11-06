@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Show structure counts on tabs
 - Poco details added to admin page for pocos
 - Starbase details added to admin page for starbases
 

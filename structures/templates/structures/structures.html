@@ -206,8 +206,8 @@
             const COOKIE_LAST_TAB_ID = "structures_last_tab_id"
             const COOKIE_LAST_TAB_HOURS = 6
 
-            let dataTablesPageLength = {{ data_tables_page_length }};
-            let dataTablesPaging = ("{{ data_tables_paging }}" == 'True');
+            const dataTablesPageLength = {{ data_tables_page_length }};
+            const dataTablesPaging = ("{{ data_tables_paging }}" == 'True');
 
             /* show last selected tab or default */
             let tabId = ""
@@ -227,11 +227,9 @@
             });
 
             /* Datatable common definitions */
-            let lengthMenu = [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]];
-            let columnDefsvisible = {
-                "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15]
-            };
-            let defaultDef = {
+            const lengthMenu = [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]];
+            const columnDefsVisible = [7, 8, 9, 10, 11, 12, 13, 14, 15];
+            const defaultDef = {
                 columns: [
                     {
                         data: 'owner',
@@ -285,7 +283,7 @@
                     }
                 }
             }
-            let structures_idx_start = 7;
+            const structures_idx_start = 7;
 
             /* structures */
             $('#tab_structures').DataTable({
@@ -298,7 +296,7 @@
                     },
                     columnDefs: [
                         { "sortable": false, "targets": [5, 6] },
-                        columnDefsvisible
+                        { "visible": false, "targets": columnDefsVisible}
                     ],
                     order: [[1, "asc"], [3, "asc"]],
                     filterDropDown:
@@ -383,7 +381,7 @@
                     },
                     columnDefs: [
                         { "sortable": false, "targets": [5, 6] },
-                        columnDefsvisible
+                        { "visible": false, "targets": columnDefsVisible}
                     ],
                     order: [[1, "asc"], [3, "asc"]],
                     filterDropDown:
@@ -459,7 +457,7 @@
                     },
                     columnDefs: [
                         { "sortable": false, "targets": [5, 6] },
-                        columnDefsvisible
+                        { "visible": false, "targets": columnDefsVisible}
                     ],
                     order: [[1, "asc"], [3, "asc"]],
                     filterDropDown:
@@ -524,7 +522,7 @@
             });
 
             /* jump gates */
-            let jump_gate_idx_start = 7;
+            const jump_gate_idx_start = 7;
             $('#tab_jump_gates').DataTable({
                 ajax: {
                     url: "{% url 'structures:jump_gates_list_data' %}?tags={{ active_tags|join:',' }}",

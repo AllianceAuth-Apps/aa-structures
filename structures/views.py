@@ -2,12 +2,13 @@
 
 import functools
 from collections import defaultdict
-from enum import IntEnum
-from typing import Dict
+from enum import Enum, IntEnum
+from typing import Dict, Union
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import User
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db.models import Count, F, Prefetch, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError, JsonResponse
@@ -54,6 +55,16 @@ from .models import (
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 QUERY_PARAM_TAGS = "tags"
+
+
+class StructureDataSelection(str, Enum):
+    """A pre-defined selection to filter structures data."""
+
+    STRUCTURES = "structures"
+    POCOS = "pocos"
+    STARBASES = "starbases"
+    JUMP_GATES = "jump_gates"
+    ALL = "all"
 
 
 def default_if_none(value, default=None):
@@ -127,10 +138,18 @@ def structure_list(request: HttpRequest):
             ]
         form = TagsFilterForm(initial={tag.name: True for tag in tags})
 
-    structures_count = _structures_query(request, "structures", tags).count()
-    pocos_count = _structures_query(request, "pocos", tags).count()
-    starbases_count = _structures_query(request, "starbases", tags).count()
-    jump_gates_count = _structures_query(request, "jump_gates", tags).count()
+    structures_count = _structures_query(
+        request.user, StructureDataSelection.STRUCTURES, tags
+    ).count()
+    pocos_count = _structures_query(
+        request.user, StructureDataSelection.POCOS, tags
+    ).count()
+    starbases_count = _structures_query(
+        request.user, StructureDataSelection.STARBASES, tags
+    ).count()
+    jump_gates_count = _structures_query(
+        request.user, StructureDataSelection.JUMP_GATES, tags
+    ).count()
 
     context = {
         "active_tags": tags,
@@ -147,43 +166,42 @@ def structure_list(request: HttpRequest):
 
 @login_required
 @permission_required("structures.basic_access")
-def structure_list_data(request: HttpRequest, variant: str) -> JsonResponse:
+def structure_list_data(request: HttpRequest, selection: str) -> JsonResponse:
     """Return structure list in JSON for AJAX call in structure_list view."""
     tags = _current_tags(request)
-    structures_qs = _structures_query(request, variant, tags)
+    structures_qs = _structures_query(request.user, selection, tags)
 
     serializer = StructureListSerializer(queryset=structures_qs, request=request)
     return JsonResponse({"data": serializer.to_list()})
 
 
-def _structures_query(request, variant, tags):
-    structures_qs = Structure.objects.visible_for_user(request.user, tags)
+def _structures_query(user: User, selection: Union[StructureDataSelection, str], tags):
+    """Return query for a variant and user and active tags."""
+    structures_qs = Structure.objects.visible_for_user(user, tags)
 
-    if variant == "structures":
+    selection = StructureDataSelection(selection)
+    if selection == StructureDataSelection.STRUCTURES:
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
         )
 
-    elif variant == "pocos":
+    elif selection == StructureDataSelection.POCOS:
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
         ).annotate_has_poco_details()
 
-    elif variant == "starbases":
+    elif selection == StructureDataSelection.STARBASES:
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
         ).annotate_has_starbase_detail()
 
-    elif variant == "jump_gates":
+    elif selection == StructureDataSelection.JUMP_GATES:
         structures_qs = structures_qs.filter(
             eve_type=EveTypeId.JUMP_GATE
         ).annotate_jump_fuel_quantity()
 
-    elif variant == "all":
+    elif selection == StructureDataSelection.ALL:
         pass
-
-    else:
-        raise NotImplementedError("Unknown variant")
 
     return structures_qs
 

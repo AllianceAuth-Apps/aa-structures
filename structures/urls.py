@@ -10,7 +10,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("list", views.structure_list, name="structure_list"),
     path(
-        "structure_list_data/<str:variant>",
+        "structure_list_data/<str:selection>",
         views.structure_list_data,
         name="structure_list_data",
     ),

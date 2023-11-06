@@ -17,10 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Switch to menu style navigation
-- Overhaul of all structures page
-- Overhaul of jump structures page
-- Overhaul of summary page
-- Overhaul of poco page
+- Break "All Structures" tab into multiple tabs per category
+- Redesign structure list & jump structure list
+- Redesign summary page
+- Redesign poco page
 - Moved services information to structure details window
 - Move reinforcement hour to structure details window
 - Add next reinforcement change info to structure details window

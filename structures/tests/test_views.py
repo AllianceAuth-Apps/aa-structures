@@ -7,6 +7,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
+from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.models import (
     EveAllianceInfo,
@@ -21,13 +22,19 @@ from structures.constants import EveTypeId
 from structures.models import Owner, Structure, StructureItem, Webhook
 
 from .testdata.factories import create_owner_from_user, create_poco, create_starbase
-from .testdata.factories_2 import PocoDetailsFactory
-from .testdata.helpers import (
-    create_structures,
-    load_entities,
-    load_entity,
-    set_owner_character,
+from .testdata.factories_2 import (
+    EveAllianceInfoFactory,
+    EveCharacterFactory,
+    EveCorporationInfoFactory,
+    OwnerFactory,
+    PocoDetailsFactory,
+    PocoFactory,
+    StarbaseFactory,
+    StructureFactory,
+    UserMainBasicFactory,
+    UserMainDefaultFactory,
 )
+from .testdata.helpers import create_structures, load_entities, set_owner_character
 from .testdata.load_eveuniverse import load_eveuniverse
 
 VIEWS_PATH = "structures.views"
@@ -45,25 +52,32 @@ class TestStructureListData(TestCase):
         super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
-        create_structures()
 
-    def test_should_format_rows_correctly(self):
+    def test_should_serialize_data_correctly(self):
         # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", user
+        alliance = EveAllianceInfoFactory(
+            alliance_name="Wayne Enterprises", alliance_ticker="WYE"
         )
-        structure = Structure.objects.get(id=1000000000001)
-        # when
+        corporation = EveCorporationInfoFactory(
+            corporation_name="Wayne Technologies", alliance=alliance
+        )
+        character = EveCharacterFactory(corporation=corporation)
+        user = UserMainDefaultFactory(main_character__character=character)
+        owner = OwnerFactory(corporation=corporation)
+        eve_solar_system = EveSolarSystem.objects.get(name="Amamake")
+        eve_type = EveType.objects.get(name="Astrahus")
+        structure = StructureFactory(
+            owner=owner, eve_solar_system=eve_solar_system, eve_type=eve_type
+        )
         request = self.factory.get("/")
         request.user = user
-        response = views.structure_list_data(request, "all")
+        # when
+        response = views.structure_list_data(request, "structures")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
-        obj = data[1000000000001]
-        self.assertEqual(obj["alliance_name"], "Wayne Enterprises")
+        obj = data[structure.id]
+        self.assertEqual(obj["alliance_name"], "Wayne Enterprises [WYE]")
         self.assertEqual(obj["corporation_name"], "Wayne Technologies")
         self.assertEqual(obj["region_name"], "Heimatar")
         self.assertEqual(obj["solar_system_name"], "Amamake")
@@ -79,8 +93,94 @@ class TestStructureListData(TestCase):
         )
         self.assertEqual(obj["power_mode_str"], "Full Power")
         self.assertEqual(obj["state_str"], "Shield vulnerable")
-        self.assertEqual(obj["core_status_str"], "")
+        self.assertEqual(obj["core_status_str"], "no")
         self.assertEqual(obj["details"], "")
+
+
+class TestStructureListDataFilterVariant(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.factory = RequestFactory()
+        load_eveuniverse()
+        corporation = EveCorporationInfoFactory()
+        character = EveCharacterFactory(corporation=corporation)
+        cls.user = UserMainDefaultFactory(main_character__character=character)
+        owner = OwnerFactory(corporation=corporation)
+        cls.structure = StructureFactory(owner=owner)
+        cls.poco = PocoFactory(owner=owner)
+        cls.starbase = StarbaseFactory(owner=owner)
+
+    def test_should_return_upwell_structures_only(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = views.structure_list_data(request, "structures")
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure_ids = set(data.keys())
+        self.assertSetEqual(structure_ids, {self.structure.id})
+
+    def test_should_return_pocos_only(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = views.structure_list_data(request, "pocos")
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure_ids = set(data.keys())
+        self.assertSetEqual(structure_ids, {self.poco.id})
+
+    def test_should_return_starbases_only(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = views.structure_list_data(request, "starbases")
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure_ids = set(data.keys())
+        self.assertSetEqual(structure_ids, {self.starbase.id})
+
+    def test_should_return_all_structures(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = views.structure_list_data(request, "all")
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure_ids = set(data.keys())
+        self.assertSetEqual(
+            structure_ids, {self.structure.id, self.poco.id, self.starbase.id}
+        )
+
+    def test_should_raise_error_when_invalid_variant_requested(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when/then
+        with self.assertRaises(NotImplementedError):
+            views.structure_list_data(request, "invalid")
+
+    def test_should_not_return_structure_from_different_corporations(self):
+        # given
+        other_structure = StructureFactory()
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = views.structure_list_data(request, "structures")
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure_ids = set(data.keys())
+        self.assertNotIn(other_structure.id, structure_ids)
 
 
 class TestStatistics(TestCase):
@@ -89,25 +189,32 @@ class TestStatistics(TestCase):
         super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
-        create_structures()
+        alliance = EveAllianceInfoFactory(
+            alliance_name="Wayne Enterprises", alliance_ticker="WYE"
+        )
+        cls.corporation = EveCorporationInfoFactory(
+            corporation_name="Wayne Technologies", alliance=alliance
+        )
+        owner = OwnerFactory(corporation=cls.corporation)
+        StructureFactory(owner=owner, eve_type_name="Astrahus")
+        StructureFactory(owner=owner, eve_type_name="Athanor")
+        PocoFactory.create_batch(size=4, owner=owner)
+        StarbaseFactory.create_batch(size=3, owner=owner)
+        cls.character = EveCharacterFactory(corporation=cls.corporation)
 
     def test_should_return_summary_data(self):
         # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", user
-        )
+        user = UserMainDefaultFactory(main_character__character=self.character)
         # when
-        request = self.factory.get(reverse("structures:structure_summary_data"))
+        request = self.factory.get("/")
         request.user = user
         response = views.structure_summary_data(request)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
-        obj = data[2001]
+        obj = data[self.corporation.corporation_id]
         self.assertEqual(obj["corporation_name"], "Wayne Technologies")
-        self.assertEqual(obj["alliance_name"], "Wayne Enterprises")
+        self.assertEqual(obj["alliance_name"], "Wayne Enterprises [WYE]")
         self.assertEqual(obj["citadel_count"], 1)
         self.assertEqual(obj["ec_count"], 0)
         self.assertEqual(obj["refinery_count"], 1)
@@ -118,30 +225,15 @@ class TestStatistics(TestCase):
 
     def test_should_return_no_summary_data_without_permission(self):
         # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
+        user = UserMainBasicFactory(main_character__character=self.character)
         # when
-        request = self.factory.get(reverse("structures:structure_summary_data"))
+        request = self.factory.get("/")
         request.user = user
         response = views.structure_summary_data(request)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
         self.assertFalse(data)
-
-
-class TestStructureListSpecial(TestCase):
-    def test_should_show_empty_list(self):
-        # given
-        load_entity(EveCharacter)
-        user, _ = create_user_from_evecharacter(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        # when
-        request = RequestFactory().get(reverse("structures:structure_list"))
-        request.user = user
-        response = views.structure_list(request)
-        # then
-        self.assertEqual(response.status_code, 200)
 
 
 class TestStructureListDataPermissions(TestCase):

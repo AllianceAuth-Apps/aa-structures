@@ -110,6 +110,13 @@ class JumpFuelAlertConfigFactory(
     threshold = 100
 
 
+class UserMainBasicFactory(UserMainFactory):
+    """Basic user in Structures."""
+
+    main_character__scopes = Owner.get_esi_scopes()
+    permissions__ = ["structures.basic_access"]
+
+
 class UserMainDefaultFactory(UserMainFactory):
     """Default user in Structures."""
 
@@ -200,6 +207,9 @@ class StructureFactory(
         model = Structure
         django_get_or_create = ("id",)
 
+    class Params:
+        eve_type_name = "Astrahus"
+
     fuel_expires_at = factory.LazyAttribute(lambda obj: now() + dt.timedelta(days=3))
     has_fitting = False
     has_core = False
@@ -213,7 +223,7 @@ class StructureFactory(
 
     @factory.lazy_attribute
     def eve_type(self):
-        return EveType.objects.get(name="Astrahus")
+        return EveType.objects.get(name=self.eve_type_name)
 
     @factory.lazy_attribute
     def eve_solar_system(self):

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [2.7.0] - 2023-11-05
 
+### Added
+
+- Poco details added to admin page for pocos
+- Starbase details added to admin page for starbases
+
 ### Changed
 
 - Switch to menu style navigation

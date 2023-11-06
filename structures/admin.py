@@ -28,6 +28,8 @@ from .models import (
     Notification,
     Owner,
     OwnerCharacter,
+    PocoDetails,
+    StarbaseDetail,
     Structure,
     StructureItem,
     StructureService,
@@ -679,6 +681,32 @@ class StructureItemAdminInline(admin.TabularInline):
         return False
 
 
+class StructureStarbaseDetailAdminInline(admin.StackedInline):
+    model = StarbaseDetail
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class StructurePocoDetailsAdminInline(admin.StackedInline):
+    model = PocoDetails
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 class OwnerCorporationsFilter(admin.SimpleListFilter):
     """Custom filter to filter on corporations from owners only"""
 
@@ -775,6 +803,7 @@ class StructureAdmin(admin.ModelAdmin):
         "_webhooks",
     )
     list_filter = (
+        ("eve_type__eve_group__eve_category", admin.RelatedOnlyFieldListFilter),
         OwnerCorporationsFilter,
         OwnerAllianceFilter,
         ("eve_solar_system", admin.RelatedOnlyFieldListFilter),
@@ -784,7 +813,6 @@ class StructureAdmin(admin.ModelAdmin):
         ),
         ("eve_type", admin.RelatedOnlyFieldListFilter),
         ("eve_type__eve_group", admin.RelatedOnlyFieldListFilter),
-        ("eve_type__eve_group__eve_category", admin.RelatedOnlyFieldListFilter),
         ("tags", admin.RelatedOnlyFieldListFilter),
         HasWebhooksListFilter,
     )
@@ -852,13 +880,27 @@ class StructureAdmin(admin.ModelAdmin):
         ),
     )
     filter_horizontal = ("tags", "webhooks")
-    inlines = (StructureServiceAdminInline, StructureItemAdminInline)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "tags":
             kwargs["queryset"] = StructureTag.objects.filter(is_user_managed=True)
 
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def get_inlines(self, request, obj: Structure):
+        if obj.is_upwell_structure:
+            return (
+                StructureServiceAdminInline,
+                StructureItemAdminInline,
+            )
+
+        if obj.is_poco:
+            return (StructurePocoDetailsAdminInline,)
+
+        if obj.is_starbase:
+            return (StructureStarbaseDetailAdminInline,)
+
+        return []
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

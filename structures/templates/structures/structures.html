@@ -197,7 +197,7 @@
             let dataTablesPaging = ("{{ data_tables_paging }}" == 'True');
 
             /* show last selected tab or default */
-            let tabId = "{{show_tab}}"
+            let tabId = ""
             if (tabId != "") {
                 setCookie(COOKIE_LAST_TAB_ID, tabId, 1)
             }
@@ -259,7 +259,6 @@
                     { data: 'corporation_name' },
                     { data: 'region_name' },
                     { data: 'solar_system_name' },
-                    { data: 'category_name' },
                     { data: 'group_name' },
                     { data: 'is_reinforced_str' },
                     { data: 'state_str' },
@@ -271,7 +270,7 @@
                 pageLength: dataTablesPageLength,
                 columnDefs: [
                     { "sortable": false, "targets": [5, 6] },
-                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16] }
+                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15] }
                 ],
                 order: [[1, "asc"], [3, "asc"]],
                 filterDropDown:
@@ -299,26 +298,25 @@
                         },
                         {
                             idx: structures_idx_start + 4,
-                            title: "{% translate 'Category' %}",
-                            maxWidth: "10em"
-                        },
-                        {
-                            idx: structures_idx_start + 5,
                             title: "{% translate 'Group' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: structures_idx_start + 7,
+                            idx: structures_idx_start + 5,
+                            title: "{% translate 'Reinforced?' %}"
+                        },
+                        {
+                            idx: structures_idx_start + 6,
                             title: "{% translate 'State' %}",
                             maxWidth: "6em"
                         },
                         {
-                            idx: structures_idx_start + 8,
+                            idx: structures_idx_start + 7,
                             title: "{% translate 'Power Mode' %}",
                             maxWidth: "12em"
                         },
                         {
-                            idx: structures_idx_start + 9,
+                            idx: structures_idx_start + 8,
                             title: "{% translate 'Core?' %}",
                             maxWidth: "6em"
                         }
@@ -396,7 +394,6 @@
                     { data: 'corporation_name' },
                     { data: 'region_name' },
                     { data: 'solar_system_name' },
-                    { data: 'category_name' },
                     { data: 'group_name' },
                     { data: 'is_reinforced_str' },
                     { data: 'state_str' },
@@ -408,7 +405,7 @@
                 pageLength: dataTablesPageLength,
                 columnDefs: [
                     { "sortable": false, "targets": [5, 6] },
-                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16] }
+                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15] }
                 ],
                 order: [[1, "asc"], [3, "asc"]],
                 filterDropDown:
@@ -435,14 +432,13 @@
                             maxWidth: "14em"
                         },
                         {
-                            idx: pocos_idx_start + 4,
-                            title: "{% translate 'Category' %}",
-                            maxWidth: "10em"
-                        },
-                        {
                             idx: pocos_idx_start + 5,
                             title: "{% translate 'Group' %}",
                             maxWidth: "7em"
+                        },
+                        {
+                            idx: pocos_idx_start + 6,
+                            title: "{% translate 'Reinforced?' %}",
                         },
                         {
                             idx: pocos_idx_start + 7,
@@ -533,7 +529,6 @@
                     { data: 'corporation_name' },
                     { data: 'region_name' },
                     { data: 'solar_system_name' },
-                    { data: 'category_name' },
                     { data: 'group_name' },
                     { data: 'is_reinforced_str' },
                     { data: 'state_str' },
@@ -545,7 +540,7 @@
                 pageLength: dataTablesPageLength,
                 columnDefs: [
                     { "sortable": false, "targets": [5, 6] },
-                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16] }
+                    { "visible": false, "targets": [7, 8, 9, 10, 11, 12, 13, 14, 15] }
                 ],
                 order: [[1, "asc"], [3, "asc"]],
                 filterDropDown:
@@ -573,26 +568,25 @@
                         },
                         {
                             idx: starbases_idx_start + 4,
-                            title: "{% translate 'Category' %}",
-                            maxWidth: "10em"
-                        },
-                        {
-                            idx: starbases_idx_start + 5,
                             title: "{% translate 'Group' %}",
                             maxWidth: "7em"
                         },
                         {
-                            idx: starbases_idx_start + 7,
+                            idx: structures_idx_start + 5,
+                            title: "{% translate 'Reinforced?' %}"
+                        },
+                        {
+                            idx: starbases_idx_start + 6,
                             title: "{% translate 'State' %}",
                             maxWidth: "6em"
                         },
                         {
-                            idx: starbases_idx_start + 8,
+                            idx: starbases_idx_start + 7,
                             title: "{% translate 'Power Mode' %}",
                             maxWidth: "12em"
                         },
                         {
-                            idx: starbases_idx_start + 9,
+                            idx: starbases_idx_start + 8,
                             title: "{% translate 'Core?' %}",
                             maxWidth: "6em"
                         }

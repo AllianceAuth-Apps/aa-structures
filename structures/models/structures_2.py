@@ -178,7 +178,7 @@ class PocoDetails(models.Model):
 
             elif (
                 self.allow_access_with_standings
-                and self.standing_level >= self.StandingLevel.NEUTRAL
+                and self.standing_level <= self.StandingLevel.NEUTRAL
                 and self.neutral_standing_tax_rate is not None
             ):
                 tax_rate = self.neutral_standing_tax_rate

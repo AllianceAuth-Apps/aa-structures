@@ -1021,6 +1021,22 @@ class TestPocoDetails(NoSocketsTestCase):
         self.assertFalse(result.is_confident)
         self.assertEqual(result.tax_rate, 0)
 
+    def test_should_return_tax_for_unknown_3_when_allowed(self):
+        # given
+        details = PocoDetailsFactory(
+            structure=self.structure,
+            allow_access_with_standings=True,
+            standing_level=PocoDetails.StandingLevel.TERRIBLE,
+            neutral_standing_tax_rate=0.05,
+        )
+        my_character = EveCharacter.objects.get(character_id=1011)
+        # when
+        result = details.determine_access_and_tax_for_character(my_character)
+        # then
+        self.assertTrue(result.has_access)
+        self.assertFalse(result.is_confident)
+        self.assertEqual(result.tax_rate, 0.05)
+
     def test_should_return_no_access(self):
         # given
         details = PocoDetailsFactory(

@@ -144,44 +144,43 @@ class PocoDetails(models.Model):
     ) -> "PocoCharacterAccessInfo":
         """Return access and tax information for a character."""
         owner_corporation = self.structure.owner.corporation
-        if character.corporation_id == owner_corporation.corporation_id:
-            has_access = True
-            is_confident = True
 
-        elif (
+        if character.corporation_id == owner_corporation.corporation_id:
+            # Corporation member
+            return self.PocoCharacterAccessInfo(
+                character_id=character.character_id,
+                has_access=True,
+                is_confident=True,
+                tax_rate=self.corporation_tax_rate,
+            )
+
+        if (
             character.alliance_id
             and owner_corporation.alliance
             and owner_corporation.alliance.alliance_id == character.alliance_id
+            and self.allow_alliance_access
             and self.alliance_tax_rate is not None
         ):
-            has_access = self.allow_alliance_access
-            is_confident = True
-
-        else:
-            has_access = (
-                self.allow_access_with_standings
-                and self.neutral_standing_tax_rate is not None
+            # Alliance member
+            return self.PocoCharacterAccessInfo(
+                character_id=character.character_id,
+                has_access=True,
+                is_confident=True,
+                tax_rate=self.alliance_tax_rate,
             )
-            is_confident = False
 
-        tax_rate = None
+        # neutral character
+        has_access = (
+            self.allow_access_with_standings
+            and self.standing_level <= self.StandingLevel.NEUTRAL
+            and self.neutral_standing_tax_rate is not None
+        )
+        is_confident = False
 
         if has_access:
-            if character.corporation_id == owner_corporation.corporation_id:
-                tax_rate = self.corporation_tax_rate
-
-            elif (
-                owner_corporation.alliance
-                and owner_corporation.alliance.alliance_id == character.alliance_id
-            ):
-                tax_rate = self.alliance_tax_rate
-
-            elif (
-                self.allow_access_with_standings
-                and self.standing_level <= self.StandingLevel.NEUTRAL
-                and self.neutral_standing_tax_rate is not None
-            ):
-                tax_rate = self.neutral_standing_tax_rate
+            tax_rate = self.neutral_standing_tax_rate
+        else:
+            tax_rate = None
 
         return self.PocoCharacterAccessInfo(
             character_id=character.character_id,

@@ -265,13 +265,16 @@ class StarbaseFactory(StructureFactory):
 
 
 class PocoFactory(StructureFactory):
+    class Params:
+        eve_planet_name = "Amamake V"
+
     has_fitting = None
     has_core = None
     state = Structure.State.NA
 
     @factory.lazy_attribute
     def eve_planet(self):
-        return EvePlanet.objects.order_by("?").first()
+        return EvePlanet.objects.get(name=self.eve_planet_name)
 
     @factory.lazy_attribute
     def eve_solar_system(self):

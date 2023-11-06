@@ -201,7 +201,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when/then
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(ValueError):
             views.structure_list_data(request, "invalid")
 
     def test_should_not_return_structure_from_different_corporations(self):
@@ -864,38 +864,41 @@ class TestPocoListData(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        create_structures()
-        cls.character_id = 1001
-        cls.user, cls.owner = set_owner_character(character_id=cls.character_id)
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "structures.basic_access", cls.user
-        )
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", cls.user
-        )
         cls.factory = RequestFactory()
+        load_eveuniverse()
+        cls.user = UserMainBasicFactory()
+        cls.main = cls.user.profile.main_character
+        owner = OwnerFactory(are_pocos_public=True)
+        cls.poco_public = PocoFactory(owner=owner, eve_planet_name="Amamake V")
+        cls.poco_non_public = PocoFactory()
 
-    def test_should_return_correct_data_for_poco(self):
+    def test_should_return_public_pocos_only(self):
         # given
         request = self.factory.get("/")
         request.user = self.user
-        self.owner.are_pocos_public = True
-        self.owner.save()
-        structure = Structure.objects.get(id=1200000000003)
-        PocoDetailsFactory(
-            structure=structure,
-            alliance_tax_rate=0.02,
-            allow_access_with_standings=True,
-            allow_alliance_access=True,
-            corporation_tax_rate=0.01,
-        )
         # when
-        response = views.public_poco_list_data(request, self.character_id)
+        response = views.public_poco_list_data(request, self.main.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
-        obj = data[1200000000003]
+        structure_ids = set(data.keys())
+        self.assertSetEqual(structure_ids, {self.poco_public.id})
+
+    def test_should_return_correct_data_for_poco(self):
+        # given
+        PocoDetailsFactory(
+            structure=self.poco_public,
+            allow_access_with_standings=True,
+            neutral_standing_tax_rate=0.01,
+        )
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = views.public_poco_list_data(request, self.main.character_id)
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        obj = data[self.poco_public.id]
         self.assertEqual(obj["region"], "Heimatar")
         self.assertEqual(obj["solar_system"], "Amamake")
         self.assertEqual(obj["planet_name"], "Amamake V")
@@ -903,35 +906,6 @@ class TestPocoListData(TestCase):
         self.assertEqual(obj["space_type"], "lowsec")
         self.assertEqual(obj["has_access_str"], "yes")
         self.assertEqual(obj["tax"]["sort"], 1.0)
-
-    def test_should_return_all_pocos(self):
-        # given
-        request = self.factory.get("/")
-        request.user = self.user
-        self.owner.are_pocos_public = True
-        self.owner.save()
-        # when
-        response = views.public_poco_list_data(request, self.character_id)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        self.assertSetEqual(
-            set(data.keys()),
-            {1200000000003, 1200000000004, 1200000000005, 1200000000006},
-        )
-
-    def test_should_return_no_pocos(self):
-        # given
-        request = self.factory.get("/")
-        request.user = self.user
-        self.owner.are_pocos_public = False
-        self.owner.save()
-        # when
-        response = views.public_poco_list_data(request, self.character_id)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        self.assertFalse(data)
 
 
 class TestStructureFittingModal(TestCase):

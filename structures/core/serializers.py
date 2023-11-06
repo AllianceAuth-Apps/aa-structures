@@ -534,7 +534,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
                         '(<i class="fas fa-check text-success text-tooltip"></i>)</span>',
                         dubious_access_text,
                     )
-                    has_access_str = "?"
+                    has_access_str = _("yes")
 
             if access_info.has_access and access_info.tax_rate is not None:
                 tax = access_info.tax_rate * 100

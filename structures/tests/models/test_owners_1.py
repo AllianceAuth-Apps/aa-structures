@@ -11,12 +11,16 @@ from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from app_utils.testing import NoSocketsTestCase, create_user_from_evecharacter
 
 from structures.models import Owner, OwnerCharacter
-from structures.tests.testdata.factories import create_owner_from_user
-from structures.tests.testdata.helpers import (
-    create_structures,
-    load_entities,
-    set_owner_character,
+from structures.tests.testdata.factories_2 import (
+    EveAllianceInfoFactory,
+    EveCharacterFactory,
+    EveCorporationInfoFactory,
+    EveSovereigntyMapFactory,
+    OwnerFactory,
+    StructureFactory,
+    UserMainDefaultOwnerFactory,
 )
+from structures.tests.testdata.helpers import load_entities, set_owner_character
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.models.owners"
@@ -26,13 +30,15 @@ class TestOwner(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-
-    def setUp(self) -> None:
-        self.owner.is_alliance_main = True
-        self.owner.save()
+        cls.alliance = EveAllianceInfoFactory(
+            alliance_name="Wayne Enterprises", alliance_ticker="WYE"
+        )
+        corporation = EveCorporationInfoFactory(
+            corporation_name="Wayne Technologies", alliance=cls.alliance
+        )
+        character = EveCharacterFactory(corporation=corporation)
+        cls.user = UserMainDefaultOwnerFactory(main_character__character=character)
+        cls.owner = OwnerFactory(user=cls.user)
 
     def test_str(self):
         # when
@@ -170,10 +176,12 @@ class TestOwner(NoSocketsTestCase):
             },
         )
 
-    def test_should_ensure_only_one_owner_is_alliance_main_1(self):
+    def test_should_ensure_only_one_owner_in_same_alliance_is_main(self):
         # given
-        self.assertTrue(self.owner.is_alliance_main)
-        owner = Owner.objects.get(corporation__corporation_id=2002)
+        self.owner.is_alliance_main = True
+        self.owner.save()
+        corporation = EveCorporationInfoFactory(alliance=self.alliance)
+        owner = OwnerFactory(corporation=corporation)
         # when
         owner.is_alliance_main = True
         owner.save()
@@ -183,10 +191,11 @@ class TestOwner(NoSocketsTestCase):
         self.owner.refresh_from_db()
         self.assertFalse(self.owner.is_alliance_main)
 
-    def test_should_ensure_only_one_owner_is_alliance_main_2(self):
+    def test_should_allow_mains_from_other_alliances(self):
         # given
-        self.assertTrue(self.owner.is_alliance_main)
-        owner = Owner.objects.get(corporation__corporation_id=2007)
+        self.owner.is_alliance_main = True
+        self.owner.save()
+        owner = OwnerFactory()
         # when
         owner.is_alliance_main = True
         owner.save()
@@ -196,23 +205,22 @@ class TestOwner(NoSocketsTestCase):
         self.owner.refresh_from_db()
         self.assertTrue(self.owner.is_alliance_main)
 
-    def test_should_ensure_only_one_owner_is_alliance_main_3(self):
+    def test_should_allow_other_corporations_to_be_main(self):
         # given
-        self.assertTrue(self.owner.is_alliance_main)
-        owner_2103 = Owner.objects.get(corporation__corporation_id=2103)
-        owner_2103.is_alliance_main = True
-        owner_2103.save()
-        owner_2102 = Owner.objects.get(corporation__corporation_id=2102)
+        self.owner.is_alliance_main = True
+        self.owner.save()
+        owner_2 = OwnerFactory(is_alliance_main=True)
+        owner_3 = OwnerFactory()
         # when
-        owner_2102.is_alliance_main = True
-        owner_2102.save()
+        owner_3.is_alliance_main = True
+        owner_3.save()
         # then
-        owner_2102.refresh_from_db()
-        self.assertTrue(owner_2102.is_alliance_main)
+        owner_3.refresh_from_db()
+        self.assertTrue(owner_3.is_alliance_main)
         self.owner.refresh_from_db()
         self.assertTrue(self.owner.is_alliance_main)
-        owner_2103.refresh_from_db()
-        self.assertTrue(owner_2103.is_alliance_main)
+        owner_2.refresh_from_db()
+        self.assertTrue(owner_2.is_alliance_main)
 
 
 class TestOwnerHasSov(NoSocketsTestCase):
@@ -220,11 +228,10 @@ class TestOwnerHasSov(NoSocketsTestCase):
     def setUpClass(cls):
         super().setUpClass()
         load_eveuniverse()
-        load_entities()
-        user, _ = create_user_from_evecharacter(
-            1001, permissions=["structures.add_structure_owner"]
+        cls.owner = OwnerFactory()
+        EveSovereigntyMapFactory(
+            eve_corporation=cls.owner.corporation, eve_solar_system_name="1-PGSG"
         )
-        cls.owner = create_owner_from_user(user=user)
 
     def test_should_return_true_when_owner_has_sov(self):
         # given
@@ -545,7 +552,7 @@ class TestOwnerCharacters(NoSocketsTestCase):
     def setUpClass(cls):
         super().setUpClass()
         load_eveuniverse()
-        create_structures()
+        StructureFactory()
         cls.user, cls.owner = set_owner_character(character_id=1001)
 
     def test_should_add_new_character(self):

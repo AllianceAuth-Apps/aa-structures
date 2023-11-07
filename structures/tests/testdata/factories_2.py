@@ -20,6 +20,7 @@ from app_utils.testdata_factories import (
 from structures.constants import EveTypeId
 from structures.core.notification_types import NotificationType
 from structures.models import (
+    EveSovereigntyMap,
     FuelAlertConfig,
     GeneratedNotification,
     JumpFuelAlertConfig,
@@ -451,6 +452,37 @@ class StructureTagFactory(
 
     name = factory.Sequence(lambda n: f"name_{n}")
     description = factory.Faker("sentence")
+
+
+class EveSovereigntyMapFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveSovereigntyMap]
+):
+    class Meta:
+        model = EveSovereigntyMap
+
+    class Params:
+        eve_corporation = None
+        eve_solar_system_name = "1-PGSG"
+
+    last_updated = factory.LazyFunction(now)
+
+    @factory.lazy_attribute
+    def solar_system_id(self):
+        obj = EveSolarSystem.objects.get(name=self.eve_solar_system_name)
+        return obj.id
+
+    @factory.lazy_attribute
+    def alliance_id(self):
+        if self.eve_corporation:
+            if self.eve_corporation.alliance:
+                return self.eve_corporation.alliance.alliance_id
+        return None
+
+    @factory.lazy_attribute
+    def corporation_id(self):
+        if self.eve_corporation:
+            return self.eve_corporation.corporation_id
+        return None
 
 
 class NotificationFactory(

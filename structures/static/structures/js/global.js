@@ -22,7 +22,7 @@ function setCookie(name, value, hours) {
  * @returns Value of the cookie or an empty string if the cookie was not found
  */
 function getCookie(name) {
-    const name = name + "=";
+    const cname = name + "=";
     const decodedCookie = decodeURIComponent(document.cookie);
     const ca = decodedCookie.split(";");
 
@@ -31,8 +31,8 @@ function getCookie(name) {
         while (c.charAt(0) == " ") {
             c = c.substring(1);
         }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
+        if (c.indexOf(cname) == 0) {
+            return c.substring(cname.length, c.length);
         }
     }
 

@@ -30,7 +30,6 @@ from ..testdata.factories_2 import (
     PocoFactory,
     StarbaseFactory,
     StructureFactory,
-    UserMainBasicFactory,
     UserMainDefaultFactory,
 )
 from ..testdata.helpers import create_structures, load_entities, set_owner_character
@@ -798,54 +797,6 @@ class TestStatus(TestCase):
         request = self.factory.get(reverse("structures:service_status"))
         response = structures.service_status(request)
         self.assertEqual(response.status_code, 500)
-
-
-class TestPocoListData(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.factory = RequestFactory()
-        load_eveuniverse()
-        cls.user = UserMainBasicFactory()
-        cls.main = cls.user.profile.main_character
-        owner = OwnerFactory(are_pocos_public=True)
-        cls.poco_public = PocoFactory(
-            owner=owner,
-            eve_planet_name="Amamake V",
-            poco_details__allow_access_with_standings=True,
-            poco_details__neutral_standing_tax_rate=0.01,
-        )
-        cls.poco_non_public = PocoFactory()
-
-    def test_should_return_public_pocos_only(self):
-        # given
-        request = self.factory.get("/")
-        request.user = self.user
-        # when
-        response = structures.public_poco_list_data(request, self.main.character_id)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        structure_ids = set(data.keys())
-        self.assertSetEqual(structure_ids, {self.poco_public.id})
-
-    def test_should_return_correct_data_for_poco(self):
-        # given
-        request = self.factory.get("/")
-        request.user = self.user
-        # when
-        response = structures.public_poco_list_data(request, self.main.character_id)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        obj = data[self.poco_public.id]
-        self.assertEqual(obj["region"], "Heimatar")
-        self.assertEqual(obj["solar_system"], "Amamake")
-        self.assertEqual(obj["planet_name"], "Amamake V")
-        self.assertEqual(obj["planet_type_name"], "Barren")
-        self.assertEqual(obj["space_type"], "lowsec")
-        self.assertEqual(obj["has_access_str"], "yes")
-        self.assertEqual(obj["tax"]["sort"], 1.0)
 
 
 class TestStructureFittingModal(TestCase):

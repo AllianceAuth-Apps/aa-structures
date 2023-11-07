@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from .views import statistics, structures
+from .views import public, statistics, structures
 
 app_name = "structures"
 
@@ -18,11 +18,6 @@ urlpatterns = [
         "add_structure_owner",
         structures.add_structure_owner,
         name="add_structure_owner",
-    ),
-    path(
-        "public_poco_list_data/<int:character_id>",
-        structures.public_poco_list_data,
-        name="public_poco_list_data",
     ),
     path("service_status", structures.service_status, name="service_status"),
     path(
@@ -41,7 +36,12 @@ urlpatterns = [
         name="starbase_detail",
     ),
     # public
-    path("public", structures.public, name="public"),
+    path("public", public.public, name="public"),
+    path(
+        "public_poco_list_data/<int:character_id>",
+        public.public_poco_list_data,
+        name="public_poco_list_data",
+    ),
     # statistics
     path("statistics", statistics.statistics, name="statistics"),
     path(

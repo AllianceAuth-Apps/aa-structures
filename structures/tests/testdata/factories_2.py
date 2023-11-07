@@ -29,6 +29,7 @@ from structures.models import (
     OwnerCharacter,
     PocoDetails,
     StarbaseDetail,
+    StarbaseDetailFuel,
     Structure,
     StructureItem,
     StructureTag,
@@ -283,10 +284,10 @@ class StarbaseFactory(StructureFactory):
         if not create or extracted is False:
             return
 
-        StructureDetailFactory(structure=obj, **kwargs)
+        StarbaseDetailFactory(structure=obj, **kwargs)
 
 
-class StructureDetailFactory(
+class StarbaseDetailFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[StarbaseDetail]
 ):
     class Meta:
@@ -306,6 +307,35 @@ class StructureDetailFactory(
     online_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
     unanchor_role = StarbaseDetail.Role.CONFIG_STARBASE_EQUIPMENT_ROLE
     use_alliance_standings = False
+
+    @factory.post_generation
+    def fuel_detail(obj, create, extracted, **kwargs):
+        """Set this param to False to disable."""
+        if not create or extracted is False:
+            return
+
+        StarbaseDetailFuelFactory(
+            detail=obj, eve_type_name="Nitrogen Fuel Block", quantity=960
+        )
+        StarbaseDetailFuelFactory(
+            detail=obj, eve_type_name="Strontium Clathrates", quantity=12_000
+        )
+
+
+class StarbaseDetailFuelFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[StarbaseDetailFuel]
+):
+    class Meta:
+        model = StarbaseDetailFuel
+
+    class Params:
+        eve_type_name = "Nitrogen Fuel Block"
+
+    quantity = 1000
+
+    @factory.lazy_attribute
+    def eve_type(self):
+        return EveType.objects.get(name=self.eve_type_name)
 
 
 class PocoFactory(StructureFactory):

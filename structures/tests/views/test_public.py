@@ -51,5 +51,5 @@ class TestPocoListData(TestCase):
         self.assertEqual(obj["planet_name"], "Amamake V")
         self.assertEqual(obj["planet_type_name"], "Barren")
         self.assertEqual(obj["space_type"], "lowsec")
-        self.assertEqual(obj["has_access_str"], "yes")
+        self.assertEqual(obj["has_access_str"], "yes(?)")
         self.assertEqual(obj["tax"]["sort"], 1.0)

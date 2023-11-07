@@ -9,7 +9,6 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db.models import Count, F, Prefetch, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -305,9 +304,7 @@ class Slot(IntEnum):
         try:
             slot_num = type_attributes[self.value]
             my_id = id_map[Slot(self.value)]
-            return staticfiles_storage.url(
-                f"structures/img/panel/{slot_num}{my_id}.png"
-            )
+            return static(f"structures/img/panel/{slot_num}{my_id}.png")
         except KeyError:
             return ""
 

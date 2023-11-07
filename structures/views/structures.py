@@ -1,4 +1,4 @@
-"""Views for Structures."""
+"""Views for structure list page."""
 
 import functools
 from collections import defaultdict

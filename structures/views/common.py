@@ -1,3 +1,5 @@
+"""Common logic used by all views."""
+
 from typing import Optional
 
 from structures.app_settings import (

@@ -1,3 +1,5 @@
+"""Views for statistics page."""
+
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, Q
 from django.http import HttpRequest, HttpResponse, JsonResponse

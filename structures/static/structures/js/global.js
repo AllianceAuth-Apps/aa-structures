@@ -2,7 +2,7 @@
 
 function setCookie(cname, cvalue, exhours) {
     const d = new Date();
-    d.setTime(d.getTime() + (exhours * 60 * 60 * 1000));
+    d.setTime(d.getTime() + exhours * 60 * 60 * 1000);
     let expires = "expires=" + d.toUTCString();
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
@@ -10,10 +10,10 @@ function setCookie(cname, cvalue, exhours) {
 function getCookie(cname) {
     const name = cname + "=";
     const decodedCookie = decodeURIComponent(document.cookie);
-    const ca = decodedCookie.split(';');
+    const ca = decodedCookie.split(";");
     for (let i = 0; i < ca.length; i++) {
         let c = ca[i];
-        while (c.charAt(0) == ' ') {
+        while (c.charAt(0) == " ") {
             c = c.substring(1);
         }
         if (c.indexOf(name) == 0) {
@@ -23,7 +23,6 @@ function getCookie(cname) {
     return "";
 }
 
-
 // sum numbers in column and write result in footer row
 // Args:
 // - api: current api object
@@ -32,10 +31,11 @@ function getCookie(cname) {
 function dataTableFooterSumColumn(api, columnIdx) {
     // Remove the formatting to get integer data for summation
     const intVal = function (i) {
-        return typeof i === 'string' ?
-            i.replace(/[\$,]/g, '') * 1 :
-            typeof i === 'number' ?
-                i : 0;
+        return typeof i === "string"
+            ? i.replace(/[\$,]/g, "") * 1
+            : typeof i === "number"
+            ? i
+            : 0;
     };
 
     const columnTotal = api
@@ -43,10 +43,8 @@ function dataTableFooterSumColumn(api, columnIdx) {
         .data()
         .reduce(function (a, b) {
             return intVal(a) + intVal(b);
-        },
-            0
-        );
+        }, 0);
     $(api.column(columnIdx).footer()).html(
-        columnTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })
+        columnTotal.toLocaleString("en-US", { maximumFractionDigits: 0 })
     );
 }

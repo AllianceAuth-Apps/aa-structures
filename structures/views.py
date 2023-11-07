@@ -664,10 +664,30 @@ def public(request: HttpRequest) -> HttpResponse:
 
     pocos_count = _public_pocos_query().count()
     selected_character = get_object_or_404(EveCharacter, character_id=character_id)
+
+    ajax_url = reverse(
+        "structures:public_poco_list_data", args=[selected_character.character_id]
+    )
+    data_export = {
+        "ajax_url": ajax_url,
+        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
+        "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
+        "filter_titles": {
+            "alliance": _("Alliance"),
+            "access": _("Access?"),
+            "corporation": _("Corporation"),
+            "constellation": _("Constellation"),
+            "planet_type": _("Planet Type"),
+            "region": _("Region"),
+            "space_type": _("Space Type"),
+            "solar_system": _("Solar System"),
+        },
+    }
     context = {
         "characters": characters,
         "selected_character": selected_character,
         "pocos_count": pocos_count,
+        "data_export": data_export,
     }
     return render(request, "structures/public.html", _add_common_context(context))
 
@@ -698,8 +718,15 @@ def _public_pocos_query():
 @permission_required("structures.basic_access")
 def statistics(request: HttpRequest) -> HttpResponse:
     """Return view to render Statistics page."""
-    context = _add_common_context()
-    return render(request, "structures/statistics.html", context)
+    ajax_url = reverse("structures:structure_summary_data")
+    data_export = {
+        "ajax_url": ajax_url,
+        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
+        "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
+        "filter_titles": {"alliance": _("Alliance")},
+    }
+    context = {"data_export": data_export}
+    return render(request, "structures/statistics.html", _add_common_context(context))
 
 
 @login_required

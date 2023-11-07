@@ -25,6 +25,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Export to Javascript -->
+    {{ data_export|json_script:"export-data" }}
+
 {% endblock %}
 
 {% block extra_javascript %}
@@ -34,94 +38,8 @@
         src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
     </script>
     <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
+    <script type="application/javascript" src="{% static 'structures/js/statistics.js' %}"></script>
 
-    <script type="application/javascript">
-
-        $(document).ready(function () {
-            let dataTablesPageLength = {{ data_tables_page_length }};
-            let dataTablesPaging = ("{{ data_tables_paging }}" == 'True');
-
-            /* summary */
-            $('#tab_summary').DataTable({
-                ajax: {
-                    url: "{% url 'structures:structure_summary_data' %}",
-                    dataSrc: 'data',
-                    cache: false
-                },
-                columns: [
-                    {
-                        data: 'owner',
-                        render: {
-                            _: 'display',
-                            sort: 'value'
-                        }
-                    },
-                    {
-                        data: 'citadel_count',
-                        render: $.fn.dataTable.render.number(',', '.', 0)
-                    },
-                    {
-                        data: 'ec_count',
-                        render: $.fn.dataTable.render.number(',', '.', 0)
-                    },
-                    {
-                        data: 'refinery_count',
-                        render: $.fn.dataTable.render.number(',', '.', 0)
-                    },
-                    {
-                        data: 'other_count',
-                        render: $.fn.dataTable.render.number(',', '.', 0)
-                    },
-                    {
-                        data: 'poco_count',
-                        render: $.fn.dataTable.render.number(',', '.', 0)
-                    },
-                    {
-                        data: 'starbase_count',
-                        render: $.fn.dataTable.render.number(',', '.', 0)
-                    },
-                    {
-                        data: 'total',
-                        render: $.fn.dataTable.render.number(',', '.', 0)
-                    },
-                    /* hidden */
-                    { data: 'alliance_name' },
-                ],
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                paging: dataTablesPaging,
-                pageLength: dataTablesPageLength,
-                order: [ [ 0, "asc" ] ],
-                columnDefs: [
-                    { "visible": false, "targets": [8] }
-                ],
-                filterDropDown:
-                {
-                    columns: [
-                        {
-                            idx: 8,
-                            title: "{% translate 'Alliance' %}",
-                            maxWidth: "11em"
-                        }
-                    ],
-                    autoSize: false,
-                    bootstrap: true
-                },
-                footerCallback: function (row, data, start, end, display) {
-                    var api = this.api(), data;
-                    let summary_total_idx_start = 1;
-
-                    dataTableFooterSumColumn(api, summary_total_idx_start);
-                    dataTableFooterSumColumn(api, summary_total_idx_start + 1);
-                    dataTableFooterSumColumn(api, summary_total_idx_start + 2);
-                    dataTableFooterSumColumn(api, summary_total_idx_start + 3);
-                    dataTableFooterSumColumn(api, summary_total_idx_start + 4);
-                    dataTableFooterSumColumn(api, summary_total_idx_start + 5);
-                    dataTableFooterSumColumn(api, summary_total_idx_start + 6);
-                }
-            });
-
-        });
-    </script>
 {% endblock %}
 
 {% block extra_css %}

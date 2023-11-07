@@ -6,7 +6,6 @@ import factory.fuzzy
 import pytz
 import yaml
 
-from django.db.models import Max
 from django.utils.timezone import now
 from eveuniverse.models import EveEntity, EveMoon, EvePlanet, EveSolarSystem, EveType
 
@@ -32,6 +31,7 @@ from structures.models import (
     StarbaseDetailFuel,
     Structure,
     StructureItem,
+    StructureService,
     StructureTag,
     Webhook,
 )
@@ -225,6 +225,7 @@ class StructureFactory(
         eve_type_name = "Astrahus"
         eve_solar_system_name = "Amamake"
 
+    id = factory.Sequence(lambda n: 1_500_000_000_000 + n)
     fuel_expires_at = factory.LazyAttribute(lambda obj: now() + dt.timedelta(days=3))
     has_fitting = False
     has_core = False
@@ -244,11 +245,6 @@ class StructureFactory(
     def eve_solar_system(self):
         return EveSolarSystem.objects.get(name=self.eve_solar_system_name)
 
-    @factory.lazy_attribute
-    def id(self):
-        last_id = Structure.objects.aggregate(Max("id"))["id__max"] or 1_500_000_000_000
-        return last_id + 1
-
     @factory.post_generation
     def webhooks(obj, create, extracted, **kwargs):
         if not create:
@@ -259,13 +255,16 @@ class StructureFactory(
 
 
 class StarbaseFactory(StructureFactory):
+    class Params:
+        eve_moon_name = "Amamake II - Moon 1"
+
     has_fitting = None
     has_core = None
     state = Structure.State.POS_ONLINE
 
     @factory.lazy_attribute
     def eve_moon(self):
-        return EveMoon.objects.order_by("?").first()
+        return EveMoon.objects.get(name=self.eve_moon_name)
 
     @factory.lazy_attribute
     def eve_solar_system(self):
@@ -432,6 +431,17 @@ class StructureItemJumpFuelFactory(StructureItemFactory):
         return EveType.objects.get(id=EveTypeId.LIQUID_OZONE)
 
 
+class StructureServiceFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[StructureService]
+):
+    class Meta:
+        model = StructureService
+        django_get_or_create = ("name",)
+
+    name = factory.Sequence(lambda n: f"Fake Service #{n + 1}")
+    state = StructureService.State.ONLINE
+
+
 class StructureTagFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[StructureTag]
 ):
@@ -452,6 +462,7 @@ class NotificationFactory(
 
     text_from_dict = None
 
+    notification_id = factory.Sequence(lambda n: 1_500_000_000 + n)
     created = factory.LazyFunction(now)
     is_read = False
     last_updated = factory.LazyAttribute(lambda o: o.created)
@@ -459,16 +470,6 @@ class NotificationFactory(
     owner = factory.SubFactory(OwnerFactory)
     sender = factory.SubFactory(EveEntityCorporationFactory, id=1000137, name="DED")
     timestamp = factory.LazyAttribute(lambda o: o.created)
-
-    @factory.lazy_attribute
-    def notification_id(self):
-        last_id = (
-            Notification.objects.aggregate(Max("notification_id"))[
-                "notification_id__max"
-            ]
-            or 1_500_000_000
-        )
-        return last_id + 1
 
     @factory.lazy_attribute
     def text(self):

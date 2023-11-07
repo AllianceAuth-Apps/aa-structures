@@ -93,8 +93,8 @@
 
                 <p class="text-muted">
                     {% translate "All dates are EVE time" %}
-                    • {% translate "Data can be outdated by up to 1 hour due to API caching." %}
-                    • {% translate "Last updated" %} {{ last_updated|naturaltime|default:"?" }}
+                    | {% translate "Data can be outdated by up to 1 hour due to API caching" %}
+                    | {% translate "Last updated" %} {{ last_updated|naturaltime|default:"?" }}
                 </p>
 
             </div>

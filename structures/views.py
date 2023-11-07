@@ -13,6 +13,7 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db.models import Count, F, Prefetch, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import translation
 from django.utils.html import format_html
@@ -25,7 +26,7 @@ from eveuniverse.models import EveType, EveTypeDogmaAttribute
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.allianceauth import notify_admins
+from app_utils.allianceauth import is_night_mode, notify_admins
 from app_utils.logging import LoggerAddTag
 from app_utils.views import link_html
 
@@ -57,7 +58,7 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 QUERY_PARAM_TAGS = "tags"
 
 
-class StructureDataSelection(str, Enum):
+class StructureSelection(str, Enum):
     """A pre-defined selection to filter structures data."""
 
     STRUCTURES = "structures"
@@ -138,29 +139,34 @@ def structure_list(request: HttpRequest):
         form = TagsFilterForm(initial={tag.name: True for tag in tags})
 
     structures_count = _structures_query(
-        request.user, StructureDataSelection.STRUCTURES, tags
+        request.user, StructureSelection.STRUCTURES, tags
     ).count()
     pocos_count = _structures_query(
-        request.user, StructureDataSelection.POCOS, tags
+        request.user, StructureSelection.POCOS, tags
     ).count()
     starbases_count = _structures_query(
-        request.user, StructureDataSelection.STARBASES, tags
+        request.user, StructureSelection.STARBASES, tags
     ).count()
     jump_gates_count = _structures_query(
-        request.user, StructureDataSelection.JUMP_GATES, tags
+        request.user, StructureSelection.JUMP_GATES, tags
     ).count()
 
-    structures_ajax_url = _construct_ajax_url(StructureDataSelection.STRUCTURES, tags)
-    pocos_ajax_url = _construct_ajax_url(StructureDataSelection.POCOS, tags)
-    starbases_ajax_url = _construct_ajax_url(StructureDataSelection.STARBASES, tags)
-    jump_gates_ajax_url = _construct_ajax_url(StructureDataSelection.JUMP_GATES, tags)
+    structures_ajax_url = _construct_ajax_url(StructureSelection.STRUCTURES, tags)
+    pocos_ajax_url = _construct_ajax_url(StructureSelection.POCOS, tags)
+    starbases_ajax_url = _construct_ajax_url(StructureSelection.STARBASES, tags)
+    jump_gates_ajax_url = _construct_ajax_url(StructureSelection.JUMP_GATES, tags)
 
-    # "{% url 'structures:structure_list_data' 'structures' %}?tags={{ active_tags|join:',' }}"
+    if is_night_mode(request):
+        spinner_image_url = static("structures/img/bars-rotate-fade-white-36.svg")
+    else:
+        spinner_image_url = static("structures/img/bars-rotate-fade-black-36.svg")
+
     data_export = {
         "structures_ajax_url": structures_ajax_url,
         "pocos_ajax_url": pocos_ajax_url,
         "starbases_ajax_url": starbases_ajax_url,
         "jump_gates_ajax_url": jump_gates_ajax_url,
+        "spinner_image_url": spinner_image_url,
         "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
         "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
         "filter_titles": {
@@ -191,7 +197,7 @@ def structure_list(request: HttpRequest):
     return render(request, "structures/structures.html", _add_common_context(context))
 
 
-def _construct_ajax_url(selection: StructureDataSelection, tags):
+def _construct_ajax_url(selection: StructureSelection, tags):
     ajax_url = reverse("structures:structure_list_data", args=[selection.value])
     if tags:
         params_encoded = _urlencode_tags(tags)
@@ -210,32 +216,32 @@ def structure_list_data(request: HttpRequest, selection: str) -> JsonResponse:
     return JsonResponse({"data": serializer.to_list()})
 
 
-def _structures_query(user: User, selection: Union[StructureDataSelection, str], tags):
+def _structures_query(user: User, selection: Union[StructureSelection, str], tags):
     """Return query for a variant and user and active tags."""
     structures_qs = Structure.objects.visible_for_user(user, tags)
 
-    selection = StructureDataSelection(selection)
-    if selection == StructureDataSelection.STRUCTURES:
+    selection = StructureSelection(selection)
+    if selection == StructureSelection.STRUCTURES:
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
         )
 
-    elif selection == StructureDataSelection.POCOS:
+    elif selection == StructureSelection.POCOS:
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
         ).annotate_has_poco_details()
 
-    elif selection == StructureDataSelection.STARBASES:
+    elif selection == StructureSelection.STARBASES:
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
         ).annotate_has_starbase_detail()
 
-    elif selection == StructureDataSelection.JUMP_GATES:
+    elif selection == StructureSelection.JUMP_GATES:
         structures_qs = structures_qs.filter(
             eve_type=EveTypeId.JUMP_GATE
         ).annotate_jump_fuel_quantity()
 
-    elif selection == StructureDataSelection.ALL:
+    elif selection == StructureSelection.ALL:
         pass
 
     return structures_qs

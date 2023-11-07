@@ -2,21 +2,6 @@
 
 "use strict";
 
-function draw_spinner(elem) {
-    let url = "";
-
-    // {% if NIGHT_MODE %}
-    url = "{% static 'structures/img/bars-rotate-fade-white-36.svg' %}";
-    // {% else %}
-    //     url = "{% static 'structures/img/bars-rotate-fade-black-36.svg' %}"
-    // {% endif %}
-
-    elem.find(".modal-title").html("Loading...");
-    elem.find(".modal-body").html(
-        '<img class="center-image" src="' + url + '">'
-    );
-}
-
 $(document).ready(function () {
     const COOKIE_LAST_TAB_ID = "structures_last_tab_id";
     const COOKIE_LAST_TAB_HOURS = 6;
@@ -175,7 +160,12 @@ $(document).ready(function () {
     });
 
     $("#modalUpwellDetails").on("show.bs.modal", function (event) {
-        draw_spinner($(this));
+        $(this).find(".modal-title").html("Loading...");
+        $(this)
+            .find(".modal-body")
+            .html(
+                `<img class="center-image" src="${dataExport.spinner_image_url}">`
+            );
 
         const button = $(event.relatedTarget);
         const ajax_url = button.data("ajax_url");
@@ -257,7 +247,12 @@ $(document).ready(function () {
     });
 
     $("#modalPocoDetails").on("show.bs.modal", function (event) {
-        draw_spinner($(this));
+        $(this).find(".modal-title").html("Loading...");
+        $(this)
+            .find(".modal-body")
+            .html(
+                `<img class="center-image" src="${dataExport.spinner_image_url}">`
+            );
 
         const button = $(event.relatedTarget);
         const ajax_url = button.data("ajax_url");
@@ -338,7 +333,12 @@ $(document).ready(function () {
     });
 
     $("#modalStarbaseDetail").on("show.bs.modal", function (event) {
-        draw_spinner($(this));
+        $(this).find(".modal-title").html("Loading...");
+        $(this)
+            .find(".modal-body")
+            .html(
+                `<img class="center-image" src="${dataExport.spinner_image_url}">`
+            );
 
         const button = $(event.relatedTarget);
         const ajax_url = button.data("ajax_url");

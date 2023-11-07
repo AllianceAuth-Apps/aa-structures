@@ -18,10 +18,10 @@ from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import create_user_from_evecharacter, json_response_to_python
 
-from structures import views
 from structures.models import Owner, Structure, Webhook
+from structures.views import structures
 
-from .testdata.factories_2 import (
+from ..testdata.factories_2 import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
@@ -33,16 +33,12 @@ from .testdata.factories_2 import (
     UserMainBasicFactory,
     UserMainDefaultFactory,
 )
-from .testdata.helpers import create_structures, load_entities, set_owner_character
-from .testdata.load_eveuniverse import load_eveuniverse
+from ..testdata.helpers import create_structures, load_entities, set_owner_character
+from ..testdata.load_eveuniverse import load_eveuniverse
+from .utils import json_response_to_dict
 
-VIEWS_PATH = "structures.views"
+VIEWS_PATH = "structures.views.structures"
 OWNERS_PATH = "structures.models.owners"
-
-
-def json_response_to_dict(response, key="id") -> dict:
-    """Convert JSON response into dict by given key."""
-    return {x[key]: x for x in json_response_to_python(response)["data"]}
 
 
 class TestStructureListDataSerialization(TestCase):
@@ -72,7 +68,7 @@ class TestStructureListDataSerialization(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.structure_list_data(request, "structures")
+        response = structures.structure_list_data(request, "structures")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -104,7 +100,7 @@ class TestStructureListDataSerialization(TestCase):
             owner=self.owner, jump_fuel_quantity=5000, eve_solar_system_name="1-PGSG"
         )
         # when
-        response = views.structure_list_data(request, "jump_gates")
+        response = structures.structure_list_data(request, "jump_gates")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -135,7 +131,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.structure_list_data(request, "structures")
+        response = structures.structure_list_data(request, "structures")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -147,7 +143,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.structure_list_data(request, "pocos")
+        response = structures.structure_list_data(request, "pocos")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -159,7 +155,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.structure_list_data(request, "starbases")
+        response = structures.structure_list_data(request, "starbases")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -171,7 +167,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.structure_list_data(request, "jump_gates")
+        response = structures.structure_list_data(request, "jump_gates")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -183,7 +179,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.structure_list_data(request, "all")
+        response = structures.structure_list_data(request, "all")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -199,7 +195,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request.user = self.user
         # when/then
         with self.assertRaises(ValueError):
-            views.structure_list_data(request, "invalid")
+            structures.structure_list_data(request, "invalid")
 
     def test_should_not_return_structure_from_different_corporations(self):
         # given
@@ -207,65 +203,12 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.structure_list_data(request, "structures")
+        response = structures.structure_list_data(request, "structures")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
         structure_ids = set(data.keys())
         self.assertNotIn(other_structure.id, structure_ids)
-
-
-class TestStatistics(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.factory = RequestFactory()
-        load_eveuniverse()
-        alliance = EveAllianceInfoFactory(
-            alliance_name="Wayne Enterprises", alliance_ticker="WYE"
-        )
-        cls.corporation = EveCorporationInfoFactory(
-            corporation_name="Wayne Technologies", alliance=alliance
-        )
-        owner = OwnerFactory(corporation=cls.corporation)
-        StructureFactory(owner=owner, eve_type_name="Astrahus")
-        StructureFactory(owner=owner, eve_type_name="Athanor")
-        PocoFactory.create_batch(size=4, owner=owner)
-        StarbaseFactory.create_batch(size=3, owner=owner)
-        cls.character = EveCharacterFactory(corporation=cls.corporation)
-
-    def test_should_return_summary_data(self):
-        # given
-        user = UserMainDefaultFactory(main_character__character=self.character)
-        # when
-        request = self.factory.get("/")
-        request.user = user
-        response = views.structure_summary_data(request)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        obj = data[self.corporation.corporation_id]
-        self.assertEqual(obj["corporation_name"], "Wayne Technologies")
-        self.assertEqual(obj["alliance_name"], "Wayne Enterprises [WYE]")
-        self.assertEqual(obj["citadel_count"], 1)
-        self.assertEqual(obj["ec_count"], 0)
-        self.assertEqual(obj["refinery_count"], 1)
-        self.assertEqual(obj["other_count"], 0)
-        self.assertEqual(obj["poco_count"], 4)
-        self.assertEqual(obj["starbase_count"], 3)
-        self.assertEqual(obj["total"], 9)
-
-    def test_should_return_no_summary_data_without_permission(self):
-        # given
-        user = UserMainBasicFactory(main_character__character=self.character)
-        # when
-        request = self.factory.get("/")
-        request.user = user
-        response = views.structure_summary_data(request)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        self.assertFalse(data)
 
 
 class TestStructureListDataPermissions(TestCase):
@@ -282,7 +225,7 @@ class TestStructureListDataPermissions(TestCase):
         """
         request = self.factory.get("/")
         request.user = user
-        response = views.structure_list_data(request, "all")
+        response = structures.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
         return json_response_to_dict(response)
 
@@ -445,7 +388,7 @@ class TestStructureListFilters(TestCase):
     def test_default_filter_enabled(self):
         request = self.factory.get(reverse("structures:index"))
         request.user = self.user
-        response = views.index(request)
+        response = structures.index(request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/structures/list?tags=tag_a")
 
@@ -453,7 +396,7 @@ class TestStructureListFilters(TestCase):
     def test_default_filter_disabled(self):
         request = self.factory.get(reverse("structures:index"))
         request.user = self.user
-        response = views.index(request)
+        response = structures.index(request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/structures/list")
 
@@ -461,7 +404,7 @@ class TestStructureListFilters(TestCase):
         # no filter
         request = self.factory.get("/")
         request.user = self.user
-        response = views.structure_list_data(request, "all")
+        response = structures.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
@@ -485,7 +428,7 @@ class TestStructureListFilters(TestCase):
         # filter for tag_c
         request = self.factory.get("/?tags=tag_c")
         request.user = self.user
-        response = views.structure_list_data(request, "all")
+        response = structures.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
@@ -494,7 +437,7 @@ class TestStructureListFilters(TestCase):
         # filter for tag_b
         request = self.factory.get("/?tags=tag_b")
         request.user = self.user
-        response = views.structure_list_data(request, "all")
+        response = structures.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
@@ -503,7 +446,7 @@ class TestStructureListFilters(TestCase):
         # filter for tag_c, tag_b
         request = self.factory.get("/?tags=tag_c,tag_b")
         request.user = self.user
-        response = views.structure_list_data(request, "all")
+        response = structures.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_dict(response)
@@ -512,13 +455,13 @@ class TestStructureListFilters(TestCase):
     def test_call_with_raw_tags(self):
         request = self.factory.get("/?tags=tag_c,tag_b")
         request.user = self.user
-        response = views.structure_list(request)
+        response = structures.structure_list(request)
         self.assertEqual(response.status_code, 200)
 
     def test_set_tags_filter(self):
         request = self.factory.post("/", data={"tag_b": True, "tag_c": True})
         request.user = self.user
-        response = views.structure_list(request)
+        response = structures.structure_list(request)
         self.assertEqual(response.status_code, 302)
         parts = urlparse(response.url)
         path = parts[2]
@@ -548,7 +491,7 @@ class TestStructurePowerModes(TestCase):
     def display_data_for_structure(self, structure_id: int):
         request = self.factory.get("/")
         request.user = self.user
-        response = views.structure_list_data(request, "all")
+        response = structures.structure_list_data(request, "all")
         self.assertEqual(response.status_code, 200)
 
         data = json_response_to_python(response)["data"]
@@ -654,7 +597,7 @@ class TestAddStructureOwner(TestCase):
         request.token = token
         middleware = SessionMiddleware(Mock())
         middleware.process_request(request)
-        orig_view = views.add_structure_owner.__wrapped__.__wrapped__.__wrapped__
+        orig_view = structures.add_structure_owner.__wrapped__.__wrapped__.__wrapped__
         # when
         return orig_view(request, token)
 
@@ -801,7 +744,7 @@ class TestStatus(TestCase):
             owner.save()
 
         request = self.factory.get(reverse("structures:service_status"))
-        response = views.service_status(request)
+        response = structures.service_status(request)
         self.assertEqual(response.status_code, 200)
 
     @patch(OWNERS_PATH + ".STRUCTURES_STRUCTURE_SYNC_GRACE_MINUTES", 30)
@@ -814,7 +757,7 @@ class TestStatus(TestCase):
             owner.save()
 
         request = self.factory.get(reverse("structures:service_status"))
-        response = views.service_status(request)
+        response = structures.service_status(request)
         self.assertEqual(response.status_code, 500)
 
     @patch(OWNERS_PATH + ".STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES", 30)
@@ -827,7 +770,7 @@ class TestStatus(TestCase):
             owner.save()
 
         request = self.factory.get(reverse("structures:service_status"))
-        response = views.service_status(request)
+        response = structures.service_status(request)
         self.assertEqual(response.status_code, 500)
 
     @patch(OWNERS_PATH + ".STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES", 30)
@@ -840,7 +783,7 @@ class TestStatus(TestCase):
             owner.save()
 
         request = self.factory.get(reverse("structures:service_status"))
-        response = views.service_status(request)
+        response = structures.service_status(request)
         self.assertEqual(response.status_code, 500)
 
     @patch(OWNERS_PATH + ".STRUCTURES_STRUCTURE_SYNC_GRACE_MINUTES", 30)
@@ -853,7 +796,7 @@ class TestStatus(TestCase):
             owner.save()
 
         request = self.factory.get(reverse("structures:service_status"))
-        response = views.service_status(request)
+        response = structures.service_status(request)
         self.assertEqual(response.status_code, 500)
 
 
@@ -879,7 +822,7 @@ class TestPocoListData(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.public_poco_list_data(request, self.main.character_id)
+        response = structures.public_poco_list_data(request, self.main.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -891,7 +834,7 @@ class TestPocoListData(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.public_poco_list_data(request, self.main.character_id)
+        response = structures.public_poco_list_data(request, self.main.character_id)
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
@@ -928,7 +871,7 @@ class TestStructureFittingModal(TestCase):
         request = self.factory.get("/")
         request.user = user
         # when
-        response = views.structure_details(request, self.structure.id)
+        response = structures.structure_details(request, self.structure.id)
         # then
         self.assertEqual(response.status_code, 200)
 
@@ -944,7 +887,7 @@ class TestStructureFittingModal(TestCase):
         request = self.factory.get("/")
         request.user = user
         # when
-        response = views.structure_details(request, self.structure.id)
+        response = structures.structure_details(request, self.structure.id)
         # then
         self.assertEqual(response.status_code, 302)
 
@@ -964,7 +907,7 @@ class TestDetailsModal(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.poco_details(request, structure.id)
+        response = structures.poco_details(request, structure.id)
         # then
         self.assertEqual(response.status_code, 200)
 
@@ -974,6 +917,6 @@ class TestDetailsModal(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = views.starbase_detail(request, structure.id)
+        response = structures.starbase_detail(request, structure.id)
         # then
         self.assertEqual(response.status_code, 200)

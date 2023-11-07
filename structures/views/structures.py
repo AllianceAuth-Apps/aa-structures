@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from django.db.models import Count, F, Prefetch, Q
+from django.db.models import Prefetch
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
@@ -19,7 +19,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from esi.decorators import token_required
 from esi.models import Token
-from eveuniverse.core import dotlan, eveimageserver
+from eveuniverse.core import eveimageserver
 from eveuniverse.models import EveType, EveTypeDogmaAttribute
 
 from allianceauth.authentication.models import CharacterOwnership
@@ -27,12 +27,9 @@ from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.allianceauth import is_night_mode, notify_admins
 from app_utils.logging import LoggerAddTag
-from app_utils.views import link_html
 
-from structures.helpers import floating_icon_with_text_html
-
-from . import __title__, tasks
-from .app_settings import (
+from structures import __title__, tasks
+from structures.app_settings import (
     STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
     STRUCTURES_DEFAULT_LANGUAGE,
     STRUCTURES_DEFAULT_PAGE_LENGTH,
@@ -40,10 +37,10 @@ from .app_settings import (
     STRUCTURES_PAGING_ENABLED,
     STRUCTURES_SHOW_JUMP_GATES,
 )
-from .constants import EveAttributeId, EveCategoryId, EveGroupId, EveTypeId
-from .core.serializers import PocoListSerializer, StructureListSerializer
-from .forms import TagsFilterForm
-from .models import (
+from structures.constants import EveAttributeId, EveCategoryId, EveGroupId, EveTypeId
+from structures.core.serializers import PocoListSerializer, StructureListSerializer
+from structures.forms import TagsFilterForm
+from structures.models import (
     Owner,
     Structure,
     StructureItem,
@@ -51,6 +48,8 @@ from .models import (
     StructureTag,
     Webhook,
 )
+
+from .common import add_common_context
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -71,25 +70,6 @@ def _urlencode_tags(tags: Sequence[StructureTag]) -> str:
     params = {QUERY_PARAM_TAGS: ",".join([tag.name for tag in tags])}
     params_encoded = urlencode(params)
     return params_encoded
-
-
-def _default_if_none(value, default=None):
-    """Return default if a value is None."""
-    if value is None:
-        return default
-    return value
-
-
-def _add_common_context(context: dict = None) -> dict:
-    """Add common context and return it."""
-    new_context = {
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
-        "last_updated": Owner.objects.structures_last_updated(),
-    }
-    if context:
-        new_context.update(context)
-    return new_context
 
 
 @login_required
@@ -163,7 +143,7 @@ def structure_list(request: HttpRequest):
         "jump_gates_count": jump_gates_count,
         "data_export": data_export,
     }
-    return render(request, "structures/structures.html", _add_common_context(context))
+    return render(request, "structures/structures.html", add_common_context(context))
 
 
 def _construct_data_export(request, tags):
@@ -733,7 +713,7 @@ def public(request: HttpRequest) -> HttpResponse:
         "pocos_count": pocos_count,
         "data_export": data_export,
     }
-    return render(request, "structures/public.html", _add_common_context(context))
+    return render(request, "structures/public.html", add_common_context(context))
 
 
 def public_poco_list_data(request: HttpRequest, character_id: int) -> JsonResponse:
@@ -753,105 +733,3 @@ def _public_pocos_query():
         owner__are_pocos_public=True,
     )
     return pocos
-
-
-# Statistics
-
-
-@login_required
-@permission_required("structures.basic_access")
-def statistics(request: HttpRequest) -> HttpResponse:
-    """Return view to render Statistics page."""
-    ajax_url = reverse("structures:structure_summary_data")
-    data_export = {
-        "ajax_url": ajax_url,
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
-        "filter_titles": {"alliance": _("Alliance")},
-    }
-    context = {"data_export": data_export}
-    return render(request, "structures/statistics.html", _add_common_context(context))
-
-
-@login_required
-@permission_required("structures.basic_access")
-def structure_summary_data(request: HttpRequest) -> JsonResponse:
-    """View returning data for structure summary page."""
-    summary_qs = (
-        Structure.objects.visible_for_user(request.user)
-        .values(
-            corporation_id=F("owner__corporation__corporation_id"),
-            corporation_name=F("owner__corporation__corporation_name"),
-            alliance_name=F("owner__corporation__alliance__alliance_name"),
-            alliance_ticker=F("owner__corporation__alliance__alliance_ticker"),
-        )
-        .annotate(
-            ec_count=Count(
-                "id", filter=Q(eve_type__eve_group=EveGroupId.ENGINEERING_COMPLEX)
-            )
-        )
-        .annotate(
-            refinery_count=Count(
-                "id", filter=Q(eve_type__eve_group=EveGroupId.REFINERY)
-            )
-        )
-        .annotate(
-            citadel_count=Count("id", filter=Q(eve_type__eve_group=EveGroupId.CITADEL))
-        )
-        .annotate(
-            upwell_count=Count(
-                "id",
-                filter=Q(eve_type__eve_group__eve_category=EveCategoryId.STRUCTURE),
-            )
-        )
-        .annotate(poco_count=Count("id", filter=Q(eve_type=EveTypeId.CUSTOMS_OFFICE)))
-        .annotate(
-            starbase_count=Count(
-                "id", filter=Q(eve_type__eve_group__eve_category=EveCategoryId.STARBASE)
-            )
-        )
-    )
-    data = []
-    for row in summary_qs:
-        other_count = (
-            row["upwell_count"]
-            - row["ec_count"]
-            - row["refinery_count"]
-            - row["citadel_count"]
-        )
-        total = row["upwell_count"] + row["poco_count"] + row["starbase_count"]
-
-        corporation_id = row["corporation_id"]
-        corporation_name = row["corporation_name"]
-        alliance_name = _default_if_none(row["alliance_name"], "")
-        alliance_ticker = _default_if_none(row["alliance_ticker"], "")
-        corporation_icon_url = eveimageserver.corporation_logo_url(
-            corporation_id, size=64
-        )
-        owner_link = link_html(
-            dotlan.corporation_url(corporation_name), corporation_name
-        )
-        owner_display_html = floating_icon_with_text_html(
-            corporation_icon_url, [owner_link, alliance_ticker]
-        )
-        owner_html = {"display": owner_display_html, "value": corporation_name}
-        alliance_name_str = (
-            f"{alliance_name} [{alliance_ticker}]" if alliance_ticker else alliance_name
-        )
-
-        data.append(
-            {
-                "id": int(corporation_id),
-                "owner": owner_html,
-                "corporation_name": corporation_name,
-                "alliance_name": alliance_name_str,
-                "citadel_count": row["citadel_count"],
-                "ec_count": row["ec_count"],
-                "refinery_count": row["refinery_count"],
-                "other_count": other_count,
-                "poco_count": row["poco_count"],
-                "starbase_count": row["starbase_count"],
-                "total": total,
-            }
-        )
-    return JsonResponse({"data": data})

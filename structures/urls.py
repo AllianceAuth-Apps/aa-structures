@@ -2,43 +2,49 @@
 
 from django.urls import path
 
-from . import views
+from .views import statistics, structures
 
 app_name = "structures"
 
 urlpatterns = [
-    path("", views.index, name="index"),
-    path("list", views.structure_list, name="structure_list"),
+    path("", structures.index, name="index"),
+    path("list", structures.structure_list, name="structure_list"),
     path(
         "structure_list_data/<str:selection>",
-        views.structure_list_data,
+        structures.structure_list_data,
         name="structure_list_data",
     ),
-    path("summary_data", views.structure_summary_data, name="structure_summary_data"),
-    path("add_structure_owner", views.add_structure_owner, name="add_structure_owner"),
+    path(
+        "add_structure_owner",
+        structures.add_structure_owner,
+        name="add_structure_owner",
+    ),
     path(
         "public_poco_list_data/<int:character_id>",
-        views.public_poco_list_data,
+        structures.public_poco_list_data,
         name="public_poco_list_data",
     ),
-    path("service_status", views.service_status, name="service_status"),
+    path("service_status", structures.service_status, name="service_status"),
     path(
         "<int:structure_id>/structure_details",
-        views.structure_details,
+        structures.structure_details,
         name="structure_details",
     ),
     path(
         "<int:structure_id>/poco_details",
-        views.poco_details,
+        structures.poco_details,
         name="poco_details",
     ),
     path(
         "<int:structure_id>/starbase_detail",
-        views.starbase_detail,
+        structures.starbase_detail,
         name="starbase_detail",
     ),
     # public
-    path("public", views.public, name="public"),
+    path("public", structures.public, name="public"),
     # statistics
-    path("statistics", views.statistics, name="statistics"),
+    path("statistics", statistics.statistics, name="statistics"),
+    path(
+        "summary_data", statistics.structure_summary_data, name="structure_summary_data"
+    ),
 ]

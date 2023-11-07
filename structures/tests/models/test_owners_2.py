@@ -19,12 +19,12 @@ from structures.models import (
     Webhook,
 )
 from structures.tests import to_json
-from structures.tests.testdata.factories import (
-    create_owner_from_user,
-    create_poco,
-    create_starbase,
-    create_structure_service,
-    create_upwell_structure,
+from structures.tests.testdata.factories_2 import (
+    OwnerFactory,
+    PocoFactory,
+    StarbaseFactory,
+    StructureFactory,
+    StructureServiceFactory,
 )
 from structures.tests.testdata.helpers import load_entities
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
@@ -455,7 +455,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_can_sync_upwell_structures(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -578,7 +578,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_can_sync_pocos(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
 
@@ -637,7 +637,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_can_sync_starbases(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
 
@@ -749,7 +749,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_can_sync_all_structures_and_notify_user(self, mock_notify, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
 
         # when
         owner.update_structures_esi(user=self.user)
@@ -787,7 +787,9 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             permissions=["structures.add_structure_owner"],
             scopes=Owner.get_esi_scopes(),
         )
-        owner = create_owner_from_user(user)  # corp_ID = 2005
+        owner = OwnerFactory(
+            user=user, structures_last_update_at=None
+        )  # corp_ID = 2005
         # when
         owner.update_structures_esi()
         # then
@@ -807,7 +809,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=500,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -834,7 +836,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=500,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -855,7 +857,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=404,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -881,7 +883,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=500,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -904,7 +906,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=403,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -928,7 +930,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=403,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         character = owner.characters.first()
         character.error_count = 3
         character.save()
@@ -948,7 +950,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             "Universe", "get_universe_structures_structure_id", http_error_code=500
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -964,7 +966,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     ):
         mock_create_structure.side_effect = OSError
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -975,8 +977,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_should_remove_old_upwell_structures(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
-        create_upwell_structure(owner=owner, id=1000000000004, name="delete-me")
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        StructureFactory(owner=owner, id=1000000000004, name="delete-me")
         # when
         owner.update_structures_esi()
         # then
@@ -988,8 +990,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_should_remove_old_pocos(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
-        create_poco(owner=owner, id=1000000000004, name="delete-me")
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        PocoFactory(owner=owner, id=1000000000004, name="delete-me")
         # when
         owner.update_structures_esi()
         # then
@@ -1010,8 +1012,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_should_remove_old_starbases(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
-        create_starbase(owner=owner, id=1300000000099, name="delete-me")
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        StarbaseFactory(owner=owner, id=1300000000099, name="delete-me")
         # when
         owner.update_structures_esi()
         # then
@@ -1030,7 +1032,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_tags_are_not_modified_by_update(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -1068,9 +1070,9 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=500,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
-        create_upwell_structure(owner=owner, id=1000000000001)
-        create_upwell_structure(owner=owner, id=1000000000002)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        StructureFactory(owner=owner, id=1000000000001)
+        StructureFactory(owner=owner, id=1000000000002)
         # when
         owner.update_structures_esi()
         # then
@@ -1088,9 +1090,9 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=500,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
-        create_poco(owner=owner, id=1200000000003)
-        create_poco(owner=owner, id=1200000000004)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        PocoFactory(owner=owner, id=1200000000003)
+        PocoFactory(owner=owner, id=1200000000004)
         # when
         owner.update_structures_esi()
         # then
@@ -1115,9 +1117,9 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=500,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
-        create_starbase(owner=owner, id=1300000000001)
-        create_starbase(owner=owner, id=1300000000002)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        StarbaseFactory(owner=owner, id=1300000000001)
+        StarbaseFactory(owner=owner, id=1300000000002)
         # when
         owner.update_structures_esi()
         # then
@@ -1136,9 +1138,9 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_should_remove_outdated_services(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
-        structure = create_upwell_structure(owner=owner, id=1000000000002)
-        create_structure_service(structure=structure, name="Clone Bay")
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        structure = StructureFactory(owner=owner, id=1000000000002)
+        StructureServiceFactory(structure=structure, name="Clone Bay")
         # when
         owner.update_structures_esi()
         # then
@@ -1153,7 +1155,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_should_have_empty_name_if_not_match_with_planets(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         EvePlanet.objects.all().delete()
         # when
         owner.update_structures_esi()
@@ -1167,7 +1169,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     def test_define_poco_name_from_planet_type_if_found(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -1193,7 +1195,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA],
             is_active=True,
         )
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         owner.webhooks.add(webhook)
         owner.update_structures_esi()
         structure = Structure.objects.get(id=1000000000001)
@@ -1224,7 +1226,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA],
             is_active=True,
         )
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         owner.webhooks.add(webhook)
         with patch("structures.models.structures_1.now") as now:
             now.return_value = dt.datetime(2020, 3, 2, 0, 0, tzinfo=utc)
@@ -1249,7 +1251,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA],
             is_active=True,
         )
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         owner.webhooks.add(webhook)
         owner.update_structures_esi()
         structure = Structure.objects.get(id=1000000000001)
@@ -1274,7 +1276,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             http_error_code=404,
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
-        owner = create_owner_from_user(self.user)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
         # when
         owner.update_structures_esi()
         # then
@@ -1296,7 +1298,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
     # ):
     #     # given
     #     mock_esi_client.side_effect = esi_mock_client
-    #     owner = create_owner_from_user(self.user)
+    #     owner = OwnerFactory(user=self.user, structures_last_update_at=None)
     #     owner.is_structure_sync_fresh = False
     #     owner.save()
     #     # when

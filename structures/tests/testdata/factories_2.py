@@ -192,7 +192,6 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
         if extracted:
             for eve_character in extracted:
                 character_ownership = eve_character.character_ownership
-                print(f"{eve_character}: character_ownership: {character_ownership}")
                 OwnerCharacterFactory(
                     owner=obj, character_ownership=character_ownership, **kwargs
                 )
@@ -205,11 +204,13 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
     def webhooks(obj, create, extracted, **kwargs):
         if not create:
             return
+
         if extracted:
             for webhook in extracted:
                 obj.webhooks.add(webhook)
+
         else:
-            obj.webhooks.add(WebhookFactory())
+            obj.webhooks.add(WebhookFactory(**kwargs))
 
 
 class OwnerCharacterFactory(

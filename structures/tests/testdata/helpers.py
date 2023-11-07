@@ -816,3 +816,59 @@ def markdown_to_plain(text: str) -> str:
     html = markdown(text)
     text = "".join(BeautifulSoup(html, features="html.parser").findAll(text=True))
     return unicodedata.normalize("NFKD", text)
+
+
+def generate_eve_entities_from_auth_entities():
+    """Generate EveEntity objects from existing Auth EveOnline objects."""
+    alliances = set()
+    corporations = set()
+    for character in EveCharacter.objects.all():
+        EveEntity.objects.get_or_create(
+            id=character.character_id,
+            defaults={
+                "category": EveEntity.CATEGORY_CHARACTER,
+                "name": character.character_name,
+            },
+        )
+
+        if character.corporation_id not in corporations:
+            obj, created = EveEntity.objects.get_or_create(
+                id=character.corporation_id,
+                defaults={
+                    "category": EveEntity.CATEGORY_CORPORATION,
+                    "name": character.corporation_name,
+                },
+            )
+            if created:
+                corporations.add(obj.id)
+
+        if character.alliance_id and character.alliance_id not in alliances:
+            obj, created = EveEntity.objects.get_or_create(
+                id=character.alliance_id,
+                defaults={
+                    "category": EveEntity.CATEGORY_ALLIANCE,
+                    "name": character.alliance_name,
+                },
+            )
+            if created:
+                alliances.add(obj.id)
+
+    for corporation in EveCorporationInfo.objects.exclude(
+        corporation_id__in=corporations
+    ):
+        EveEntity.objects.get_or_create(
+            id=corporation.corporation_id,
+            defaults={
+                "category": EveEntity.CATEGORY_CORPORATION,
+                "name": character.corporation_name,
+            },
+        )
+
+    for alliance in EveAllianceInfo.objects.exclude(alliance_id__in=alliances):
+        EveEntity.objects.get_or_create(
+            id=alliance.alliance_id,
+            defaults={
+                "category": EveEntity.CATEGORY_ALLIANCE,
+                "name": alliance.alliance_name,
+            },
+        )

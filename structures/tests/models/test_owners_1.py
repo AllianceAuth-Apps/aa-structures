@@ -477,6 +477,12 @@ class TestOwnerCharacters(NoSocketsTestCase):
     def setUpTestData(cls):
         cls.owner = OwnerFactory()
 
+    def test_should_return_str(self):
+        # given
+        character = OwnerCharacterFactory()
+        # when/then
+        self.assertTrue(str(character))
+
     def test_should_add_new_character(self):
         # given
         character = EveCharacterFactory(corporation=self.owner.corporation)

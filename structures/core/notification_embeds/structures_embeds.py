@@ -291,9 +291,7 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
                 all_structure_info.append(
                     self.StructureInfo(
                         name=structure_info[1],
-                        eve_type=EveType.objects.get_or_create_esi(
-                            id=structure_info[2]
-                        ),
+                        eve_type=get_or_create_esi_obj(EveType, id=structure_info[2]),
                         eve_solar_system=None,
                         owner_link=_("(unknown)"),
                     )
@@ -315,13 +313,17 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
             "for the following structures:\n"
         ) % Webhook.text_bold(self._parsed_text["hour"])
         for structure_info in all_structure_info:
+            if eve_solar_system := structure_info.eve_solar_system:
+                solar_system_text = gen_solar_system_text(eve_solar_system)
+            else:
+                solar_system_text = ""
             self._description += _(
                 "- %(structure_type)s %(structure_name)s in %(solar_system)s "
                 "belonging to %(owner_link)s"
             ) % {
                 "structure_type": structure_info.eve_type.name,
                 "structure_name": Webhook.text_bold(structure_info.name),
-                "solar_system": gen_solar_system_text(structure_info.eve_solar_system),
+                "solar_system": solar_system_text,
                 "owner_link": structure_info.owner_link,
             }
 

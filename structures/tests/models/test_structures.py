@@ -807,9 +807,9 @@ class TestStructurePowerMode(NoSocketsTestCase):
 
 
 class TestStructure2(NoSocketsTestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls) -> None:
         load_eveuniverse()
-        load_entities([EveSovereigntyMap])
         create_structures()
         set_owner_character(character_id=1001)
 

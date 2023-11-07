@@ -479,7 +479,7 @@ class TestOwnerCharacters(NoSocketsTestCase):
 
     def test_should_return_str(self):
         # given
-        character = OwnerCharacterFactory()
+        character = OwnerCharacterFactory(owner=self.owner)
         # when/then
         self.assertTrue(str(character))
 

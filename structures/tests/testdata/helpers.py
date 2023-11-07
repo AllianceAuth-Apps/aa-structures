@@ -123,9 +123,9 @@ def esi_get_universe_planets_planet_id(planet_id, language=None, **kwargs):
     """
 
     entity = None
-    for x in entities_testdata["EvePlanet"]:
-        if x["id"] == planet_id:
-            entity = x.copy()
+    for obj in entities_testdata["EvePlanet"]:
+        if obj["id"] == planet_id:
+            entity = obj.copy()
             break
 
     if entity is None:
@@ -609,7 +609,6 @@ def esi_mock_client(version=1.6):
 def load_entity(EntityClass):
     """loads testdata for given entity class"""
     entity_name = EntityClass.__name__
-    EntityClass.objects.all().delete()
     for obj in entities_testdata[entity_name]:
         if EntityClass is EveCharacter:
             EveCharacter.objects.create(**obj)
@@ -676,19 +675,19 @@ def create_structures(dont_load_entities: bool = False) -> object:
     StructureTag.objects.get(name="tag_a")
     tag_b = StructureTag.objects.get(name="tag_b")
     tag_c = StructureTag.objects.get(name="tag_c")
-    Structure.objects.all().delete()
+
     for structure in entities_testdata["Structure"]:
-        x = structure.copy()
-        x["last_updated_at"] = now()
-        x["owner"] = Owner.objects.get(
-            corporation__corporation_id=x["owner_corporation_id"]
+        structure_2 = structure.copy()
+        structure_2["last_updated_at"] = now()
+        structure_2["owner"] = Owner.objects.get(
+            corporation__corporation_id=structure_2["owner_corporation_id"]
         )
-        del x["owner_corporation_id"]
+        del structure_2["owner_corporation_id"]
 
-        if "services" in x:
-            del x["services"]
+        if "services" in structure_2:
+            del structure_2["services"]
 
-        obj = Structure.objects.create(**x)
+        obj = Structure.objects.create(**structure_2)
         if obj.state != 11:
             obj.state_timer_start = now() - dt.timedelta(days=randrange(3) + 1)
             obj.state_timer_start = obj.state_timer_start + dt.timedelta(
@@ -722,8 +721,8 @@ def create_owners():
             },
         )
         my_owner = Owner.objects.create(corporation=corporation)
-        for x in default_webhooks:
-            my_owner.webhooks.add(x)
+        for webhook in default_webhooks:
+            my_owner.webhooks.add(webhook)
 
         if int(corporation.corporation_id) in [2001, 2002]:
             alliance = EveAllianceInfo.objects.get(alliance_id=3001)
@@ -784,31 +783,35 @@ def load_notification_by_type(
 
 def load_notification_entities(owner: Owner):
     timestamp_start = now() - dt.timedelta(hours=2)
-    for notification in entities_testdata["Notification"]:
-        _load_notification_for_owner(owner, timestamp_start, notification)
+    objs = [
+        _generate_notif_obj_for_owner(owner, timestamp_start, notification)
+        for notification in entities_testdata["Notification"]
+    ]
+    Notification.objects.bulk_create(objs, ignore_conflicts=True)
 
 
-def _load_notification_for_owner(owner, timestamp_start, notification, new_ids=False):
+def _generate_notif_obj_for_owner(
+    owner: Owner,
+    timestamp_start: dt.datetime,
+    notification: dict,
+    new_ids: bool = False,
+):
     notification_id = notification["notification_id"]
-    notif_type = notification["type"]
-    # print(f"Reading notification: {notification_id}-{notif_type}")
-    sender = EveEntity.objects.get(id=notification["sender_id"])
     text = notification["text"] if "text" in notification else None
     is_read = notification["is_read"] if "is_read" in notification else None
     timestamp_start = timestamp_start + dt.timedelta(minutes=5)
-    Notification.objects.update_or_create(
-        notification_id=notification_id,
-        owner=owner,
-        defaults={
-            "sender": sender,
-            "timestamp": timestamp_start,
-            "notif_type": notif_type,
-            "text": text,
-            "is_read": is_read,
-            "last_updated": now(),
-            "is_sent": False,
-        },
-    )
+    params = {
+        "notification_id": notification_id,
+        "owner": owner,
+        "sender_id": notification["sender_id"],
+        "timestamp": timestamp_start,
+        "notif_type": notification["type"],
+        "text": text,
+        "is_read": is_read,
+        "last_updated": now(),
+        "is_sent": False,
+    }
+    return Notification(**params)
 
 
 def markdown_to_plain(text: str) -> str:

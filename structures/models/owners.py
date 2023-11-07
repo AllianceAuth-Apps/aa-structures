@@ -1349,6 +1349,10 @@ class OwnerCharacter(models.Model):
             f"{self.character_ownership.character.character_name}"
         )
 
+    def character_id(self) -> int:
+        """Return character ID of this character."""
+        return self.character_ownership.character.character_id
+
     def valid_token(self) -> Optional[Token]:
         """Provide a valid token or None if none can be found."""
         return (

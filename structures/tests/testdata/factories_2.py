@@ -9,7 +9,7 @@ import yaml
 from django.utils.timezone import now
 from eveuniverse.models import EveEntity, EveMoon, EvePlanet, EveSolarSystem, EveType
 
-from allianceauth.authentication.models import CharacterOwnership
+from allianceauth.eveonline.models import EveCharacter
 from app_utils.testdata_factories import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
@@ -155,14 +155,6 @@ class WebhookFactory(
     notes = factory.Faker("sentence")
 
 
-class OwnerCharacterFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = OwnerCharacter
-
-    structures_last_used_at = factory.LazyFunction(now)
-    notifications_last_used_at = factory.LazyFunction(now)
-
-
 class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Owner]):
     class Meta:
         model = Owner
@@ -189,20 +181,25 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
 
     @factory.post_generation
     def characters(
-        obj, create: bool, extracted: Optional[List[CharacterOwnership]], **kwargs
+        obj, create: bool, extracted: Optional[List[EveCharacter]], **kwargs
     ):
-        if not create:
+        """
+        Set extracted to False to skip creating characters.
+        """
+        if not create or extracted is False:
             return
+
         if extracted:
-            for character_ownership in extracted:
+            for eve_character in extracted:
+                character_ownership = eve_character.character_ownership
+                print(f"{eve_character}: character_ownership: {character_ownership}")
                 OwnerCharacterFactory(
-                    owner=obj, character_ownership=character_ownership
+                    owner=obj, character_ownership=character_ownership, **kwargs
                 )
             return
-        character = EveCharacterFactory(corporation=obj.corporation)
-        user = UserMainDefaultOwnerFactory(main_character__character=character)
-        character_ownership = user.profile.main_character.character_ownership
-        OwnerCharacterFactory(owner=obj, character_ownership=character_ownership)
+
+        # generate new random owner character from this corporation
+        OwnerCharacterFactory(owner=obj, **kwargs)
 
     @factory.post_generation
     def webhooks(obj, create, extracted, **kwargs):
@@ -213,6 +210,28 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
                 obj.webhooks.add(webhook)
         else:
             obj.webhooks.add(WebhookFactory())
+
+
+class OwnerCharacterFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[OwnerCharacter]
+):
+    class Meta:
+        model = OwnerCharacter
+
+    class Params:
+        eve_character = None
+
+    structures_last_used_at = factory.LazyFunction(now)
+    notifications_last_used_at = factory.LazyFunction(now)
+
+    @factory.lazy_attribute
+    def character_ownership(self):
+        if not self.eve_character:
+            character = EveCharacterFactory(corporation=self.owner.corporation)
+        else:
+            character = self.eve_character
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        return user.profile.main_character.character_ownership
 
 
 class StructureFactory(

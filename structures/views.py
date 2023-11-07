@@ -151,6 +151,23 @@ def structure_list(request: HttpRequest):
         request.user, StructureSelection.JUMP_GATES, tags
     ).count()
 
+    data_export = _construct_data_export(request, tags)
+
+    context = {
+        "active_tags": tags,
+        "tags_filter_form": form,
+        "tags_exist": StructureTag.objects.exists(),
+        "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
+        "structures_count": structures_count,
+        "pocos_count": pocos_count,
+        "starbases_count": starbases_count,
+        "jump_gates_count": jump_gates_count,
+        "data_export": data_export,
+    }
+    return render(request, "structures/structures.html", _add_common_context(context))
+
+
+def _construct_data_export(request, tags):
     structures_ajax_url = _construct_ajax_url(StructureSelection.STRUCTURES, tags)
     pocos_ajax_url = _construct_ajax_url(StructureSelection.POCOS, tags)
     starbases_ajax_url = _construct_ajax_url(StructureSelection.STARBASES, tags)
@@ -183,18 +200,7 @@ def structure_list(request: HttpRequest):
         },
     }
 
-    context = {
-        "active_tags": tags,
-        "tags_filter_form": form,
-        "tags_exist": StructureTag.objects.exists(),
-        "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
-        "structures_count": structures_count,
-        "pocos_count": pocos_count,
-        "starbases_count": starbases_count,
-        "jump_gates_count": jump_gates_count,
-        "data_export": data_export,
-    }
-    return render(request, "structures/structures.html", _add_common_context(context))
+    return data_export
 
 
 def _construct_ajax_url(selection: StructureSelection, tags):

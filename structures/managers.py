@@ -288,7 +288,7 @@ class StructureQuerySet(models.QuerySet):
         )
 
     def annotate_has_starbase_detail(self) -> models.QuerySet:
-        """Add annotation wether the structure has starbase details."""
+        """Add annotation whether the structure has starbase details."""
         from .models import StarbaseDetail
 
         return self.annotate(
@@ -298,6 +298,7 @@ class StructureQuerySet(models.QuerySet):
         )
 
     def annotate_jump_fuel_quantity(self) -> models.QuerySet:
+        """Add annotation with quantity of jump fuel."""
         from .models import StructureItem
 
         return self.annotate(

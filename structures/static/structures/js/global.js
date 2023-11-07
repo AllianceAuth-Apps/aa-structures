@@ -1,16 +1,31 @@
-/* Global JS functions and symbols for Member Audit */
+/* Global JS functions and symbols */
 
-function setCookie(cname, cvalue, exhours) {
+"use strict";
+
+/**
+ * Set a cookie.
+ * @param {string} name Name of the cookie
+ * @param {string} value Value of the cookie
+ * @param {intVal} hours Lifetime of the cookie in hours
+ */
+function setCookie(name, value, hours) {
     const d = new Date();
-    d.setTime(d.getTime() + exhours * 60 * 60 * 1000);
+
+    d.setTime(d.getTime() + hours * 60 * 60 * 1000);
     let expires = "expires=" + d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
 }
 
-function getCookie(cname) {
-    const name = cname + "=";
+/**
+ * Get value of a cookie.
+ * @param {string} name Name of the cookie
+ * @returns Value of the cookie or an empty string if the cookie was not found
+ */
+function getCookie(name) {
+    const name = name + "=";
     const decodedCookie = decodeURIComponent(document.cookie);
     const ca = decodedCookie.split(";");
+
     for (let i = 0; i < ca.length; i++) {
         let c = ca[i];
         while (c.charAt(0) == " ") {
@@ -20,14 +35,15 @@ function getCookie(cname) {
             return c.substring(name.length, c.length);
         }
     }
+
     return "";
 }
 
-// sum numbers in column and write result in footer row
-// Args:
-// - api: current api object
-// - columnIdx: Index number of columns to sum, starts with 0
-// - format: format of output. either 'number' or 'isk'
+/**
+ * Sum numbers in column and write result in footer row.
+ * @param {object} api Api object of the datatable
+ * @param {intVal} columnIdx Index number of columns to sum, starts with 0
+ */
 function dataTableFooterSumColumn(api, columnIdx) {
     // Remove the formatting to get integer data for summation
     const intVal = function (i) {
@@ -44,6 +60,7 @@ function dataTableFooterSumColumn(api, columnIdx) {
         .reduce(function (a, b) {
             return intVal(a) + intVal(b);
         }, 0);
+
     $(api.column(columnIdx).footer()).html(
         columnTotal.toLocaleString("en-US", { maximumFractionDigits: 0 })
     );

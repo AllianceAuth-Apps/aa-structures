@@ -46,8 +46,9 @@
             </div>
 
             <p class="text-muted">
-                {% translate "Data can be outdated by up to 1 hour due to API caching" %}
-                • {% translate "Last updated" %} {{ last_updated|naturaltime|default:"?" }}
+                {% translate "Non corporation or alliance members will be assumed to have neutral standing with the owner" %} •
+                {% translate "Data can be outdated by up to 1 hour due to API caching" %} •
+                {% translate "Last updated" %} {{ last_updated|naturaltime|default:"?" }}
             </p>
 
         </div>

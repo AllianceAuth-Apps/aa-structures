@@ -1,3 +1,5 @@
+/* Logic for structure list page */
+
 "use strict";
 
 function draw_spinner(elem) {

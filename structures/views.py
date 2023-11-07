@@ -3,7 +3,7 @@
 import functools
 from collections import defaultdict
 from enum import Enum, IntEnum
-from typing import Dict, Union
+from typing import Dict, Sequence, Union
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -67,7 +67,13 @@ class StructureDataSelection(str, Enum):
     ALL = "all"
 
 
-def default_if_none(value, default=None):
+def _urlencode_tags(tags: Sequence[StructureTag]) -> str:
+    params = {QUERY_PARAM_TAGS: ",".join([tag.name for tag in tags])}
+    params_encoded = urlencode(params)
+    return params_encoded
+
+
+def _default_if_none(value, default=None):
     """Return default if a value is None."""
     if value is None:
         return default
@@ -98,12 +104,8 @@ def index(request: HttpRequest):
     ):
         url = reverse("structures:structure_list")
         if STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED:
-            params = {
-                QUERY_PARAM_TAGS: ",".join(
-                    [x.name for x in StructureTag.objects.filter(is_default=True)]
-                )
-            }
-            params_encoded = urlencode(params)
+            tags = StructureTag.objects.filter(is_default=True)
+            params_encoded = _urlencode_tags(tags)
             url += f"?{params_encoded}"
     else:
         url = reverse("structures:public")
@@ -125,17 +127,14 @@ def structure_list(request: HttpRequest):
 
             url = reverse("structures:structure_list")
             if tags:
-                params = {QUERY_PARAM_TAGS: ",".join([x.name for x in tags])}
-                params_encoded = urlencode(params)
+                params_encoded = _urlencode_tags(tags)
                 url += f"?{params_encoded}"
             return redirect(url)
     else:
         tags_raw = request.GET.get(QUERY_PARAM_TAGS)
         if tags_raw:
             tags_parsed = tags_raw.split(",")
-            tags = [
-                tag for tag in StructureTag.objects.all() if tag.name in tags_parsed
-            ]
+            tags = list(StructureTag.objects.filter(name__in=tags_parsed))
         form = TagsFilterForm(initial={tag.name: True for tag in tags})
 
     structures_count = _structures_query(
@@ -193,12 +192,10 @@ def structure_list(request: HttpRequest):
 
 
 def _construct_ajax_url(selection: StructureDataSelection, tags):
-    # tags_str = ",".join(tags)
     ajax_url = reverse("structures:structure_list_data", args=[selection.value])
-    # + f"?tags={tags_str}"
-    # if tags_str
-    # else ""
-
+    if tags:
+        params_encoded = _urlencode_tags(tags)
+        ajax_url += f"?{params_encoded}"
     return ajax_url
 
 
@@ -817,8 +814,8 @@ def structure_summary_data(request: HttpRequest) -> JsonResponse:
 
         corporation_id = row["corporation_id"]
         corporation_name = row["corporation_name"]
-        alliance_name = default_if_none(row["alliance_name"], "")
-        alliance_ticker = default_if_none(row["alliance_ticker"], "")
+        alliance_name = _default_if_none(row["alliance_name"], "")
+        alliance_ticker = _default_if_none(row["alliance_ticker"], "")
         corporation_icon_url = eveimageserver.corporation_logo_url(
             corporation_id, size=64
         )

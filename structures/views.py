@@ -151,6 +151,33 @@ def structure_list(request: HttpRequest):
         request.user, StructureDataSelection.JUMP_GATES, tags
     ).count()
 
+    structures_ajax_url = _construct_ajax_url(StructureDataSelection.STRUCTURES, tags)
+    pocos_ajax_url = _construct_ajax_url(StructureDataSelection.POCOS, tags)
+    starbases_ajax_url = _construct_ajax_url(StructureDataSelection.STARBASES, tags)
+    jump_gates_ajax_url = _construct_ajax_url(StructureDataSelection.JUMP_GATES, tags)
+
+    # "{% url 'structures:structure_list_data' 'structures' %}?tags={{ active_tags|join:',' }}"
+    data_export = {
+        "structures_ajax_url": structures_ajax_url,
+        "pocos_ajax_url": pocos_ajax_url,
+        "starbases_ajax_url": starbases_ajax_url,
+        "jump_gates_ajax_url": jump_gates_ajax_url,
+        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
+        "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
+        "filter_titles": {
+            "alliance": _("Alliance"),
+            "corporation": _("Corporation"),
+            "constellation": _("Constellation"),
+            "core": _("Core?"),
+            "group": _("Group"),
+            "power_mode": _("Power Mode"),
+            "region": _("Region"),
+            "reinforced": _("Reinforced?"),
+            "state": _("State"),
+            "solar_system": _("Solar System"),
+        },
+    }
+
     context = {
         "active_tags": tags,
         "tags_filter_form": form,
@@ -160,8 +187,19 @@ def structure_list(request: HttpRequest):
         "pocos_count": pocos_count,
         "starbases_count": starbases_count,
         "jump_gates_count": jump_gates_count,
+        "data_export": data_export,
     }
     return render(request, "structures/structures.html", _add_common_context(context))
+
+
+def _construct_ajax_url(selection: StructureDataSelection, tags):
+    # tags_str = ",".join(tags)
+    ajax_url = reverse("structures:structure_list_data", args=[selection.value])
+    # + f"?tags={tags_str}"
+    # if tags_str
+    # else ""
+
+    return ajax_url
 
 
 @login_required

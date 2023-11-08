@@ -612,10 +612,7 @@ def load_entity(EntityClass):
     for obj in entities_testdata[entity_name]:
         if EntityClass is EveCharacter:
             EveCharacter.objects.create(**obj)
-            corp_defaults = {
-                "corporation_name": obj["corporation_name"],
-                "member_count": 99,
-            }
+
             if "alliance_id" in obj:
                 alliance, _ = EveAllianceInfo.objects.get_or_create(
                     alliance_id=obj["alliance_id"],
@@ -624,14 +621,25 @@ def load_entity(EntityClass):
                         "executor_corp_id": obj["corporation_id"],
                     },
                 )
-                corp_defaults["alliance"] = alliance
+            else:
+                alliance = None
+
+            corp_defaults = {
+                "corporation_name": obj["corporation_name"],
+                "member_count": 99,
+                "alliance": alliance,
+            }
             EveCorporationInfo.objects.get_or_create(
                 corporation_id=obj["corporation_id"], defaults=corp_defaults
             )
+
             continue
+
         elif EntityClass is Webhook:
             obj["notification_types"] = NotificationType.values
+
         EntityClass.objects.create(**obj)
+
     assert len(entities_testdata[entity_name]) == EntityClass.objects.count()
 
 
@@ -656,21 +664,7 @@ def create_structures(dont_load_entities: bool = False) -> object:
 
     create_owners()
 
-    for character in EveCharacter.objects.all():
-        EveEntity.objects.get_or_create(
-            id=character.character_id,
-            defaults={
-                "category": EveEntity.CATEGORY_CHARACTER,
-                "name": character.character_name,
-            },
-        )
-        corporation = EveCorporationInfo.objects.get(
-            corporation_id=character.corporation_id
-        )
-        if corporation.alliance:
-            character.alliance_id = corporation.alliance.alliance_id
-            character.alliance_name = corporation.alliance.alliance_name
-            character.save()
+    generate_eve_entities_from_auth_entities()
 
     StructureTag.objects.get(name="tag_a")
     tag_b = StructureTag.objects.get(name="tag_b")
@@ -688,9 +682,9 @@ def create_structures(dont_load_entities: bool = False) -> object:
             del structure_2["services"]
 
         obj = Structure.objects.create(**structure_2)
-        if obj.state != 11:
+        if obj.state != Structure.State.SHIELD_VULNERABLE:
             obj.state_timer_start = now() - dt.timedelta(days=randrange(3) + 1)
-            obj.state_timer_start = obj.state_timer_start + dt.timedelta(
+            obj.state_timer_end = obj.state_timer_start + dt.timedelta(
                 days=randrange(4) + 1
             )
 
@@ -701,33 +695,26 @@ def create_structures(dont_load_entities: bool = False) -> object:
             obj.tags.add(tag_b)
 
         if "services" in structure:
-            for service in structure["services"]:
-                StructureService.objects.create(
+            objs = [
+                StructureService(
                     structure=obj,
                     name=service["name"],
                     state=StructureService.State.from_esi_name(service["state"]),
                 )
-        obj.save()
+                for service in structure["services"]
+            ]
+            StructureService.objects.bulk_create(objs, ignore_conflicts=True)
 
 
 def create_owners():
-    default_webhooks = Webhook.objects.filter(is_default=True)
-    for corporation in EveCorporationInfo.objects.all():
-        EveEntity.objects.get_or_create(
-            id=corporation.corporation_id,
-            defaults={
-                "category": EveEntity.CATEGORY_CORPORATION,
-                "name": corporation.corporation_name,
-            },
-        )
-        my_owner = Owner.objects.create(corporation=corporation)
-        for webhook in default_webhooks:
-            my_owner.webhooks.add(webhook)
-
-        if int(corporation.corporation_id) in [2001, 2002]:
-            alliance = EveAllianceInfo.objects.get(alliance_id=3001)
-            corporation.alliance = alliance
-            corporation.save()
+    owners = [
+        Owner(corporation=corporation)
+        for corporation in EveCorporationInfo.objects.all()
+    ]
+    owners = Owner.objects.bulk_create(owners, ignore_conflicts=True)
+    default_webhooks = list(Webhook.objects.filter(is_default=True))
+    for owner in owners:
+        owner.webhooks.add(*default_webhooks)
 
 
 def create_user(character_id, load_data=False) -> User:

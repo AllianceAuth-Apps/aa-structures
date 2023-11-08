@@ -183,13 +183,6 @@ class TestFetchNotificationsEsi(NoSocketsTestCase):
         owner.refresh_from_db()
         self.assertFalse(owner.is_notification_sync_fresh)
 
-
-@patch(OWNERS_PATH + ".esi")
-class TestFetchNotificationsEsi2(NoSocketsTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        load_eveuniverse()
-
     def test_should_create_notifications_from_scratch(self, mock_esi):
         # given
         owner = OwnerFactory(notifications_last_update_at=None)
@@ -264,7 +257,7 @@ class TestFetchNotificationsEsi2(NoSocketsTestCase):
 @override_settings(DEBUG=True)
 @patch(NOTIFICATIONS_PATH + ".STRUCTURES_REPORT_NPC_ATTACKS", True)
 @patch(NOTIFICATIONS_PATH + ".Webhook.send_message", spec=True)
-class TestSendNewNotifications1(NoSocketsTestCase):
+class TestSendNewNotifications(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()

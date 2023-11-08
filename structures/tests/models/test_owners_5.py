@@ -29,11 +29,9 @@ from structures.tests.testdata.factories_2 import (
     datetime_to_esi,
 )
 from structures.tests.testdata.helpers import (
-    create_structures,
     generate_eve_entities_from_auth_entities,
     load_entities,
     load_notification_entities,
-    set_owner_character,
 )
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
@@ -743,92 +741,80 @@ class TestOwnerToken(NoSocketsTestCase):
         self.assertIsNone(token)
 
 
+@patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
+@patch(OWNERS_PATH + ".notify_admins")
 class TestOwnerUpdateIsUp(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-        cls.owner.is_alliance_main = True
-        cls.owner.is_included_in_service_status = True
-        cls.owner.save()
+        cls.corporation = EveCorporationInfoFactory()
 
-    @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
     @patch(OWNERS_PATH + ".Owner.are_all_syncs_ok", True)
-    @patch(OWNERS_PATH + ".notify_admins")
     def test_should_do_nothing_when_still_up(self, mock_notify_admins):
         # given
-        self.owner.is_up = True
-        self.owner.save()
+        owner = OwnerFactory(
+            corporation=self.corporation, is_up=True, is_alliance_main=True
+        )
         # when
-        result = self.owner.update_is_up()
+        result = owner.update_is_up()
         # then
         self.assertTrue(result)
         self.assertFalse(mock_notify_admins.called)
-        self.owner.refresh_from_db()
-        self.assertTrue(self.owner.is_up)
-        self.assertTrue(self.owner.is_alliance_main)
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_up)
 
-    @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
     @patch(OWNERS_PATH + ".Owner.are_all_syncs_ok", False)
-    @patch(OWNERS_PATH + ".notify_admins")
     def test_should_report_when_down(self, mock_notify_admins):
         # given
-        self.owner.is_up = True
-        self.owner.save()
+        owner = OwnerFactory(
+            corporation=self.corporation, is_up=True, is_alliance_main=True
+        )
         # when
-        result = self.owner.update_is_up()
+        result = owner.update_is_up()
         # then
         self.assertFalse(result)
         self.assertTrue(mock_notify_admins.called)
-        self.owner.refresh_from_db()
-        self.assertFalse(self.owner.is_up)
-        self.assertTrue(self.owner.is_alliance_main)
+        owner.refresh_from_db()
+        self.assertFalse(owner.is_up)
 
-    @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
     @patch(OWNERS_PATH + ".Owner.are_all_syncs_ok", False)
-    @patch(OWNERS_PATH + ".notify_admins")
     def test_should_not_report_again_when_still_down(self, mock_notify_admins):
         # given
-        self.owner.is_up = False
-        self.owner.save()
+        owner = OwnerFactory(
+            corporation=self.corporation, is_up=False, is_alliance_main=True
+        )
         # when
-        result = self.owner.update_is_up()
+        result = owner.update_is_up()
         # then
         self.assertFalse(result)
         self.assertFalse(mock_notify_admins.called)
-        self.owner.refresh_from_db()
-        self.assertFalse(self.owner.is_up)
-        self.assertTrue(self.owner.is_alliance_main)
+        owner.refresh_from_db()
+        self.assertFalse(owner.is_up)
 
-    @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
     @patch(OWNERS_PATH + ".Owner.are_all_syncs_ok", True)
-    @patch(OWNERS_PATH + ".notify_admins")
     def test_should_report_when_up_again(self, mock_notify_admins):
         # given
-        self.owner.is_up = False
-        self.owner.save()
+        owner = OwnerFactory(
+            corporation=self.corporation, is_up=False, is_alliance_main=True
+        )
         # when
-        result = self.owner.update_is_up()
+        result = owner.update_is_up()
         # then
         self.assertTrue(result)
         self.assertTrue(mock_notify_admins.called)
-        self.owner.refresh_from_db()
-        self.assertTrue(self.owner.is_up)
-        self.assertTrue(self.owner.is_alliance_main)
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_up)
 
-    @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
     @patch(OWNERS_PATH + ".Owner.are_all_syncs_ok", True)
-    @patch(OWNERS_PATH + ".notify_admins")
     def test_should_report_when_up_for_the_first_time(self, mock_notify_admins):
         # given
-        self.owner.is_up = None
-        self.owner.save()
+        owner = OwnerFactory(
+            corporation=self.corporation, is_up=None, is_alliance_main=True
+        )
         # when
-        result = self.owner.update_is_up()
+        result = owner.update_is_up()
         # then
         self.assertTrue(result)
         self.assertTrue(mock_notify_admins.called)
-        self.owner.refresh_from_db()
-        self.assertTrue(self.owner.is_up)
-        self.assertTrue(self.owner.is_alliance_main)
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_up)

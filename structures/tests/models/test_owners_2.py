@@ -6,10 +6,12 @@ from django.utils.timezone import now, utc
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from app_utils.testing import NoSocketsTestCase
 
+from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import Structure, StructureService
 from structures.tests import to_json
 from structures.tests.testdata.factories_2 import (
+    EveEntityCorporationFactory,
     FuelAlertConfigFactory,
     OwnerFactory,
     StructureFactory,
@@ -33,6 +35,9 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, structures_last_update_at=None)
         cls.corporation_id = cls.owner.corporation.corporation_id
+        EveEntityCorporationFactory(
+            id=EveCorporationId.DED, name="DED"
+        )  # for notifications
         cls.endpoints = [
             EsiEndpoint(
                 "Assets",

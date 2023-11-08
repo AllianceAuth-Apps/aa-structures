@@ -473,18 +473,14 @@ class TestStructureListFilters(TestCase):
 
 class TestStructurePowerModes(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
-        load_entities()
         load_eveuniverse()
-
-    def setUp(self):
-        create_structures(dont_load_entities=True)
-        self.user, self.owner = set_owner_character(character_id=1001)
-        AuthUtils.add_permission_to_user_by_name("structures.basic_access", self.user)
+        create_structures()
+        cls.user, cls.owner = set_owner_character(character_id=1001)
+        AuthUtils.add_permission_to_user_by_name("structures.basic_access", cls.user)
         AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", self.user
+            "structures.view_all_structures", cls.user
         )
 
     def display_data_for_structure(self, structure_id: int):

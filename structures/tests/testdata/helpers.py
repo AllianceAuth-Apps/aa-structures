@@ -823,55 +823,46 @@ def markdown_to_plain(text: str) -> str:
 
 def generate_eve_entities_from_auth_entities():
     """Generate EveEntity objects from existing Auth EveOnline objects."""
-    alliances = set()
-    corporations = set()
-    for character in EveCharacter.objects.all():
-        EveEntity.objects.get_or_create(
+
+    def add_eve_entity(id, name, category):
+        if id not in existing_ids:
+            objs.append(EveEntity(id=id, category=category, name=name))
+            existing_ids.add(id)
+
+    existing_ids = set(EveEntity.objects.values_list("id", flat=True))
+    objs = []
+    for character in EveCharacter.objects.exclude(character_id__in=existing_ids):
+        add_eve_entity(
             id=character.character_id,
-            defaults={
-                "category": EveEntity.CATEGORY_CHARACTER,
-                "name": character.character_name,
-            },
+            name=character.character_name,
+            category=EveEntity.CATEGORY_CHARACTER,
         )
-
-        if character.corporation_id not in corporations:
-            obj, created = EveEntity.objects.get_or_create(
-                id=character.corporation_id,
-                defaults={
-                    "category": EveEntity.CATEGORY_CORPORATION,
-                    "name": character.corporation_name,
-                },
-            )
-            if created:
-                corporations.add(obj.id)
-
-        if character.alliance_id and character.alliance_id not in alliances:
-            obj, created = EveEntity.objects.get_or_create(
+        add_eve_entity(
+            id=character.corporation_id,
+            name=character.corporation_name,
+            category=EveEntity.CATEGORY_CORPORATION,
+        )
+        if character.alliance_id:
+            add_eve_entity(
                 id=character.alliance_id,
-                defaults={
-                    "category": EveEntity.CATEGORY_ALLIANCE,
-                    "name": character.alliance_name,
-                },
+                name=character.alliance_name,
+                category=EveEntity.CATEGORY_ALLIANCE,
             )
-            if created:
-                alliances.add(obj.id)
 
     for corporation in EveCorporationInfo.objects.exclude(
-        corporation_id__in=corporations
+        corporation_id__in=existing_ids
     ):
-        EveEntity.objects.get_or_create(
+        add_eve_entity(
             id=corporation.corporation_id,
-            defaults={
-                "category": EveEntity.CATEGORY_CORPORATION,
-                "name": character.corporation_name,
-            },
+            name=corporation.corporation_name,
+            category=EveEntity.CATEGORY_CORPORATION,
         )
 
-    for alliance in EveAllianceInfo.objects.exclude(alliance_id__in=alliances):
-        EveEntity.objects.get_or_create(
+    for alliance in EveAllianceInfo.objects.exclude(alliance_id__in=existing_ids):
+        add_eve_entity(
             id=alliance.alliance_id,
-            defaults={
-                "category": EveEntity.CATEGORY_ALLIANCE,
-                "name": alliance.alliance_name,
-            },
+            name=alliance.alliance_name,
+            category=EveEntity.CATEGORY_ALLIANCE,
         )
+
+    EveEntity.objects.bulk_create(objs, ignore_conflicts=True)

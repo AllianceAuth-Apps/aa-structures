@@ -34,15 +34,12 @@ if "structuretimers" in app_labels():
     @patch(MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", True)
     class TestTimersForStructureTimers(NoSocketsTestCase):
         @classmethod
-        def setUpClass(cls):
-            super().setUpClass()
+        def setUpTestData(cls):
             load_eveuniverse()
             create_structures()
-
-        def setUp(self) -> None:
-            _, self.owner = set_owner_character(character_id=1001)
-            load_notification_entities(self.owner)
-            self.owner.webhooks.add(create_webhook())
+            _, cls.owner = set_owner_character(character_id=1001)
+            load_notification_entities(cls.owner)
+            cls.owner.webhooks.add(create_webhook())
 
         def test_should_create_timer_for_reinforced_structure(self):
             # given

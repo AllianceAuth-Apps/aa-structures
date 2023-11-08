@@ -26,17 +26,14 @@ if "discord" in app_labels():
     @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
     class TestGroupPings(NoSocketsTestCase):
         @classmethod
-        def setUpClass(cls):
-            super().setUpClass()
+        def setUpTestData(cls):
             load_eveuniverse()
             load_entities()
             cls.group_1 = Group.objects.create(name="Dummy Group 1")
             cls.group_2 = Group.objects.create(name="Dummy Group 2")
             create_structures(dont_load_entities=True)
-
-        def setUp(self):
-            _, self.owner = set_owner_character(character_id=1001)
-            load_notification_entities(self.owner)
+            _, cls.owner = set_owner_character(character_id=1001)
+            load_notification_entities(cls.owner)
 
         @staticmethod
         def _my_group_to_role(group: Group) -> dict:

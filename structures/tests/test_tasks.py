@@ -36,8 +36,9 @@ MODULE_PATH_MODELS_OWNERS = "structures.models.owners"
 
 @patch(MODULE_PATH + ".Webhook.send_queued_messages", spec=True)
 class TestSendMessagesForWebhook(TestCase):
-    def setUp(self) -> None:
-        self.webhook = Webhook.objects.create(
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.webhook = Webhook.objects.create(
             name="Dummy", url="https://www.example.com/webhook"
         )
 
@@ -59,10 +60,11 @@ class TestSendMessagesForWebhook(TestCase):
 
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 class TestUpdateStructures(NoSocketsTestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls) -> None:
         load_eveuniverse()
         create_structures()
-        self.user, self.owner = set_owner_character(character_id=1001)
+        cls.user, cls.owner = set_owner_character(character_id=1001)
 
     @patch(MODULE_PATH + ".Owner.update_structures_esi")
     def test_call_structure_update_with_owner_and_user(
@@ -131,10 +133,11 @@ class TestUpdateStructures(NoSocketsTestCase):
 
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 class TestUpdateOwnerAsset(NoSocketsTestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
-        self.user, self.owner = set_owner_character(character_id=1001)
+        cls.user, cls.owner = set_owner_character(character_id=1001)
 
     @patch(MODULE_PATH + ".Owner.update_asset_esi")
     def test_call_structure_asset_update_with_owner_and_user(
@@ -271,13 +274,14 @@ class TestFetchAllNotifications(NoSocketsTestCase):
 @patch(MODULE_PATH + ".notify", spec=True)
 @patch("structures.models.notifications.Webhook.send_test_message")
 class TestSendTestNotification(NoSocketsTestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
-        self.user, self.owner = set_owner_character(character_id=1001)
-        self.owner.is_alliance_main = True
-        self.owner.save()
-        load_notification_entities(self.owner)
+        cls.user, cls.owner = set_owner_character(character_id=1001)
+        cls.owner.is_alliance_main = True
+        cls.owner.save()
+        load_notification_entities(cls.owner)
 
     def test_send_test_notification(self, mock_send_test_message, mock_notify):
         mock_send_test_message.return_value = ("", True)

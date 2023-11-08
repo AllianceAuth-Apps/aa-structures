@@ -686,15 +686,11 @@ class TestNotificationSendMessage(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestNotificationPings(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
-        load_entities()
-
-    def setUp(self):
-        create_structures(dont_load_entities=True)
-        _, self.owner = set_owner_character(character_id=1001)
-        load_notification_entities(self.owner)
+        create_structures()
+        _, cls.owner = set_owner_character(character_id=1001)
+        load_notification_entities(cls.owner)
 
     def test_can_ping(self, mock_send_message):
         # given

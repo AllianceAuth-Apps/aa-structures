@@ -260,9 +260,11 @@ class StarbaseDetail(models.Model):
         """
         if self.structure.state is Structure.State.POS_OFFLINE:
             return None
+
         fuel = self.fuels.filter(eve_type__eve_group_id=EveGroupId.FUEL_BLOCK).first()
         if not fuel:
             return None
+
         seconds = starbases.fuel_duration(
             starbase_type=self.structure.eve_type,
             fuel_quantity=fuel.quantity,

@@ -36,6 +36,7 @@ class EveGroupId(IntEnum):
 class EveTypeId(IntEnum):
     """An EVE type ID."""
 
+    ASTRAHUS_UPWELL_QUANTUM_CORE = 56201
     CALDARI_CONTROL_TOWER = 16213
     CUSTOMS_OFFICE = 2233
     IHUB = 32458

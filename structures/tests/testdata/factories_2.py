@@ -328,7 +328,7 @@ class StarbaseDetailFactory(
     class Meta:
         model = StarbaseDetail
 
-    structure = factory.SubFactory(StarbaseFactory)
+    structure = factory.SubFactory(StarbaseFactory, starbase_detail=False)
 
     allow_alliance_members = False
     allow_corporation_members = False
@@ -393,6 +393,10 @@ class PocoFactory(StructureFactory):
     def eve_type(self):
         return EveType.objects.get(name="Customs Office")
 
+    @factory.lazy_attribute
+    def name(self):
+        return f"Customs Office ({self.eve_planet.name})"
+
     @factory.post_generation
     def poco_details(obj, create, extracted, **kwargs):
         """Set this param to False to disable.
@@ -411,7 +415,7 @@ class PocoDetailsFactory(
     class Meta:
         model = PocoDetails
 
-    structure = factory.SubFactory(PocoFactory)
+    structure = factory.SubFactory(PocoFactory, poco_details=False)
 
     allow_access_with_standings = False
     allow_alliance_access = False

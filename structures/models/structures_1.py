@@ -538,13 +538,11 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
     @property
     def is_reinforced(self) -> bool:
         """Return True if this structure is reinforced, else False."""
-        return self.state in [
+        return self.state in {
             self.State.ARMOR_REINFORCE,
             self.State.HULL_REINFORCE,
-            self.State.ANCHOR_VULNERABLE,
-            self.State.HULL_VULNERABLE,
             self.State.POS_REINFORCED,
-        ]
+        }
 
     @property
     def is_burning_fuel(self) -> bool:
@@ -569,13 +567,6 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
         )
 
     @cached_property
-    def owner_has_sov(self) -> bool:
-        """Return True if the owner of this structure has sov in this solar system,
-        else False.
-        """
-        return self.owner.has_sov(self.eve_solar_system)
-
-    @cached_property
     def location_name(self) -> str:
         """Name of this structures's location."""
         try:
@@ -590,6 +581,12 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
             return self.eve_solar_system.name
         except AttributeError:
             return "?"
+
+    def owner_has_sov(self) -> bool:
+        """Return True if the owner of this structure has sov in this solar system,
+        else False.
+        """
+        return self.owner.has_sov(self.eve_solar_system)
 
     def distance_to_object(self, x: float, y: float, z: float) -> float:
         """Distance to object with given coordinates (within same solar system)."""
@@ -668,22 +665,28 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
         if self.fuel_expires_at and old_instance and self.pk == old_instance.pk:
             logger_tag = f"{self}: Fuel notifications"
             if self.fuel_expires_at != old_instance.fuel_expires_at:
-                logger.info(
-                    "%s: Fuel expiry dates changed: old|current|delta: %s|%s|%s",
-                    logger_tag,
-                    old_instance.fuel_expires_at.isoformat()
-                    if old_instance.fuel_expires_at
-                    else None,
-                    self.fuel_expires_at.isoformat(),
-                    int(
+                if old_instance.fuel_expires_at:
+                    delta = int(
                         abs(
                             (
                                 self.fuel_expires_at - old_instance.fuel_expires_at
                             ).total_seconds()
                         )
                     )
+                else:
+                    delta = "-"
+                old_date = (
+                    old_instance.fuel_expires_at.isoformat()
                     if old_instance.fuel_expires_at
-                    else "-",
+                    else None
+                )
+                current_date = self.fuel_expires_at.isoformat()
+                logger.info(
+                    "%s: Fuel expiry dates changed: old|current|delta: %s|%s|%s",
+                    logger_tag,
+                    old_date,
+                    current_date,
+                    delta,
                 )
             if (
                 self.is_burning_fuel
@@ -748,7 +751,7 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
         )
 
         self.tags.add(space_type_tag)
-        if self.owner_has_sov:
+        if self.owner_has_sov():
             method_name = (
                 "update_or_create_for_sov" if recreate_tags else "get_or_create_for_sov"
             )

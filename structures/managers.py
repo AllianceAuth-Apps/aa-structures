@@ -74,15 +74,19 @@ class EveSovereigntyMapManager(models.Manager):
             self.solar_system_sov_alliance_id(eve_solar_system) == alliance_id
         )
 
-    def solar_system_sov_alliance_id(self, eve_solar_system) -> Optional[int]:
+    def solar_system_sov_alliance_id(
+        self, eve_solar_system: EveSolarSystem
+    ) -> Optional[int]:
         """returns ID of sov owning alliance for this system or None"""
         if not eve_solar_system.is_null_sec:
             return None
+
         try:
             sov_map = self.get(solar_system_id=eve_solar_system.id)
-            return sov_map.alliance_id if sov_map.alliance_id else None
         except self.model.DoesNotExist:
             return None
+
+        return sov_map.alliance_id if sov_map.alliance_id else None
 
 
 class NotificationBaseQuerySet(models.QuerySet):

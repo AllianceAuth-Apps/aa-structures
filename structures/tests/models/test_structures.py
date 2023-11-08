@@ -84,8 +84,7 @@ class TestStructureTag(NoSocketsTestCase):
 
 class TestStructure(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         _, cls.owner = set_owner_character(character_id=1001)
@@ -496,8 +495,7 @@ class TestStructure3(NoSocketsTestCase):
     """New version of TestStructure using factories to create testdata."""
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities()
         cls.user, _ = create_user_from_evecharacter(1001)
@@ -533,8 +531,7 @@ class TestStructure3(NoSocketsTestCase):
 
 class TestStructureIsBurningFuel(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         set_owner_character(character_id=1001)
@@ -584,8 +581,7 @@ class TestStructureIsBurningFuel(NoSocketsTestCase):
 @patch(STRUCTURES_PATH + ".Structure.FUEL_DATES_EQUAL_THRESHOLD_STARBASE", 7200)
 class TestStructureFuelLevels(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         set_owner_character(character_id=1001)
@@ -745,8 +741,7 @@ class TestStructureFuelLevels(NoSocketsTestCase):
 
 class TestStructurePowerMode(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
 
@@ -848,8 +843,7 @@ class TestStructure2(NoSocketsTestCase):
 
 class TestStructureSave(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities([EveCharacter, EveSovereigntyMap])
         cls.owner = OwnerFactory(
@@ -924,8 +918,7 @@ class TestStructureNoSetup(NoSocketsTestCase):
 
 class TestStructureService(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         set_owner_character(character_id=1001)
@@ -945,8 +938,7 @@ class TestStructureService(NoSocketsTestCase):
 
 class TestPocoDetails(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         cls.user, cls.owner = set_owner_character(character_id=1001)

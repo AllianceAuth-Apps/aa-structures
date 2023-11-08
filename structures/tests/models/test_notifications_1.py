@@ -27,8 +27,7 @@ MODULE_PATH = "structures.models.notifications"
 
 class TestNotification(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         _, cls.owner = set_owner_character(character_id=1001)
@@ -111,7 +110,7 @@ class TestNotification(NoSocketsTestCase):
 
 class TestNotificationFilterForAllianceLevel(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls):  # TODO: Refactor so it works with setUpTestData()
         super().setUpClass()
         load_eveuniverse()
         create_structures()
@@ -193,8 +192,7 @@ class TestNotificationFilterForAllianceLevel(NoSocketsTestCase):
 
 class TestNotificationCreateFromStructure(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         _, cls.owner = set_owner_character(character_id=1001)
@@ -259,8 +257,7 @@ class TestNotificationCreateFromStructure(NoSocketsTestCase):
 
 class TestNotificationRelevantWebhooks(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities()
         user, _ = create_user_from_evecharacter(
@@ -362,8 +359,7 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
 
 class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities()
         user, _ = create_user_from_evecharacter(
@@ -490,8 +486,7 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message")
 class TestNotificationSendToWebhook(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         cls.structure = Structure.objects.get(id=1000000000001)
@@ -538,8 +533,7 @@ class TestNotificationSendToWebhook(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestNotificationSendMessage(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         _, cls.owner = set_owner_character(character_id=1001)

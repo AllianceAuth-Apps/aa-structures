@@ -54,8 +54,7 @@ class MockRequest(object):
 
 class TestFuelNotificationConfigAdminView(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.defaults = {
             "is_enabled": True,
             "channel_ping_type": Webhook.PingType.HERE,
@@ -216,8 +215,7 @@ class TestFuelNotificationConfigAdminView(TestCase):
 
 class TestStructureFuelAlertAdmin(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.modeladmin = StructureFuelAlertConfigAdmin(
             model=FuelAlertConfig, admin_site=AdminSite()
         )
@@ -239,8 +237,7 @@ class TestStructureFuelAlertAdmin(TestCase):
 
 class TestNotificationAdmin(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.modeladmin = NotificationAdmin(model=Notification, admin_site=AdminSite())
         load_eveuniverse()
         create_structures()
@@ -311,8 +308,7 @@ class TestNotificationAdmin(TestCase):
 
 class TestOwnerAdmin(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         cls.modeladmin = OwnerAdmin(model=Owner, admin_site=AdminSite())
         load_eveuniverse()
@@ -396,8 +392,7 @@ class TestOwnerAdmin(TestCase):
 
 class TestStructureAdmin(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         cls.modeladmin = StructureAdmin(model=Structure, admin_site=AdminSite())
         load_eveuniverse()
@@ -507,8 +502,7 @@ class TestStructureAdmin(TestCase):
 
 class TestWebhookAdmin(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.modeladmin = WebhookAdmin(model=Webhook, admin_site=AdminSite())
         load_entities([Webhook])
         cls.user = create_user(character_id=1001, load_data=True)

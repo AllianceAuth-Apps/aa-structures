@@ -35,8 +35,7 @@ MODULE_PATH = "structures.models.owners"
 @patch(MODULE_PATH + ".esi")
 class TestUpdateStructuresEsi(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         # given (global)
         load_eveuniverse()
         load_entities()

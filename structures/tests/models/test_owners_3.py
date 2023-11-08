@@ -752,8 +752,7 @@ class TestOwnerToken(NoSocketsTestCase):
 
 class TestOwnerUpdateIsUp(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         cls.user, cls.owner = set_owner_character(character_id=1001)

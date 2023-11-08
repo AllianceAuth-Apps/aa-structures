@@ -46,8 +46,7 @@ MODULE_PATH = "structures.models.notifications"
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestStructureFuelAlerts(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         _, cls.owner = set_owner_character(character_id=1001)
@@ -378,8 +377,7 @@ class TestStructureFuelAlerts(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestJumpFuelAlerts(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities()
         cls.user, _ = create_user_from_evecharacter(
@@ -673,8 +671,7 @@ class TestJumpFuelAlerts(NoSocketsTestCase):
 
 class TestNotificationRelatedStructures(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities()
         user, _ = create_user_from_evecharacter(

@@ -42,8 +42,7 @@ OWNERS_PATH = "structures.models.owners"
 
 class TestStructureListDataSerialization(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
         alliance = EveAllianceInfoFactory(
@@ -114,8 +113,7 @@ class TestStructureListDataSerialization(TestCase):
 
 class TestStructureListDataFilterVariant(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultFactory()
@@ -212,8 +210,7 @@ class TestStructureListDataFilterVariant(TestCase):
 
 class TestStructureListDataPermissions(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
         create_structures()
@@ -370,8 +367,7 @@ class TestStructureListDataPermissions(TestCase):
 
 class TestStructureListFilters(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         cls.user, cls.owner = set_owner_character(character_id=1001)
@@ -569,8 +565,7 @@ class TestStructurePowerModes(TestCase):
 
 class TestAddStructureOwner(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities([EveCorporationInfo, EveAllianceInfo, EveCharacter, Webhook])
         cls.user, cls.character_ownership = create_user_from_evecharacter(
@@ -722,8 +717,7 @@ class TestAddStructureOwner(TestCase):
 
 class TestStatus(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         my_user, _ = set_owner_character(character_id=1001)
@@ -797,8 +791,7 @@ class TestStatus(TestCase):
 
 class TestStructureFittingModal(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.character = EveCharacterFactory()
@@ -841,8 +834,7 @@ class TestStructureFittingModal(TestCase):
 
 class TestDetailsModal(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultFactory()

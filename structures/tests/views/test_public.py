@@ -9,8 +9,7 @@ from .utils import json_response_to_dict
 
 class TestPocoListData(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainBasicFactory()

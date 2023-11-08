@@ -18,12 +18,8 @@ from structures.models import (
     Webhook,
 )
 
-from .testdata.factories import (
-    create_eve_sovereignty_map,
-    create_owner_from_user,
-    create_upwell_structure,
-)
-from .testdata.factories_2 import OwnerFactory
+from .testdata.factories import create_owner_from_user, create_upwell_structure
+from .testdata.factories_2 import EveSovereigntyMapFactory, OwnerFactory
 from .testdata.helpers import create_structures, load_entities
 from .testdata.load_eveuniverse import load_eveuniverse
 
@@ -33,8 +29,7 @@ MODULE_PATH_ESI_FETCH = "structures.helpers.esi_fetch"
 
 class TestEveSovereigntyMapManagerUpdateFromEsi(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls) -> None:
         endpoints = [
             EsiEndpoint(
                 "Sovereignty",
@@ -84,7 +79,7 @@ class TestEveSovereigntyMapManagerUpdateFromEsi(NoSocketsTestCase):
     def test_should_update_existing_map(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
-        create_eve_sovereignty_map(solar_system_id=30000726, alliance_id=3001)
+        EveSovereigntyMapFactory(solar_system_id=30000726, alliance_id=3001)
         # when
         EveSovereigntyMap.objects.update_or_create_all_from_esi()
         # then
@@ -105,8 +100,7 @@ class TestEveSovereigntyMapManagerUpdateFromEsi(NoSocketsTestCase):
 
 class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities([EveCharacter, EveSovereigntyMap])
 
@@ -149,8 +143,7 @@ class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
 @patch(MODULE_PATH + ".esi")
 class TestStructureManagerEsi(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities([EveCharacter])
         user, _ = create_user_from_evecharacter(
@@ -287,8 +280,7 @@ class TestStructureManagerEsi(NoSocketsTestCase):
 
 class TestStructureManagerQuerySet(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
 
@@ -342,8 +334,7 @@ class TestStructureManagerQuerySet(NoSocketsTestCase):
 
 class TestStructureManagerCreateFromDict(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
 
     def test_can_create_full(self):
@@ -534,8 +525,7 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
 
 class TestStructureTagManager(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         load_entities([EveSovereigntyMap])
 

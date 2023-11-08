@@ -175,8 +175,7 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
 @patch(MODULE_PATH + ".process_notifications_for_owner")
 class TestFetchAllNotifications(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         create_structures()
         cls.user, cls.owner = set_owner_character(character_id=1001)
@@ -313,8 +312,7 @@ class TestSendTestNotification(NoSocketsTestCase):
 @patch("structures.models.notifications.Notification.update_related_structures")
 class TestUpdateExistingNotifications(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
+    def setUpTestData(cls) -> None:
         load_eveuniverse()
         load_entities()
         cls.user, _ = create_user_from_evecharacter(

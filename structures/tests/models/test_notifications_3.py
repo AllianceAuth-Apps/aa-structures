@@ -21,8 +21,7 @@ MODULE_PATH = "structures.models.notifications"
 
 class TestGeneratedNotification(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
 
     def test_should_have_str(self):
@@ -51,8 +50,7 @@ class TestGeneratedNotification(NoSocketsTestCase):
 
 class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
 
     def test_should_create_new_notif(self):
@@ -119,8 +117,7 @@ class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
 @mock.patch("structures.core.notification_timers.add_or_remove_timer")
 class TestProcessTimers(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.owner = OwnerFactory()
 
     @mock.patch(MODULE_PATH + ".STRUCTURES_ADD_TIMERS", True)

@@ -3,13 +3,9 @@ from unittest.mock import patch
 
 from django.contrib import admin
 from django.contrib.admin.sites import AdminSite
-from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils.timezone import now
-from eveuniverse.models import EveEntity
-
-from allianceauth.eveonline.models import EveCorporationInfo
 
 from structures.admin import (
     NotificationAdmin,
@@ -20,6 +16,7 @@ from structures.admin import (
     StructureFuelAlertConfigAdmin,
     WebhookAdmin,
 )
+from structures.core.notification_types import NotificationType
 from structures.models import (
     FuelAlertConfig,
     Notification,
@@ -30,17 +27,17 @@ from structures.models import (
 )
 
 from .testdata.factories_2 import (
+    EveAllianceInfoFactory,
+    EveCorporationInfoFactory,
     FuelAlertConfigFactory,
     NotificationFactory,
     OwnerFactory,
+    PocoFactory,
+    StarbaseFactory,
     StructureFactory,
-)
-from .testdata.helpers import (
-    create_structures,
-    create_user,
-    load_entities,
-    load_notification_entities,
-    set_owner_character,
+    StructureTagFactory,
+    SuperuserFactory,
+    WebhookFactory,
 )
 from .testdata.load_eveuniverse import load_eveuniverse
 
@@ -60,7 +57,7 @@ class TestFuelNotificationConfigAdminView(TestCase):
             "channel_ping_type": Webhook.PingType.HERE,
             "color": Webhook.Color.WARNING,
         }
-        cls.user = User.objects.create_superuser("Clark Kent")
+        cls.user = SuperuserFactory()
         load_eveuniverse()
 
     def test_should_create_new_config(self):
@@ -240,69 +237,89 @@ class TestNotificationAdmin(TestCase):
     def setUpTestData(cls):
         cls.modeladmin = NotificationAdmin(model=Notification, admin_site=AdminSite())
         load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-        load_notification_entities(cls.owner)
-        cls.obj = Notification.objects.get(notification_id=1000000404)
-        cls.obj_qs = Notification.objects.filter(
-            notification_id__in=[1000000404, 1000000405]
-        )
+        cls.user = SuperuserFactory()
+        cls.owner = OwnerFactory()
 
-    def test_structures_1(self):
+    def test_structures_when_structure_related(self):
         # given
-        notif = Notification.objects.get(notification_id=1000000404)
+        obj = NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.STRUCTURE_LOST_SHIELD
+        )
         # when
-        result = self.modeladmin._structures(notif)
+        result = self.modeladmin._structures(obj)
         self.assertEqual(result, "?")
 
-    def test_structures_2(self):
+    def test_structures_when_not_structure_related(self):
         # given
-        notif = Notification.objects.get(notification_id=1000000202)
+        obj = NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.CHAR_APP_ACCEPT_MSG
+        )
         # when
-        result = self.modeladmin._structures(notif)
+        result = self.modeladmin._structures(obj)
         self.assertIsNone(result)
 
-    # FixMe: Does not seam to work with special prefetch list
+    # FIXME: Does not seam to work with special prefetch list
     # def test_webhooks(self):
     #     self.owner.webhooks.add(Webhook.objects.get(name="Test Webhook 2"))
     #     self.assertEqual(
     #         self.modeladmin._webhooks(self.obj), "Test Webhook 1, Test Webhook 2"
     #     )
 
-    @patch(MODULE_PATH + ".NotificationAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".NotificationAdmin.message_user", spec=True)
     def test_action_mark_as_sent(self, mock_message_user):
-        for obj in self.obj_qs:
-            obj.is_sent = False
-            obj.save()
-        self.modeladmin.mark_as_sent(MockRequest(self.user), self.obj_qs)
-        for obj in self.obj_qs:
-            self.assertTrue(obj.is_sent)
+        # given
+        notif = NotificationFactory(owner=self.owner, is_sent=False)
+        queryset = Notification.objects.all()
+        # when
+        self.modeladmin.mark_as_sent(MockRequest(self.user), queryset)
+        # then
+        notif.refresh_from_db()
+        self.assertTrue(notif.is_sent)
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".NotificationAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".NotificationAdmin.message_user", spec=True)
     def test_action_mark_as_unsent(self, mock_message_user):
-        for obj in self.obj_qs:
-            obj.is_sent = True
-            obj.save()
-        self.modeladmin.mark_as_unsent(MockRequest(self.user), self.obj_qs)
-        for obj in self.obj_qs:
-            self.assertFalse(obj.is_sent)
+        # given
+        notif = NotificationFactory(owner=self.owner, is_sent=True)
+        queryset = Notification.objects.all()
+        # when
+        self.modeladmin.mark_as_unsent(MockRequest(self.user), queryset)
+        # then
+        notif.refresh_from_db()
+        self.assertFalse(notif.is_sent)
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".NotificationAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".NotificationAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".tasks.send_queued_messages_for_webhooks")
     def test_action_send_to_webhook(self, mock_task, mock_message_user):
-        self.modeladmin.send_to_configured_webhooks(MockRequest(self.user), self.obj_qs)
+        # given
+        NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.STRUCTURE_LOST_SHIELD
+        )
+        queryset = Notification.objects.all()
+        # when
+        with patch(MODULE_PATH + ".Notification.send_to_webhook", return_value=True):
+            self.modeladmin.send_to_configured_webhooks(
+                MockRequest(self.user), queryset
+            )
+        # then
         self.assertEqual(mock_task.call_count, 1)
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".NotificationAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".NotificationAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".Notification.add_or_remove_timer")
     def test_action_process_for_timerboard(
         self, mock_process_for_timerboard, mock_message_user
     ):
-        self.modeladmin.add_or_remove_timer(MockRequest(self.user), self.obj_qs)
-        self.assertEqual(mock_process_for_timerboard.call_count, 2)
+        # given
+        NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.STRUCTURE_LOST_SHIELD
+        )
+        queryset = Notification.objects.all()
+        # when
+        self.modeladmin.add_or_remove_timer(MockRequest(self.user), queryset)
+        # then
+        self.assertEqual(mock_process_for_timerboard.call_count, 1)
         self.assertTrue(mock_message_user.called)
 
 
@@ -312,46 +329,68 @@ class TestOwnerAdmin(TestCase):
         cls.factory = RequestFactory()
         cls.modeladmin = OwnerAdmin(model=Owner, admin_site=AdminSite())
         load_eveuniverse()
-        create_structures()
-        cls.user, cls.obj = set_owner_character(character_id=1001)
-
-    def test_corporation(self):
-        self.assertEqual(self.modeladmin._corporation(self.obj), "Wayne Technologies")
-
-    def test_alliance_normal(self):
-        self.assertEqual(self.modeladmin._alliance(self.obj), "Wayne Enterprises")
-
-    def test_alliance_none(self):
-        my_owner = Owner.objects.get(corporation__corporation_id=2102)
-        self.assertIsNone(self.modeladmin._alliance(my_owner))
-
-    def test_webhooks(self):
-        self.obj.webhooks.add(Webhook.objects.get(name="Test Webhook 2"))
-        self.assertEqual(
-            self.modeladmin._webhooks(self.obj), "Test Webhook 1<br>Test Webhook 2"
+        cls.user = SuperuserFactory()
+        cls.alliance = EveAllianceInfoFactory(
+            alliance_id=3001, alliance_name="Wayne Enterprises"
+        )
+        cls.corporation = EveCorporationInfoFactory(
+            corporation_id=2001,
+            corporation_name="Wayne Technologies",
+            alliance=cls.alliance,
         )
 
-    @patch(MODULE_PATH + ".OwnerAdmin.message_user", autospec=True)
+    def test_corporation(self):
+        obj = OwnerFactory(corporation=self.corporation)
+        self.assertEqual(self.modeladmin._corporation(obj), "Wayne Technologies")
+
+    def test_alliance_normal(self):
+        obj = OwnerFactory(corporation=self.corporation)
+        self.assertEqual(self.modeladmin._alliance(obj), "Wayne Enterprises")
+
+    def test_alliance_none(self):
+        corporation = EveCorporationInfoFactory(create_alliance=False)
+        obj = OwnerFactory(corporation=corporation)
+        self.assertIsNone(self.modeladmin._alliance(obj))
+
+    def test_webhooks(self):
+        # given
+        webhook_1 = WebhookFactory(name="Test Webhook 1")
+        webhook_2 = WebhookFactory(name="Test Webhook 2")
+        obj = OwnerFactory(webhooks=[webhook_1, webhook_2])
+        # when/then
+        self.assertEqual(
+            self.modeladmin._webhooks(obj), "Test Webhook 1<br>Test Webhook 2"
+        )
+
+    @patch(MODULE_PATH + ".OwnerAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".tasks.update_structures_for_owner")
     def test_action_update_structures(self, mock_task, mock_message_user):
-        owner_qs = Owner.objects.filter(corporation__corporation_id__in=[2001, 2002])
-        self.modeladmin.update_structures(MockRequest(self.user), owner_qs)
-        self.assertEqual(mock_task.delay.call_count, 2)
+        # given
+        OwnerFactory()
+        queryset = Owner.objects.all()
+        # when
+        self.modeladmin.update_structures(MockRequest(self.user), queryset)
+        # then
+        self.assertEqual(mock_task.delay.call_count, 1)
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".OwnerAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".OwnerAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".tasks.process_notifications_for_owner")
     def test_action_fetch_notifications(self, mock_task, mock_message_user):
-        owner_qs = Owner.objects.filter(corporation__corporation_id__in=[2001, 2002])
-        self.modeladmin.fetch_notifications(MockRequest(self.user), owner_qs)
-        self.assertEqual(mock_task.delay.call_count, 2)
+        # given
+        OwnerFactory()
+        queryset = Owner.objects.all()
+        # when
+        self.modeladmin.fetch_notifications(MockRequest(self.user), queryset)
+        # then
+        self.assertEqual(mock_task.delay.call_count, 1)
         self.assertTrue(mock_message_user.called)
 
     def test_should_return_empty_turnaround_times(self):
         # given
-        my_owner = Owner.objects.get(corporation__corporation_id=2001)
+        obj = OwnerFactory()
         # when
-        result = self.modeladmin._avg_turnaround_time(my_owner)
+        result = self.modeladmin._avg_turnaround_time(obj)
         # then
         self.assertEqual(result, "- | - | -")
 
@@ -364,13 +403,9 @@ class TestOwnerAdmin(TestCase):
     def test_should_return_correct_turnaround_times(self):
         # given
         my_owner = OwnerFactory()
-        my_sender = EveEntity.objects.get(id=1001)
         my_now = now()
         NotificationFactory(
             owner=my_owner,
-            notification_id=1,
-            sender=my_sender,
-            last_updated=my_now,
             timestamp=my_now,
             created=my_now + dt.timedelta(seconds=3601),
         )
@@ -378,9 +413,6 @@ class TestOwnerAdmin(TestCase):
             timestamp = my_now + dt.timedelta(minutes=i)
             NotificationFactory(
                 owner=my_owner,
-                notification_id=2 + i,
-                sender=my_sender,
-                last_updated=my_now,
                 timestamp=timestamp,
                 created=timestamp + dt.timedelta(seconds=2),
             )
@@ -394,51 +426,93 @@ class TestStructureAdmin(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.factory = RequestFactory()
-        cls.modeladmin = StructureAdmin(model=Structure, admin_site=AdminSite())
         load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-        cls.obj = Structure.objects.get(id=1000000000001)
-        cls.obj_qs = Structure.objects.filter(id__in=[1000000000001, 1000000000002])
+        cls.modeladmin = StructureAdmin(model=Structure, admin_site=AdminSite())
+        cls.user = SuperuserFactory()
+        cls.alliance = EveAllianceInfoFactory(
+            alliance_id=3001, alliance_name="Wayne Enterprises"
+        )
+        corporation = EveCorporationInfoFactory(
+            corporation_id=2001,
+            corporation_name="Wayne Technologies",
+            alliance=cls.alliance,
+        )
+        cls.owner = OwnerFactory(corporation=corporation)
 
     def test_owner(self):
+        # given
+        obj = StructureFactory(owner=self.owner)
+        # when/then
         self.assertEqual(
-            self.modeladmin._owner(self.obj), "Wayne Technologies<br>Wayne Enterprises"
+            self.modeladmin._owner(obj),
+            "Wayne Technologies<br>Wayne Enterprises",
         )
 
-    def test_location(self):
-        self.assertEqual(self.modeladmin._location(self.obj), "Amamake<br>Heimatar")
-        poco = Structure.objects.get(id=1200000000003)
-        self.assertEqual(self.modeladmin._location(poco), "Amamake V<br>Heimatar")
-        starbase = Structure.objects.get(id=1300000000001)
+    def test_location_structure(self):
+        # given
+        obj = StructureFactory(
+            owner=self.owner, eve_solar_system_name="Amamake", eve_type_name="Astrahus"
+        )
+        # when/then
+        self.assertEqual(self.modeladmin._location(obj), "Amamake<br>Heimatar")
+
+    def test_location_poco(self):
+        # given
+        obj = PocoFactory(owner=self.owner, eve_planet_name="Amamake V")
+        # when/then
+        self.assertEqual(self.modeladmin._location(obj), "Amamake V<br>Heimatar")
+
+    def test_location_starbase(self):
+        # given
+        obj = StarbaseFactory(owner=self.owner, eve_moon_name="Amamake II - Moon 1")
         self.assertEqual(
-            self.modeladmin._location(starbase), "Amamake II - Moon 1<br>Heimatar"
+            self.modeladmin._location(obj), "Amamake II - Moon 1<br>Heimatar"
         )
 
     def test_type(self):
-        self.assertEqual(self.modeladmin._type(self.obj), "Astrahus<br>Citadel")
+        # given
+        obj = StructureFactory(owner=self.owner, eve_type_name="Astrahus")
+        # when/then
+        self.assertEqual(self.modeladmin._type(obj), "Astrahus<br>Citadel")
 
     def test_tags_1(self):
-        self.assertSetEqual(set(self.modeladmin._tags(self.obj)), {"lowsec", "tag_a"})
+        # given
+        obj = StructureFactory(
+            owner=self.owner,
+            eve_solar_system_name="Amamake",
+            tags=[StructureTagFactory(name="my_tag")],
+        )
+        # when/then
+        self.assertSetEqual(set(self.modeladmin._tags(obj)), {"lowsec", "my_tag"})
 
     def test_tags_2(self):
-        self.obj.tags.clear()
-        self.assertListEqual(self.modeladmin._tags(self.obj), [])
+        # given
+        obj = StructureFactory(owner=self.owner)
+        obj.tags.clear()
+        # when/then
+        self.assertListEqual(self.modeladmin._tags(obj), [])
 
-    @patch(MODULE_PATH + ".StructureAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".StructureAdmin.message_user", spec=True)
     def test_action_add_default_tags(self, mock_message_user):
-        for obj in self.obj_qs:
-            obj.tags.clear()
-        self.modeladmin.add_default_tags(MockRequest(self.user), self.obj_qs)
+        # given
+        obj = StructureFactory()
+        obj.tags.clear()
+        queryset = Structure.objects.all()
+        # when
+        self.modeladmin.add_default_tags(MockRequest(self.user), queryset)
         default_tags = StructureTag.objects.filter(is_default=True)
-        for obj in self.obj_qs:
+        for obj in queryset:
             self.assertSetEqual(set(obj.tags.all()), set(default_tags))
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".StructureAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".StructureAdmin.message_user", spec=True)
     def test_action_remove_user_tags(self, mock_message_user):
-        self.modeladmin.remove_user_tags(MockRequest(self.user), self.obj_qs)
-        for obj in self.obj_qs:
+        # given
+        obj = StructureFactory(tags=[StructureTagFactory(name="my_tag")])
+        queryset = Structure.objects.all()
+        # when
+        self.modeladmin.remove_user_tags(MockRequest(self.user), queryset)
+        for obj in queryset:
             self.assertFalse(obj.tags.filter(is_user_managed=True).exists())
         self.assertTrue(mock_message_user.called)
 
@@ -446,11 +520,11 @@ class TestStructureAdmin(TestCase):
         class StructureAdminTest(admin.ModelAdmin):
             list_filter = (OwnerCorporationsFilter,)
 
-        Owner.objects.all().delete()
-        owner_2001 = OwnerFactory(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2001)
+        OwnerFactory(
+            corporation=EveCorporationInfoFactory(
+                corporation_id=2002, corporation_name="Wayne Foods"
+            )
         )
-        OwnerFactory(corporation=EveCorporationInfo.objects.get(corporation_id=2002))
         my_modeladmin = StructureAdminTest(Structure, AdminSite())
 
         # Make sure the lookups are correct
@@ -466,21 +540,24 @@ class TestStructureAdmin(TestCase):
         request.user = self.user
         changelist = my_modeladmin.get_changelist_instance(request)
         queryset = changelist.get_queryset(request)
-        expected = Structure.objects.filter(owner=owner_2001)
+        expected = Structure.objects.filter(owner=self.owner)
         self.assertSetEqual(set(queryset), set(expected))
 
     def test_owner_alliance_status_filter(self):
         class StructureAdminTest(admin.ModelAdmin):
             list_filter = (OwnerAllianceFilter,)
 
-        Owner.objects.all().delete()
-        owner_2001 = OwnerFactory(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2001)
-        )
+        # create test data
         owner_2002 = OwnerFactory(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2002)
+            corporation=EveCorporationInfoFactory(
+                corporation_id=2002, alliance=self.alliance
+            )
         )
-        OwnerFactory(corporation=EveCorporationInfo.objects.get(corporation_id=2102))
+        OwnerFactory(
+            corporation=EveCorporationInfoFactory(
+                corporation_id=2102, create_alliance=False
+            )
+        )
         modeladmin = StructureAdminTest(Structure, AdminSite())
 
         # Make sure the lookups are correct
@@ -496,7 +573,7 @@ class TestStructureAdmin(TestCase):
         request.user = self.user
         changelist = modeladmin.get_changelist_instance(request)
         queryset = changelist.get_queryset(request)
-        expected = Structure.objects.filter(owner__in=[owner_2001, owner_2002])
+        expected = Structure.objects.filter(owner__in=[self.owner, owner_2002])
         self.assertSetEqual(set(queryset), set(expected))
 
 
@@ -504,35 +581,40 @@ class TestWebhookAdmin(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.modeladmin = WebhookAdmin(model=Webhook, admin_site=AdminSite())
-        load_entities([Webhook])
-        cls.user = create_user(character_id=1001, load_data=True)
-        cls.obj_qs = Webhook.objects.all()
+        cls.user = SuperuserFactory()
 
-    @patch(MODULE_PATH + ".WebhookAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".WebhookAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".tasks.send_test_notifications_to_webhook")
     def test_action_test_notification(self, mock_task, mock_message_user):
-        self.modeladmin.test_notification(MockRequest(self.user), self.obj_qs)
-        self.assertEqual(mock_task.delay.call_count, 2)
+        # given
+        WebhookFactory()
+        queryset = Webhook.objects.all()
+        # when
+        self.modeladmin.test_notification(MockRequest(self.user), queryset)
+        # then
+        self.assertEqual(mock_task.delay.call_count, 1)
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".WebhookAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".WebhookAdmin.message_user", spec=True)
     def test_action_activate(self, mock_message_user):
-        for obj in self.obj_qs:
-            obj.is_active = False
-            obj.save()
-        self.modeladmin.activate(MockRequest(self.user), self.obj_qs)
-        for obj in self.obj_qs:
-            self.assertTrue(obj.is_active)
-
+        # given
+        webhook = WebhookFactory(is_active=False)
+        queryset = Webhook.objects.all()
+        # when
+        self.modeladmin.activate(MockRequest(self.user), queryset)
+        # then
+        webhook.refresh_from_db()
+        self.assertTrue(webhook.is_active)
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".WebhookAdmin.message_user", autospec=True)
+    @patch(MODULE_PATH + ".WebhookAdmin.message_user", spec=True)
     def test_action_deactivate(self, mock_message_user):
-        for obj in self.obj_qs:
-            obj.is_active = True
-            obj.save()
-        self.modeladmin.deactivate(MockRequest(self.user), self.obj_qs)
-        for obj in self.obj_qs:
-            self.assertFalse(obj.is_active)
-
+        # given
+        webhook = WebhookFactory(is_active=True)
+        queryset = Webhook.objects.all()
+        # when
+        self.modeladmin.deactivate(MockRequest(self.user), queryset)
+        # then
+        webhook.refresh_from_db()
+        self.assertFalse(webhook.is_active)
         self.assertTrue(mock_message_user.called)

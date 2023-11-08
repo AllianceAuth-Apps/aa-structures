@@ -83,27 +83,27 @@ class TestNotification(NoSocketsTestCase):
         self.assertTrue(x1.filter_for_npc_attacks())
 
     def test_can_be_rendered_1(self):
-        for ntype in NotificationType.values:
-            with self.subTest(notification_type=ntype):
-                notif = Notification.objects.filter(notif_type=ntype).first()
+        for notif_type in NotificationType.values:
+            with self.subTest(notification_type=notif_type):
+                notif = Notification.objects.filter(notif_type=notif_type).first()
                 if notif:
                     self.assertTrue(notif.can_be_rendered)
 
     def test_can_be_rendered_2(self):
         structure = Structure.objects.get(id=1000000000001)
-        for ntype in [
+        for notif_type in [
             NotificationType.STRUCTURE_REFUELED_EXTRA,
             NotificationType.TOWER_REFUELED_EXTRA,
         ]:
-            with self.subTest(notification_type=ntype):
-                notif = Notification.create_from_structure(structure, ntype)
+            with self.subTest(notification_type=notif_type):
+                notif = Notification.create_from_structure(structure, notif_type)
                 if notif:
                     self.assertTrue(notif.can_be_rendered)
 
     def test_can_be_rendered_3(self):
-        for ntype in ["DeclareWar"]:
-            with self.subTest(notification_type=ntype):
-                notif = Notification.objects.filter(notif_type=ntype).first()
+        for notif_type in ["DeclareWar"]:
+            with self.subTest(notification_type=notif_type):
+                notif = Notification.objects.filter(notif_type=notif_type).first()
                 if notif:
                     self.assertFalse(notif.can_be_rendered)
 

@@ -189,7 +189,7 @@ class NotificationBase(models.Model):
 
     @property
     def is_structure_related(self) -> bool:
-        """Weather this notification related to a structure."""
+        """Return True if this notification is about a structure, else False."""
         return self.notif_type in NotificationType.structure_related()
 
     @property

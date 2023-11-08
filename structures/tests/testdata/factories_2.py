@@ -14,6 +14,7 @@ from app_utils.testdata_factories import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
+    UserFactory,
     UserMainFactory,
 )
 
@@ -95,24 +96,9 @@ class EveEntityAllianceFactory(EveEntityFactory):
 # Structures objects
 
 
-class FuelAlertConfigFactory(
-    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[FuelAlertConfig]
-):
-    class Meta:
-        model = FuelAlertConfig
-
-    start = 48
-    end = 0
-    repeat = 12
-
-
-class JumpFuelAlertConfigFactory(
-    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[JumpFuelAlertConfig]
-):
-    class Meta:
-        model = JumpFuelAlertConfig
-
-    threshold = 100
+class SuperuserFactory(UserFactory):
+    is_staff = True
+    is_superuser = True
 
 
 class UserMainBasicFactory(UserMainFactory):
@@ -143,6 +129,26 @@ class UserMainDefaultOwnerFactory(UserMainFactory):
     ]
 
 
+class FuelAlertConfigFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[FuelAlertConfig]
+):
+    class Meta:
+        model = FuelAlertConfig
+
+    start = 48
+    end = 0
+    repeat = 12
+
+
+class JumpFuelAlertConfigFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[JumpFuelAlertConfig]
+):
+    class Meta:
+        model = JumpFuelAlertConfig
+
+    threshold = 100
+
+
 class WebhookFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Webhook]
 ):
@@ -150,8 +156,8 @@ class WebhookFactory(
         model = Webhook
         django_get_or_create = ("name",)
 
-    name = factory.Sequence(lambda n: f"name_{n}")
-    url = factory.Sequence(lambda n: f"url_{n}")
+    name = factory.Sequence(lambda n: f"Generated webhook #{n+1}")
+    url = factory.Sequence(lambda n: f"http://www.example.com/webhook_{n+1}")
     notes = factory.Faker("sentence")
 
 
@@ -270,9 +276,18 @@ class StructureFactory(
     def webhooks(obj, create, extracted, **kwargs):
         if not create:
             return
+
         if extracted:
             for webhook in extracted:
                 obj.webhooks.add(webhook)
+
+    @factory.post_generation
+    def tags(obj, create, extracted, **kwargs):
+        if not create:
+            return
+
+        elif extracted:
+            obj.tags.add(*extracted)
 
 
 class StarbaseFactory(StructureFactory):
@@ -518,7 +533,7 @@ class NotificationFactory(
     created = factory.LazyFunction(now)
     is_read = False
     last_updated = factory.LazyAttribute(lambda o: o.created)
-    notif_type = NotificationType.WAR_CORPORATION_BECAME_ELIGIBLE.value
+    notif_type = NotificationType.WAR_CORPORATION_BECAME_ELIGIBLE
     owner = factory.SubFactory(OwnerFactory)
     sender = factory.SubFactory(EveEntityCorporationFactory, id=1000137, name="DED")
     timestamp = factory.LazyAttribute(lambda o: o.created)

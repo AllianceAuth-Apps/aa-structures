@@ -61,14 +61,14 @@ def create_owner_from_user(
     else:
         owner.webhooks.add(*webhooks)
     owner.characters.add(
-        create_owner_character(
+        _create_owner_character(
             owner=owner, character_ownership=main_character.character_ownership
         )
     )
     return owner
 
 
-def create_owner_character(**kwargs) -> OwnerCharacter:
+def _create_owner_character(**kwargs) -> OwnerCharacter:
     return OwnerCharacter.objects.create(**kwargs)
 
 

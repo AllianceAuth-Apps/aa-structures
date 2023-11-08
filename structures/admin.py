@@ -229,11 +229,11 @@ class NotificationBaseAdmin(admin.ModelAdmin):
         return False
 
     @admin.display(description=_("notification ID"))
-    def _notification_id(self, obj):
+    def _notification_id(self, obj: Notification):
         return obj.notification_id
 
     @admin.display(description=_("webhooks"))
-    def _webhooks(self, obj):
+    def _webhooks(self, obj: Notification):
         if not obj.can_be_rendered:
             return format_html("<i>{}</i>", _("N/A"))
         webhooks_qs = obj.owner.webhooks.all()
@@ -255,19 +255,19 @@ class NotificationBaseAdmin(admin.ModelAdmin):
         return lines_sorted_html(names)
 
     @admin.display(description=_("structures"))
-    def _structures(self, obj) -> Optional[str]:
+    def _structures(self, obj: Notification) -> Optional[str]:
         if obj.is_structure_related:
             structures = [str(structure) for structure in obj.structures.all()]
             return lines_sorted_html(structures) if structures else "?"
         return None
 
     @admin.display(description=_("is sent"))
-    def _is_sent(self, obj):
+    def _is_sent(self, obj: Notification):
         value = obj.is_sent if obj.can_be_rendered else None
         return admin_boolean_icon_html(value)
 
     @admin.display(description=_("is timer added"))
-    def _is_timer_added(self, obj):
+    def _is_timer_added(self, obj: Notification):
         value = obj.is_timer_added if obj.can_have_timer else None
         return admin_boolean_icon_html(value)
 
@@ -287,6 +287,7 @@ class NotificationBaseAdmin(admin.ModelAdmin):
     def send_to_configured_webhooks(self, request, queryset):
         notifs_queued = 0
         for obj in queryset:
+            obj: Notification
             if obj.can_be_rendered and obj.relevant_webhooks().exists():
                 if obj.send_to_configured_webhooks():
                     notifs_queued += 1
@@ -485,34 +486,34 @@ class OwnerAdmin(admin.ModelAdmin):
         return False
 
     @admin.display(ordering="x_characters_count", description=_("characters"))
-    def _characters(self, obj) -> int:
+    def _characters(self, obj: Owner) -> int:
         return obj.x_characters_count
 
     @admin.display(description=_("default pings"), boolean=True)
-    def _has_default_pings_enabled(self, obj):
+    def _has_default_pings_enabled(self, obj: Owner):
         return obj.has_default_pings_enabled
 
     @admin.display(description=_("ping groups"))
-    def _ping_groups(self, obj):
+    def _ping_groups(self, obj: Owner):
         ping_groups = [ping_group.name for ping_group in obj.ping_groups.all()]
         return lines_sorted_html(ping_groups) if ping_groups else None
 
     @admin.display(
         ordering="corporation__corporation_name", description=_("corporation")
     )
-    def _corporation(self, obj):
+    def _corporation(self, obj: Owner):
         return obj.corporation.corporation_name
 
     @admin.display(
         ordering="corporation__alliance__alliance_name", description=_("alliance")
     )
-    def _alliance(self, obj):
+    def _alliance(self, obj: Owner):
         if obj.corporation.alliance:
             return obj.corporation.alliance.alliance_name
         return None
 
     @admin.display(description=_("webhooks"))
-    def _webhooks(self, obj):
+    def _webhooks(self, obj: Owner):
         names = [webhook.name for webhook in obj.webhooks.all()]
         if names:
             return lines_sorted_html(names)
@@ -526,16 +527,16 @@ class OwnerAdmin(admin.ModelAdmin):
         )
 
     @admin.display(description=_("active"), boolean=True)
-    def _is_active(self, obj):
+    def _is_active(self, obj: Owner):
         return obj.is_active
 
     @admin.display(description=_("alliance main"))
-    def _is_alliance_main(self, obj):
+    def _is_alliance_main(self, obj: Owner):
         value = True if obj.is_alliance_main else None
         return admin_boolean_icon_html(value)
 
     @admin.display(description=_("services up"), boolean=True)
-    def _is_sync_ok(self, obj):
+    def _is_sync_ok(self, obj: Owner):
         return obj.is_up if obj.is_active else None
 
     @admin.action(description=_("Activate selected owners"))
@@ -587,11 +588,11 @@ class OwnerAdmin(admin.ModelAdmin):
             self.message_user(request, text)
 
     @admin.display(description=_("all syncs OK"), boolean=True)
-    def _are_all_syncs_ok(self, obj):
+    def _are_all_syncs_ok(self, obj: Owner):
         return obj.are_all_syncs_ok
 
     @admin.display(description=_("avg. turnaround time"))
-    def _avg_turnaround_time(self, obj) -> str:
+    def _avg_turnaround_time(self, obj: Owner) -> str:
         """Average time between timestamp of notifications an when they are received."""
 
         def my_format(value) -> str:
@@ -615,23 +616,23 @@ class OwnerAdmin(admin.ModelAdmin):
         return f"{my_format(short)} | {my_format(medium)} | {my_format(long)}"
 
     @admin.display(description=_("structures update fresh"), boolean=True)
-    def _structures_last_update_fresh(self, obj) -> bool:
+    def _structures_last_update_fresh(self, obj: Owner) -> bool:
         return obj.is_structure_sync_fresh
 
     @admin.display(description=_("notifications update fresh"), boolean=True)
-    def _notifications_last_update_fresh(self, obj) -> bool:
+    def _notifications_last_update_fresh(self, obj: Owner) -> bool:
         return obj.is_notification_sync_fresh
 
     @admin.display(description=_("forwarding update fresh"), boolean=True)
-    def _forwarding_last_update_fresh(self, obj) -> bool:
+    def _forwarding_last_update_fresh(self, obj: Owner) -> bool:
         return obj.is_forwarding_sync_fresh
 
     @admin.display(description=_("assets update fresh"), boolean=True)
-    def _assets_last_update_fresh(self, obj) -> bool:
+    def _assets_last_update_fresh(self, obj: Owner) -> bool:
         return obj.is_assets_sync_fresh
 
     @admin.action(description=_("structures Count"))
-    def _structures_count(self, obj) -> int:
+    def _structures_count(self, obj: Owner) -> int:
         return obj.structures.count()
 
 
@@ -910,44 +911,44 @@ class StructureAdmin(admin.ModelAdmin):
         return False
 
     @admin.display(ordering="name", description=_("name"))
-    def _name(self, structure) -> str:
-        if structure.name:
-            return structure.name
-        return structure.location_name
+    def _name(self, obj: Structure) -> str:
+        if obj.name:
+            return obj.name
+        return obj.location_name
 
     @admin.display(
         ordering="owner__corporation__corporation_name", description=_("owner")
     )
-    def _owner(self, structure) -> str:
-        alliance = structure.owner.corporation.alliance
+    def _owner(self, obj: Structure) -> str:
+        alliance = obj.owner.corporation.alliance
         return format_html(
             "{}<br>{}",
-            structure.owner.corporation,
+            obj.owner.corporation,
             alliance if alliance else "",
         )
 
     @admin.display(ordering="eve_solar_system__name", description=_("location"))
-    def _location(self, structure) -> str:
+    def _location(self, obj: Structure) -> str:
         return format_html(
             "{}<br>{}",
-            structure.location_name,
-            structure.eve_solar_system.eve_constellation.eve_region,
+            obj.location_name,
+            obj.eve_solar_system.eve_constellation.eve_region,
         )
 
     @admin.display(ordering="eve_type__name", description=_("type"))
-    def _type(self, structure):
-        return format_html("{}<br>{}", structure.eve_type, structure.eve_type.eve_group)
+    def _type(self, obj: Structure):
+        return format_html("{}<br>{}", obj.eve_type, obj.eve_type.eve_group)
 
     @admin.display(description=_("power mode"))
-    def _power_mode(self, structure) -> str:
-        return structure.get_power_mode_display()
+    def _power_mode(self, obj: Structure) -> str:
+        return obj.get_power_mode_display()
 
     @admin.display(description=_("tags"))
-    def _tags(self, structure) -> list:
-        return sorted([tag.name for tag in structure.tags.all()])
+    def _tags(self, obj: Structure) -> list:
+        return sorted([tag.name for tag in obj.tags.all()])
 
     @admin.display(description=_("webhooks"))
-    def _webhooks(self, obj):
+    def _webhooks(self, obj: Structure):
         names = [webhook.name for webhook in obj.webhooks.all()]
         return lines_sorted_html(names) if names else None
 
@@ -1063,12 +1064,12 @@ class WebhookAdmin(admin.ModelAdmin):
         )
 
     @admin.display(description=_("ping groups"))
-    def _ping_groups(self, obj):
+    def _ping_groups(self, obj: Webhook):
         ping_groups = [ping_group.name for ping_group in obj.ping_groups.all()]
         return lines_sorted_html(ping_groups) if ping_groups else None
 
     @admin.display(description=_("enabled for owners or structures"))
-    def _owners(self, obj):
+    def _owners(self, obj: Webhook):
         configurations = [str(owner) for owner in obj.owners.all()]
         configurations += [
             f"{structure.owner}: {structure}" for structure in obj.structures.all()
@@ -1081,12 +1082,12 @@ class WebhookAdmin(admin.ModelAdmin):
         return lines_sorted_html(configurations)
 
     @admin.display(description=_("is default"))
-    def _is_default(self, obj):
+    def _is_default(self, obj: Webhook):
         value = True if obj.is_default else None
         return admin_boolean_icon_html(value)
 
     @admin.display(description=_("messages in queue"))
-    def _messages_in_queue(self, obj):
+    def _messages_in_queue(self, obj: Webhook):
         return obj.queue_size()
 
     @admin.action(description=_("Send test notification to selected webhook"))

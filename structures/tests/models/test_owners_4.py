@@ -19,6 +19,8 @@ from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 MODULE_PATH = "structures.models.owners"
 
 
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
 @patch(MODULE_PATH + ".esi")
 class TestUpdateStarbasesEsi(NoSocketsTestCase):
     @classmethod
@@ -175,8 +177,6 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         ]
         cls.esi_client_stub = EsiClientStub.create_from_endpoints(cls.endpoints)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_can_sync_starbases(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -316,8 +316,6 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
     #     # user report has been sent
     #     self.assertTrue(mock_notify.called)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_not_break_on_http_error_when_fetching_starbases(self, mock_esi):
         # given
         new_endpoint = EsiEndpoint(
@@ -336,8 +334,6 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         self.assertSetEqual(owner.structures.ids(), expected)
 
     @patch(MODULE_PATH + ".STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES", 3)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     @patch(MODULE_PATH + ".notify", spec=True)
     def test_should_mark_error_when_character_not_director_while_updating_starbases(
         self, mock_notify, mock_esi
@@ -360,8 +356,6 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         self.assertEqual(character.error_count, 1)
 
     @patch(MODULE_PATH + ".STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES", 3)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     @patch(MODULE_PATH + ".notify", spec=True)
     def test_should_remove_character_when_not_director_while_updating_starbases(
         self, mock_notify, mock_esi
@@ -385,8 +379,6 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         self.assertTrue(mock_notify)
         self.assertNotIn(character, owner.characters.all())
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_remove_old_starbases(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -398,8 +390,6 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         expected = {1300000000001, 1300000000002, 1300000000003}
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_not_delete_existing_starbases_when_update_failed(self, mock_esi):
         # given
 
@@ -419,8 +409,6 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         expected = {1300000000001, 1300000000002}
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_not_break_when_starbase_names_not_found(self, mock_esi):
         # given
         new_endpoint = EsiEndpoint(

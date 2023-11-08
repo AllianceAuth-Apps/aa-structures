@@ -6,12 +6,10 @@ from django.utils.timezone import now, utc
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from app_utils.testing import NoSocketsTestCase
 
-from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import Structure, StructureService
 from structures.tests import to_json
 from structures.tests.testdata.factories_2 import (
-    EveEntityCorporationFactory,
     FuelAlertConfigFactory,
     OwnerFactory,
     StructureFactory,
@@ -25,6 +23,8 @@ from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 MODULE_PATH = "structures.models.owners"
 
 
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
 @patch(MODULE_PATH + ".esi")
 class TestUpdateStructuresEsi(NoSocketsTestCase):
     @classmethod
@@ -33,9 +33,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, structures_last_update_at=None)
         cls.corporation_id = cls.owner.corporation.corporation_id
-        EveEntityCorporationFactory(
-            id=EveCorporationId.DED, name="DED"
-        )  # for notifications
         cls.endpoints = [
             EsiEndpoint(
                 "Assets",
@@ -195,8 +192,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         ]
         cls.esi_client_stub = EsiClientStub.create_from_endpoints(cls.endpoints)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_can_sync_upwell_structures(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -320,8 +315,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         }
         self.assertEqual(services, expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_can_handle_owner_without_structures(self, mock_esi):
         # given
         owner = OwnerFactory(structures_last_update_at=None)
@@ -344,8 +337,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         self.assertTrue(owner.is_structure_sync_fresh)
         self.assertSetEqual(owner.structures.ids(), set())
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_not_break_when_endpoint_for_fetching_upwell_structures_is_down(
         self, mock_esi
     ):
@@ -365,8 +356,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         expected = set()
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_update_will_not_break_on_http_error_from_structure_info(self, mock_esi):
         # given
         new_endpoint = EsiEndpoint(
@@ -381,8 +370,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         structure = Structure.objects.get(id=1000000000002)
         self.assertEqual(structure.name, "(no data)")
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     @patch(MODULE_PATH + ".Structure.objects.update_or_create_from_dict")
     def test_update_will_not_break_on_http_error_when_creating_structures(
         self, mock_create_structure, mock_esi
@@ -395,8 +382,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         # then
         self.assertFalse(owner.is_structure_sync_fresh)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_remove_old_upwell_structures(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -408,8 +393,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         expected = {1000000000001, 1000000000002, 1000000000003}
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_tags_are_not_modified_by_update(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -439,8 +422,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         s_new = Structure.objects.get(id=1000000000001)
         self.assertEqual(s_new.tags.get(name="tag_a"), tag_a)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_not_delete_existing_upwell_structures_when_update_failed(
         self, mock_esi
     ):
@@ -461,8 +442,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         expected = {1000000000001, 1000000000002}
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     def test_should_remove_outdated_services(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -478,8 +457,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         }
         self.assertEqual(services, {"Moon Drilling", "Reprocessing"})
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     @patch(
         "structures.models.structures_1.STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS", True
     )
@@ -506,8 +483,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         # then
         self.assertTrue(mock_send_message.called)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     @patch(
         "structures.models.structures_1.STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS", True
     )
@@ -531,8 +506,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         # then
         self.assertFalse(mock_send_message.called)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
     @patch("structures.models.notifications.Webhook.send_message")
     def test_should_remove_outdated_fuel_alerts_when_fuel_level_changed(
         self, mock_send_message, mock_esi

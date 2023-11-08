@@ -16,6 +16,8 @@ from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 MODULE_PATH = "structures.models.owners"
 
 
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
 @patch(MODULE_PATH + ".esi")
 class TestUpdatePocosEsi(NoSocketsTestCase):
     @classmethod
@@ -180,8 +182,6 @@ class TestUpdatePocosEsi(NoSocketsTestCase):
         ]
         cls.esi_client_stub = EsiClientStub.create_from_endpoints(cls.endpoints)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
     def test_can_sync_pocos(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -238,8 +238,6 @@ class TestUpdatePocosEsi(NoSocketsTestCase):
         structure = Structure.objects.get(id=1200000000099)
         self.assertEqual(structure.name, "")
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
     def test_should_not_break_on_http_error_when_fetching_custom_offices(
         self, mock_esi
     ):
@@ -259,8 +257,6 @@ class TestUpdatePocosEsi(NoSocketsTestCase):
         expected = set()
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
     def test_should_not_break_on_http_error_when_fetching_custom_office_names(
         self, mock_esi
     ):
@@ -284,8 +280,6 @@ class TestUpdatePocosEsi(NoSocketsTestCase):
         }
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
     def test_should_remove_old_pocos(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub
@@ -303,8 +297,6 @@ class TestUpdatePocosEsi(NoSocketsTestCase):
         }
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
     def test_should_not_delete_existing_pocos_when_update_failed(self, mock_esi):
         # given
         new_endpoint = EsiEndpoint(
@@ -323,8 +315,6 @@ class TestUpdatePocosEsi(NoSocketsTestCase):
         expected = {1200000000003, 1200000000004}
         self.assertSetEqual(owner.structures.ids(), expected)
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
     def test_should_have_empty_name_if_not_match_with_planets(self, mock_esi):
         # given
         owner = OwnerFactory(structures_last_update_at=None)
@@ -400,8 +390,6 @@ class TestUpdatePocosEsi(NoSocketsTestCase):
         structure = Structure.objects.get(id=1200000000099)
         self.assertEqual(structure.name, "")
 
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
-    @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
     def test_define_poco_name_from_planet_type_if_found(self, mock_esi):
         # given
         mock_esi.client = self.esi_client_stub

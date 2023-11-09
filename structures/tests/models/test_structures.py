@@ -455,7 +455,7 @@ class TestStructure(NoSocketsTestCase):
     def test_owner_alliance_has_sov_in_null_sec_system(self):
         obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
         EveSovereigntyMapFactory(
-            eve_solar_system_name="1-PGSG", eve_corporation=self.owner.corporation
+            eve_solar_system_name="1-PGSG", corporation=self.owner.corporation
         )
         self.assertTrue(obj.owner_has_sov())
 
@@ -891,7 +891,7 @@ class TestStructureTags(NoSocketsTestCase):
         load_eveuniverse()
         cls.owner = OwnerFactory()
         EveSovereigntyMapFactory(
-            eve_solar_system_name="1-PGSG", eve_corporation=cls.owner.corporation
+            eve_solar_system_name="1-PGSG", corporation=cls.owner.corporation
         )
 
     def test_can_create_generated_tags(self):
@@ -967,7 +967,7 @@ class TestStructureSave(NoSocketsTestCase):
         load_eveuniverse()
         cls.owner = OwnerFactory()
         EveSovereigntyMapFactory(
-            eve_solar_system_name="1-PGSG", eve_corporation=cls.owner.corporation
+            eve_solar_system_name="1-PGSG", corporation=cls.owner.corporation
         )
 
     def test_can_save_tags_low_sec(self):

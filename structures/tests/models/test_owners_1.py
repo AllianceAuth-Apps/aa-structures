@@ -227,7 +227,7 @@ class TestOwnerHasSov(NoSocketsTestCase):
         load_eveuniverse()
         cls.owner = OwnerFactory()
         EveSovereigntyMapFactory(
-            eve_corporation=cls.owner.corporation, eve_solar_system_name="1-PGSG"
+            corporation=cls.owner.corporation, eve_solar_system_name="1-PGSG"
         )
 
     def test_should_return_true_when_owner_has_sov(self):

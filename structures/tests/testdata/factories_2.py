@@ -500,7 +500,7 @@ class EveSovereigntyMapFactory(
         model = EveSovereigntyMap
 
     class Params:
-        eve_corporation = None
+        corporation = None
         eve_solar_system_name = "1-PGSG"
 
     last_updated = factory.LazyFunction(now)
@@ -512,15 +512,16 @@ class EveSovereigntyMapFactory(
 
     @factory.lazy_attribute
     def alliance_id(self):
-        if self.eve_corporation:
-            if self.eve_corporation.alliance:
-                return self.eve_corporation.alliance.alliance_id
+        if self.corporation:
+            if self.corporation.alliance:
+                return self.corporation.alliance.alliance_id
+            raise ValueError("Corporation must be in alliance to have sov")
         return None
 
     @factory.lazy_attribute
     def corporation_id(self):
-        if self.eve_corporation:
-            return self.eve_corporation.corporation_id
+        if self.corporation:
+            return self.corporation.corporation_id
         return None
 
 

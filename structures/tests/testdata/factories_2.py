@@ -257,7 +257,7 @@ class StructureFactory(
     has_fitting = False
     has_core = False
     last_updated_at = factory.LazyFunction(now)
-    name = factory.Sequence(lambda n: f"name_{n}")
+    name = factory.LazyAttribute(lambda o: f"Test Structure #{o.id}")
     owner = factory.SubFactory(OwnerFactory)
     position_x = factory.fuzzy.FuzzyFloat(-10_000_000_000_000, 10_000_000_000_000)
     position_y = factory.fuzzy.FuzzyFloat(-10_000_000_000_000, 10_000_000_000_000)

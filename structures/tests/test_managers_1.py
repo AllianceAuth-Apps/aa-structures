@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from eveuniverse.models import EveSolarSystem
 
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
+from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_types import NotificationType
@@ -17,6 +18,8 @@ from structures.models import (
 )
 
 from .testdata.factories_2 import (
+    EveAllianceInfoFactory,
+    EveCharacterFactory,
     EveCorporationInfoFactory,
     EveSovereigntyMapFactory,
     OwnerFactory,
@@ -288,7 +291,7 @@ class TestStructureManagerEsi(NoSocketsTestCase):
             Structure.objects.update_or_create_esi(id=987, token=None)
 
 
-class TestStructureManagerQuerySet(NoSocketsTestCase):
+class TestStructureQuerySet(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
@@ -320,6 +323,167 @@ class TestStructureManagerQuerySet(NoSocketsTestCase):
         result_qs = Structure.objects.filter_starbases()
         # then
         self.assertSetEqual(result_qs.ids(), {self.starbase.id})
+
+
+class TestStructureQuerySetVisibleForUser(NoSocketsTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        load_eveuniverse()
+        cls.owner = OwnerFactory()
+        # same alliance
+        alliance = EveAllianceInfoFactory()
+        cls.corporation_1a = EveCorporationInfoFactory(alliance=alliance)
+        owner_1a = OwnerFactory(corporation=cls.corporation_1a)
+        cls.structure_1a = StructureFactory(owner=owner_1a, id=1000000000011)
+        cls.corporation_1b = EveCorporationInfoFactory(alliance=alliance)
+        owner_1b = OwnerFactory(corporation=cls.corporation_1b)
+        cls.structure_1b = StructureFactory(owner=owner_1b, id=1000000000012)
+        # corp without alliance
+        cls.corporation_2 = EveCorporationInfoFactory(alliance=None)
+        owner_2 = OwnerFactory(corporation=cls.corporation_2)
+        cls.structure_2 = StructureFactory(owner=owner_2, id=1000000000020)
+
+    def test_should_show_structures_from_own_corporation_only_w_alliance(self):
+        # given
+        character = EveCharacterFactory(corporation=self.corporation_1a)
+        user = UserMainFactory(
+            main_character__character=character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_corporation_structures",
+            ],
+        )
+        # when
+        structure_ids = Structure.objects.visible_for_user(user).ids()
+        # then
+        self.assertSetEqual(structure_ids, {self.structure_1a.id})
+
+    def test_should_show_structures_from_own_corporation_only_wo_alliance(self):
+        # given
+        character = EveCharacterFactory(corporation=self.corporation_2)
+        user = UserMainFactory(
+            main_character__character=character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_corporation_structures",
+            ],
+        )
+        # when
+        structure_ids = Structure.objects.visible_for_user(user).ids()
+        # then
+        self.assertSetEqual(structure_ids, {self.structure_2.id})
+
+    def test_should_show_structures_from_own_alliance_only_with_corp_in_alliance(self):
+        # given
+        character = EveCharacterFactory(corporation=self.corporation_1a)
+        user = UserMainFactory(
+            main_character__character=character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_alliance_structures",
+            ],
+        )
+        # when
+        structure_ids = Structure.objects.visible_for_user(user).ids()
+        # then
+        self.assertSetEqual(structure_ids, {self.structure_1a.id, self.structure_1b.id})
+
+    def test_should_show_structures_from_own_alliance_only_with_corp_not_in_alliance(
+        self,
+    ):
+        # given
+        character = EveCharacterFactory(corporation=self.corporation_2)
+        user = UserMainFactory(
+            main_character__character=character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_alliance_structures",
+            ],
+        )
+        # when
+        structure_ids = Structure.objects.visible_for_user(user).ids()
+        # then
+        self.assertSetEqual(structure_ids, {self.structure_2.id})
+
+    def test_should_show_all_structures(self):
+        # given
+        character = EveCharacterFactory(corporation=self.corporation_1a)
+        user = UserMainFactory(
+            main_character__character=character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_all_structures",
+            ],
+        )
+        # when
+        structure_ids = Structure.objects.visible_for_user(user).ids()
+        # then
+        self.assertSetEqual(
+            structure_ids,
+            {self.structure_1a.id, self.structure_1b.id, self.structure_2.id},
+        )
+
+    def test_should_show_no_structures(self):
+        # given
+        character = EveCharacterFactory(corporation=self.corporation_1a)
+        user = UserMainFactory(
+            main_character__character=character,
+            permissions__=["structures.basic_access"],
+        )
+        # when
+        structure_ids = Structure.objects.visible_for_user(user).ids()
+        # then
+        self.assertSetEqual(structure_ids, set())
+
+
+class TestStructureQuerySetFilterTags(NoSocketsTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        load_eveuniverse()
+        owner = OwnerFactory()
+        tag_a = StructureTagFactory(name="tag_a")
+        tag_b = StructureTagFactory(name="tag_b")
+        cls.structure_1 = StructureFactory(owner=owner, tags=[tag_a], id=1000000000001)
+        cls.structure_2 = StructureFactory(owner=owner, tags=[tag_b], id=1000000000002)
+        cls.structure_3 = StructureFactory(
+            owner=owner, tags=[tag_a, tag_b], id=1000000000003
+        )
+        cls.structure_4 = StructureFactory(owner=owner, id=1000000000004)
+
+    def test_should_filter_nothing_when_no_tags_provided(self):
+        # when
+        result = Structure.objects.filter_tags(tag_names=[]).ids()
+        # then
+        self.assertSetEqual(
+            result,
+            {
+                self.structure_1.id,
+                self.structure_2.id,
+                self.structure_3.id,
+                self.structure_4.id,
+            },
+        )
+
+    def test_should_return_structures_which_have_one_tag_only(self):
+        # when
+        result = Structure.objects.filter_tags(tag_names=["tag_a"]).ids()
+        # then
+        self.assertSetEqual(result, {self.structure_1.id, self.structure_3.id})
+
+    def test_should_return_structures_which_have_one_of_two_tags_only(self):
+        # when
+        result = Structure.objects.filter_tags(tag_names=["tag_a", "tag_b"]).ids()
+        # then
+        self.assertSetEqual(
+            result,
+            {self.structure_1.id, self.structure_2.id, self.structure_3.id},
+        )
+
+    def test_should_return_no_structures_when_tag_not_matches(self):
+        # when
+        result = Structure.objects.filter_tags(tag_names=["invalid"]).ids()
+        # then
+        self.assertSetEqual(result, set())
 
 
 class TestStructureManagerCreateFromDict(NoSocketsTestCase):

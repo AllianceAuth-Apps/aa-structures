@@ -4,7 +4,7 @@
 
 import datetime as dt
 import itertools
-from typing import Any, Optional, Set, Tuple
+from typing import Any, Iterable, Optional, Set, Tuple
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
@@ -237,7 +237,6 @@ class StructureQuerySet(models.QuerySet):
             "eve_type__eve_group__eve_category",
         )
 
-    # TODO: Add specific tests
     def visible_for_user(
         self, user: User, tags: Optional[list] = None
     ) -> models.QuerySet:
@@ -272,7 +271,7 @@ class StructureQuerySet(models.QuerySet):
                     if corporation.alliance
                 }
                 for alliance in alliances:
-                    corporations += alliance.evecorporationinfo_set.all()
+                    corporations += list(alliance.evecorporationinfo_set.all())
 
                 corporations = list(set(corporations))
 
@@ -280,6 +279,14 @@ class StructureQuerySet(models.QuerySet):
                 owner__corporation__in=corporations
             )
         return structures_query
+
+    def filter_tags(self, tag_names: Iterable[str]) -> models.QuerySet:
+        """Apply filter for given tags."""
+        if not tag_names:
+            return self
+
+        query = self.filter(tags__name__in=list(tag_names)).distinct()
+        return query
 
     def annotate_has_poco_details(self) -> models.QuerySet:
         """Add annotation wether the structure has poco details."""

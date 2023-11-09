@@ -30,6 +30,7 @@ from ..testdata.factories_2 import (
     PocoFactory,
     StarbaseFactory,
     StructureFactory,
+    StructureTagFactory,
     UserMainDefaultFactory,
 )
 from ..testdata.helpers import create_structures, load_entities, set_owner_character
@@ -213,250 +214,181 @@ class TestStructureListDataPermissions(TestCase):
     def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
-        create_structures()
 
-    def _structure_list_data_view(self, user) -> dict:
-        """helper method:  makes the request to the view
-        and returns response as dict for the given user
-        """
+    def test_should_show_structures_from_own_corporation_only(self):
+        # given
+        user = UserMainFactory(
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_corporation_structures",
+            ],
+        )
+        owner = OwnerFactory(user=user)
+        structure_own_corp = StructureFactory(owner=owner)
+        StructureFactory()  # structure with a different corporation
         request = self.factory.get("/")
         request.user = user
+        # when
         response = structures.structure_list_data(request, "all")
+        # then
         self.assertEqual(response.status_code, 200)
-        return json_response_to_dict(response)
-
-    def test_should_show_no_structures(self):
-        # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        # when
-        structure_ids = self._structure_list_data_view(user).keys()
-        # then
-        self.assertSetEqual(set(structure_ids), set())
-
-    def test_should_show_own_corporation_only_1(self):
-        # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_corporation_structures", user
-        )
-        # when
-        structure_ids = self._structure_list_data_view(user).keys()
-        # then
-        self.assertSetEqual(
-            set(structure_ids),
-            {
-                1000000000001,
-                1000000000002,
-                1200000000003,
-                1200000000004,
-                1200000000005,
-                1200000000006,
-                1300000000001,
-                1300000000002,
-                1300000000003,
-            },
-        )
-
-    def test_should_show_own_corporation_only_2(self):
-        # given
-        user, _ = set_owner_character(character_id=1011)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_corporation_structures", user
-        )
-        # when
-        structure_ids = self._structure_list_data_view(user).keys()
-        # then
-        self.assertSetEqual(set(structure_ids), {1000000000003, 1000000000004})
-
-    def test_should_show_own_alliance_only_1(self):
-        # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_alliance_structures", user
-        )
-        # when
-        structure_ids = self._structure_list_data_view(user).keys()
-        # then
-        self.assertSetEqual(
-            set(structure_ids),
-            {
-                1000000000001,
-                1000000000002,  # only for alliance
-                1200000000003,
-                1200000000004,
-                1200000000005,
-                1200000000006,
-                1300000000001,
-                1300000000002,
-                1300000000003,
-            },
-        )
-
-    def test_should_show_own_alliance_only_2(self):
-        # given
-        user, _ = set_owner_character(character_id=1011)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_alliance_structures", user
-        )
-        # when
-        structure_ids = self._structure_list_data_view(user).keys()
-        # then
-        self.assertSetEqual(set(structure_ids), {1000000000003, 1000000000004})
-
-    def test_should_show_all_structures(self):
-        # given
-        user, _ = set_owner_character(character_id=1001)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", user
-        )
-        # when
-        structure_ids = self._structure_list_data_view(user).keys()
-        # then
-        self.assertSetEqual(
-            set(structure_ids),
-            {
-                1000000000001,
-                1000000000002,
-                1000000000003,  # only for all
-                1000000000004,
-                1200000000003,
-                1200000000004,
-                1200000000005,
-                1200000000006,
-                1300000000001,
-                1300000000002,
-                1300000000003,
-            },
-        )
+        data = json_response_to_dict(response)
+        structure_ids = set(data.keys())
+        self.assertSetEqual(structure_ids, {structure_own_corp.id})
 
     def test_should_show_unanchoring_status(self):
         # given
-        user, _ = set_owner_character(character_id=1011)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_corporation_structures", user
+        user = UserMainFactory(
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_all_structures",
+                "structures.view_all_unanchoring_status",
+            ],
         )
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_unanchoring_status", user
+        owner = OwnerFactory(user=user)
+        structure = StructureFactory(
+            owner=owner, unanchors_at=now() + dt.timedelta(days=3)
         )
+        request = self.factory.get("/")
+        request.user = user
         # when
-        data = self._structure_list_data_view(user)
+        response = structures.structure_list_data(request, "all")
         # then
-        structure = data[1000000000003]
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure = data[structure.id]
         self.assertIn("Unanchoring until", structure["state_details"])
 
     def test_should_not_show_unanchoring_status(self):
         # given
-        user, _ = set_owner_character(character_id=1011)
-        user = AuthUtils.add_permission_to_user_by_name("structures.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_corporation_structures", user
+        user = UserMainFactory(
+            permissions__=["structures.basic_access", "structures.view_all_structures"],
         )
+        owner = OwnerFactory(user=user)
+        structure = StructureFactory(
+            owner=owner, unanchors_at=now() + dt.timedelta(days=3)
+        )
+        request = self.factory.get("/")
+        request.user = user
         # when
-        data = self._structure_list_data_view(user)
+        response = structures.structure_list_data(request, "all")
         # then
-        structure = data[1000000000003]
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_dict(response)
+        structure = data[structure.id]
         self.assertNotIn("Unanchoring until", structure["state_details"])
 
 
-class TestStructureListFilters(TestCase):
+class TestIndexTagFilter(TestCase):
     @classmethod
     def setUpTestData(cls):
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "structures.basic_access", cls.user
-        )
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", cls.user
-        )
-        cls.factory = RequestFactory()
+        StructureTagFactory(name="tag_a", is_default=True)
 
     @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", True)
     def test_default_filter_enabled(self):
+        # given
         request = self.factory.get(reverse("structures:index"))
         request.user = self.user
+        # when
         response = structures.index(request)
+        # then
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/structures/list?tags=tag_a")
 
     @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", False)
     def test_default_filter_disabled(self):
+        # given
         request = self.factory.get(reverse("structures:index"))
         request.user = self.user
+        # when
         response = structures.index(request)
+        # then
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/structures/list")
 
-    def test_list_filter_by_tag_1(self):
-        # no filter
+
+class TestStructureListTagFilters(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        load_eveuniverse()
+        cls.factory = RequestFactory()
+        cls.user = UserMainDefaultFactory()
+        cls.owner = OwnerFactory(user=cls.user)
+        tag_b = StructureTagFactory(name="tag_b")
+        tag_c = StructureTagFactory(name="tag_c")
+        cls.structure_1 = StructureFactory(
+            owner=cls.owner, tags=[tag_b], id=1000000000001
+        )
+        cls.structure_2 = StructureFactory(
+            owner=cls.owner, tags=[tag_c], id=1000000000002
+        )
+        cls.structure_3 = StructureFactory(
+            owner=cls.owner, tags=[tag_b, tag_c], id=1000000000003
+        )
+        cls.structure_4 = StructureFactory(owner=cls.owner, id=1000000000004)
+
+    def test_list_filter_by_tag_with_no_filter(self):
+        # given
         request = self.factory.get("/")
         request.user = self.user
+        # when
         response = structures.structure_list_data(request, "all")
+        # then
         self.assertEqual(response.status_code, 200)
-
         data = json_response_to_dict(response)
         self.assertSetEqual(
             set(data.keys()),
             {
-                1000000000001,
-                1000000000002,
-                1000000000003,
-                1000000000004,
-                1200000000003,
-                1200000000004,
-                1200000000005,
-                1200000000006,
-                1300000000001,
-                1300000000002,
-                1300000000003,
+                self.structure_1.id,
+                self.structure_2.id,
+                self.structure_3.id,
+                self.structure_4.id,
             },
         )
 
-        # filter for tag_c
-        request = self.factory.get("/?tags=tag_c")
-        request.user = self.user
-        response = structures.structure_list_data(request, "all")
-        self.assertEqual(response.status_code, 200)
-
-        data = json_response_to_dict(response)
-        self.assertSetEqual(set(data.keys()), {1000000000002, 1000000000003})
-
-        # filter for tag_b
+    def test_list_filter_by_one_tag(self):
+        # given
         request = self.factory.get("/?tags=tag_b")
         request.user = self.user
+        # when
         response = structures.structure_list_data(request, "all")
+        # then
         self.assertEqual(response.status_code, 200)
-
         data = json_response_to_dict(response)
-        self.assertSetEqual(set(data.keys()), {1000000000003})
+        self.assertSetEqual(
+            set(data.keys()), {self.structure_1.id, self.structure_3.id}
+        )
 
-        # filter for tag_c, tag_b
-        request = self.factory.get("/?tags=tag_c,tag_b")
+    def test_list_filter_by_two_tags(self):
+        # given
+        request = self.factory.get("/?tags=tag_b,tag_c")
         request.user = self.user
+        # when
         response = structures.structure_list_data(request, "all")
+        # then
         self.assertEqual(response.status_code, 200)
-
         data = json_response_to_dict(response)
-        self.assertSetEqual(set(data.keys()), {1000000000002, 1000000000003})
+        self.assertSetEqual(
+            set(data.keys()),
+            {self.structure_1.id, self.structure_2.id, self.structure_3.id},
+        )
 
     def test_call_with_raw_tags(self):
+        # given
         request = self.factory.get("/?tags=tag_c,tag_b")
         request.user = self.user
+        # when
         response = structures.structure_list(request)
+        # then
         self.assertEqual(response.status_code, 200)
 
     def test_set_tags_filter(self):
+        # given
         request = self.factory.post("/", data={"tag_b": True, "tag_c": True})
         request.user = self.user
+        # when
         response = structures.structure_list(request)
+        # then
         self.assertEqual(response.status_code, 302)
         parts = urlparse(response.url)
         path = parts[2]
@@ -621,7 +553,7 @@ class TestAddStructureOwner(TestCase):
         self, mock_messages, mock_notify_admins, mock_update_all_for_owner
     ):
         # given
-        owner = Owner.objects.create(
+        owner = OwnerFactory(
             corporation=EveCorporationInfo.objects.get(corporation_id=2102),
             is_active=False,
         )

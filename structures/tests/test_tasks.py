@@ -3,32 +3,21 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from allianceauth.eveonline.models import EveCorporationInfo
 from app_utils.testdata_factories import UserFactory
-from app_utils.testing import (
-    NoSocketsTestCase,
-    create_user_from_evecharacter,
-    generate_invalid_pk,
-)
+from app_utils.testing import NoSocketsTestCase, generate_invalid_pk
 
 from structures import tasks
 from structures.core.notification_types import NotificationType
-from structures.models import FuelAlertConfig, Owner, Webhook
+from structures.models import Owner, Webhook
 
-from .testdata.factories import create_notification, create_owner_from_user
 from .testdata.factories_2 import (
     FuelAlertConfigFactory,
     JumpFuelAlertConfigFactory,
+    NotificationFactory,
     OwnerFactory,
+    UserMainDefaultOwnerFactory,
     WebhookFactory,
 )
-from .testdata.helpers import (
-    create_structures,
-    load_entities,
-    load_notification_entities,
-    set_owner_character,
-)
-from .testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.tasks"
 MODULE_PATH_MODELS_OWNERS = "structures.models.owners"
@@ -37,10 +26,8 @@ MODULE_PATH_MODELS_OWNERS = "structures.models.owners"
 @patch(MODULE_PATH + ".Webhook.send_queued_messages", spec=True)
 class TestSendMessagesForWebhook(TestCase):
     @classmethod
-    def setUpTestData(cls) -> None:
-        cls.webhook = Webhook.objects.create(
-            name="Dummy", url="https://www.example.com/webhook"
-        )
+    def setUpTestData(cls):
+        cls.webhook = WebhookFactory()
 
     def test_normal(self, mock_send_queued_messages):
         tasks.send_messages_for_webhook(self.webhook.pk)
@@ -59,85 +46,79 @@ class TestSendMessagesForWebhook(TestCase):
 
 
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
-class TestUpdateStructures(NoSocketsTestCase):
+@patch(MODULE_PATH + ".Owner.update_structures_esi", spec=True)
+class TestUpdateStructuresEsi(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls) -> None:
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
+    def setUpTestData(cls):
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
-    @patch(MODULE_PATH + ".Owner.update_structures_esi")
+    def test_call_structure_update_with_owner_only(self, mock_update_structures_esi):
+        """TODO: Investigate how to call the top level method that contains the chains()"""
+        tasks.update_structures_esi_for_owner(self.owner.pk)
+        self.assertTrue(mock_update_structures_esi.called)
+
     def test_call_structure_update_with_owner_and_user(
         self, mock_update_structures_esi
     ):
         """TODO: Investigate how to call the top level method that contains the chains()"""
         tasks.update_structures_esi_for_owner(self.owner.pk, self.user.pk)
-        first, second = mock_update_structures_esi.call_args
+        first, _ = mock_update_structures_esi.call_args
         self.assertEqual(first[0], self.user)
 
-    @patch(MODULE_PATH + ".Owner.update_structures_esi")
     def test_call_structure_update_with_owner_and_ignores_invalid_user(
         self, mock_update_structures_esi
     ):
         """TODO: Investigate how to call the top level method that contains the chains()"""
         tasks.update_structures_esi_for_owner(self.owner.pk, generate_invalid_pk(User))
-        first, second = mock_update_structures_esi.call_args
+        first, _ = mock_update_structures_esi.call_args
         self.assertIsNone(first[0])
 
-    @override_settings(
-        CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
-    )
-    def test_raises_exception_if_owner_is_unknown(self):
+    def test_raises_exception_if_owner_is_unknown(self, mock_update_structures_esi):
         with self.assertRaises(Owner.DoesNotExist):
             """TODO: Investigate how to call the top level method that contains the chains()"""
             tasks.update_structures_esi_for_owner(owner_pk=generate_invalid_pk(Owner))
 
-    @patch(MODULE_PATH + ".update_structures_for_owner")
+
+@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
+@patch(MODULE_PATH + ".update_structures_for_owner", spec=True)
+class TestUpdateStructuresForOwner(NoSocketsTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
+
     def test_can_update_structures_for_all_owners(
         self, mock_update_structures_for_owner
     ):
-        Owner.objects.all().delete()
-        owner_2001 = Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2001)
-        )
-        owner_2002 = Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2002)
-        )
+        # given
+        owner_2 = OwnerFactory()
+        # when
         tasks.update_structures()
-        self.assertEqual(mock_update_structures_for_owner.delay.call_count, 2)
+        # then
         call_args_list = mock_update_structures_for_owner.delay.call_args_list
-        args, kwargs = call_args_list[0]
-        self.assertEqual(args[0], owner_2001.pk)
-        args, kwargs = call_args_list[1]
-        self.assertEqual(args[0], owner_2002.pk)
+        owner_pks = {args[0][0] for args in call_args_list}
+        self.assertSetEqual(owner_pks, {self.owner.pk, owner_2.pk})
 
-    @patch(MODULE_PATH + ".update_structures_for_owner")
     def test_does_not_update_structures_for_non_active_owners(
         self, mock_update_structures_for_owner
     ):
-        Owner.objects.filter().delete()
-        owner_2001 = Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2001),
-            is_active=True,
-        )
-        Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2002),
-            is_active=False,
-        )
+        # given
+        OwnerFactory(is_active=False)
+        # when
         tasks.update_structures()
-        self.assertEqual(mock_update_structures_for_owner.delay.call_count, 1)
+        # then
         call_args_list = mock_update_structures_for_owner.delay.call_args_list
-        args, kwargs = call_args_list[0]
-        self.assertEqual(args[0], owner_2001.pk)
+        owner_pks = {args[0][0] for args in call_args_list}
+        self.assertSetEqual(owner_pks, {self.owner.pk})
 
 
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 class TestUpdateOwnerAsset(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
     @patch(MODULE_PATH + ".Owner.update_asset_esi")
     def test_call_structure_asset_update_with_owner_and_user(
@@ -145,7 +126,7 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
     ):
         """TODO: Investigate how to call the top level method that contains the chains()"""
         tasks.update_structures_assets_for_owner(self.owner.pk, self.user.pk)
-        first, second = mock_update_asset_esi.call_args
+        first, _ = mock_update_asset_esi.call_args
         self.assertEqual(first[0], self.user)
 
     @patch(MODULE_PATH + ".Owner.update_asset_esi")
@@ -156,7 +137,7 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
         tasks.update_structures_assets_for_owner(
             self.owner.pk, generate_invalid_pk(User)
         )
-        first, second = mock_update_asset_esi.call_args
+        first, _ = mock_update_asset_esi.call_args
         self.assertIsNone(first[0])
 
     @override_settings(
@@ -171,43 +152,32 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
 
 
 @patch(MODULE_PATH_MODELS_OWNERS + ".Owner.update_is_up", lambda *args, **kwargs: None)
-@patch(MODULE_PATH + ".send_structure_fuel_notifications_for_config")
-@patch(MODULE_PATH + ".process_notifications_for_owner")
+@patch(MODULE_PATH + ".send_structure_fuel_notifications_for_config", spec=True)
+@patch(MODULE_PATH + ".process_notifications_for_owner", spec=True)
 class TestFetchAllNotifications(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
     def test_fetch_all_notifications(
         self, mock_fetch_notifications_owner, mock_send_fuel_notifications_for_config
     ):
         # given
-        owner_2001 = Owner.objects.get(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2001)
-        )
-        owner_2002 = Owner.objects.get(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2002)
-        )
-        Owner.objects.exclude(pk__in=[owner_2001.pk, owner_2002.pk]).update(
-            is_active=False
-        )
+        owner_2 = OwnerFactory()
+        OwnerFactory(is_active=False)
         # when
         tasks.fetch_all_notifications()
         # then
-        self.assertEqual(mock_fetch_notifications_owner.apply_async.call_count, 2)
         call_args_list = mock_fetch_notifications_owner.apply_async.call_args_list
-        _, kwargs = call_args_list[0]
-        self.assertEqual(kwargs["kwargs"]["owner_pk"], owner_2001.pk)
-        _, kwargs = call_args_list[1]
-        self.assertEqual(kwargs["kwargs"]["owner_pk"], owner_2002.pk)
+        owner_pks = {obj[1]["kwargs"]["owner_pk"] for obj in call_args_list}
+        self.assertSetEqual(owner_pks, {self.owner.pk, owner_2.pk})
 
     def test_send_new_fuel_notifications(
         self, mock_fetch_notifications_owner, mock_send_fuel_notifications_for_config
     ):
         # given
-        config = FuelAlertConfig.objects.create(start=48, end=0, repeat=12)
+        config = FuelAlertConfigFactory(start=48, end=0, repeat=12)
         # when
         tasks.fetch_all_notifications()
         # then
@@ -271,76 +241,70 @@ class TestFetchAllNotifications(NoSocketsTestCase):
 
 @patch("structures.webhooks.core.sleep", lambda _: None)
 @patch(MODULE_PATH + ".notify", spec=True)
-@patch("structures.models.notifications.Webhook.send_test_message")
+@patch("structures.models.notifications.Webhook.send_test_message", spec=True)
 class TestSendTestNotification(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-        cls.owner.is_alliance_main = True
-        cls.owner.save()
-        load_notification_entities(cls.owner)
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
     def test_send_test_notification(self, mock_send_test_message, mock_notify):
+        # given
         mock_send_test_message.return_value = ("", True)
         my_webhook = self.owner.webhooks.first()
+
+        # when
         tasks.send_test_notifications_to_webhook(my_webhook.pk, self.user.pk)
 
-        # should have tried to sent notification
+        # then
         self.assertEqual(mock_send_test_message.call_count, 1)
-
-        # should have sent user report
         self.assertTrue(mock_notify.called)
         args = mock_notify.call_args[1]
         self.assertEqual(args["level"], "success")
 
     def test_send_test_notification_error(self, mock_send_test_message, mock_notify):
+        # given
         mock_send_test_message.return_value = ("Error", False)
         my_webhook = self.owner.webhooks.first()
+
+        # when
         tasks.send_test_notifications_to_webhook(my_webhook.pk, self.user.pk)
 
-        # should have tried to sent notification
+        # then
         self.assertEqual(mock_send_test_message.call_count, 1)
-
-        # should have sent user report
         self.assertTrue(mock_notify.called)
         args = mock_notify.call_args[1]
         self.assertEqual(args["level"], "danger")
 
 
 @patch("structures.models.notifications.Notification.update_related_structures")
-class TestUpdateExistingNotifications(NoSocketsTestCase):
+class TestUpdateNotificationsStructureRelations(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls) -> None:
-        load_eveuniverse()
-        load_entities()
-        cls.user, _ = create_user_from_evecharacter(
-            1001,
-            permissions=["structures.basic_access", "structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
+    def setUpTestData(cls):
+        cls.owner = OwnerFactory(is_alliance_main=True)
 
     def test_should_run_updates(self, mock_update_related_structures):
         # given
         mock_update_related_structures.return_value = True
-        owner = create_owner_from_user(self.user)
-        create_notification(
-            owner=owner, notif_type=NotificationType.STRUCTURE_UNDER_ATTACK
+        NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.STRUCTURE_UNDER_ATTACK
         )
-        create_notification(owner=owner, notif_type=NotificationType.CORP_APP_NEW_MSG)
+        NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.CORP_APP_NEW_MSG
+        )
         # when
-        result = tasks.update_existing_notifications(owner.pk)
+        result = tasks.update_notifications_structure_relations(self.owner.pk)
         # then
         self.assertEqual(result, 1)
 
     def test_should_run_no_updates(self, mock_update_related_structures):
         # given
         mock_update_related_structures.return_value = True
-        owner = create_owner_from_user(self.user)
-        create_notification(owner=owner, notif_type=NotificationType.CORP_APP_NEW_MSG)
+        NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.CORP_APP_NEW_MSG
+        )
         # when
-        result = tasks.update_existing_notifications(owner.pk)
+        result = tasks.update_notifications_structure_relations(self.owner.pk)
         # then
         self.assertEqual(result, 0)
 

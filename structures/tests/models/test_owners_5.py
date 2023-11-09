@@ -333,17 +333,16 @@ class TestSendNewNotifications(NoSocketsTestCase):
     def test_should_send_all_notifications_corp(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        webhook = WebhookFactory(notification_types=NotificationType.values)
         corporation = EveCorporationInfoFactory(corporation_id=2011)
         character = EveCharacterFactory(corporation=corporation)
         user = UserMainDefaultOwnerFactory(main_character__character=character)
         owner = OwnerFactory(
             user=user,
             is_alliance_main=True,
-            webhooks=[webhook],
+            webhooks__notification_types=NotificationType.values,
             forwarding_last_update_at=None,
         )
-        load_notification_entities(self.owner)
+        load_notification_entities(owner)
 
         # when
         owner.send_new_notifications()

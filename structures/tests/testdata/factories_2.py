@@ -530,9 +530,9 @@ class NotificationFactory(
 ):
     class Meta:
         model = Notification
-        exclude = ("text_from_dict",)
 
-    text_from_dict = None
+    class Params:
+        text_from_dict = None
 
     notification_id = factory.Sequence(lambda n: 1_500_000_000 + n)
     created = factory.LazyFunction(now)

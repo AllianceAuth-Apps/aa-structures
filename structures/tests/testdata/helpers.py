@@ -1,6 +1,7 @@
 """functions for loading test data and for building mocks"""
 import datetime as dt
 import json
+import logging
 import math
 import unicodedata
 from copy import deepcopy
@@ -14,6 +15,7 @@ from bs4 import BeautifulSoup
 from markdown import markdown
 
 from django.contrib.auth.models import User
+from django.forms.models import model_to_dict
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
 from eveuniverse.models import EveEntity
@@ -44,6 +46,8 @@ ESI_CORP_STRUCTURES_PAGE_SIZE = 2
 
 _current_folder = Path(__file__).parent
 _FILENAME_EVEUNIVERSE_TESTDATA = "eveuniverse.json"
+
+logger = logging.getLogger(__name__)
 
 
 def test_data_filename():
@@ -703,7 +707,7 @@ def create_structures(dont_load_entities: bool = False) -> object:
                 )
                 for service in structure["services"]
             ]
-            StructureService.objects.bulk_create(objs, ignore_conflicts=True)
+            StructureService.objects.bulk_create(objs)
 
 
 def create_owners():
@@ -711,7 +715,7 @@ def create_owners():
         Owner(corporation=corporation)
         for corporation in EveCorporationInfo.objects.all()
     ]
-    owners = Owner.objects.bulk_create(owners, ignore_conflicts=True)
+    owners = Owner.objects.bulk_create(owners)
     default_webhooks = list(Webhook.objects.filter(is_default=True))
     for owner in owners:
         owner.webhooks.add(*default_webhooks)
@@ -768,13 +772,18 @@ def load_notification_by_type(
     raise ValueError(f"Could not find notif for type: {notif_type}")
 
 
-def load_notification_entities(owner: Owner):
+def load_notification_entities(owner: Owner, in_bulk=True):
     timestamp_start = now() - dt.timedelta(hours=2)
     objs = [
         _generate_notif_obj_for_owner(owner, timestamp_start, notification)
         for notification in entities_testdata["Notification"]
     ]
-    Notification.objects.bulk_create(objs, ignore_conflicts=True)
+    if in_bulk:
+        Notification.objects.bulk_create(objs)
+    else:
+        for obj in objs:
+            logger.info("Creating notif: %s", model_to_dict(obj))
+            obj.save()
 
 
 def _generate_notif_obj_for_owner(
@@ -852,4 +861,4 @@ def generate_eve_entities_from_auth_entities():
             category=EveEntity.CATEGORY_ALLIANCE,
         )
 
-    EveEntity.objects.bulk_create(objs, ignore_conflicts=True)
+    EveEntity.objects.bulk_create(objs)

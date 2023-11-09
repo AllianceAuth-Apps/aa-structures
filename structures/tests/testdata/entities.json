@@ -567,7 +567,7 @@
             "sender_id": 2901,
             "sender_type": "corporation",
             "timestamp": "2019-03-20 22:26:00",
-            "text": "allianceID: 99007974\ncorpID: 98151631\nmoonID: 40161465\nsolarSystemID: 30002537\ntypeID: 16213\nwants:\n- quantity: 119\n  typeID: 4051\n",
+            "text": "allianceID: 3001\ncorpID: 2001\nmoonID: 40161465\nsolarSystemID: 30002537\ntypeID: 16213\nwants:\n- quantity: 119\n  typeID: 4051\n",
             "is_read": true
         },
         {
@@ -730,7 +730,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-25 19:16:00",
-            "text": "charID: 94177384\ndefenderID: 98369956\nentityID: 3011\n",
+            "text": "charID: 1011\ndefenderID: 2001\nentityID: 3011\n",
             "is_read": false,
             "is_sent": false
         },
@@ -740,7 +740,7 @@
             "sender_id": 2001,
             "sender_type": "corporation",
             "timestamp": "2019-11-07 20:18:00",
-            "text": "againstID: 3011\ndeclaredByID: 98619178\nexpireTimeStamp: 132202234630922771\n",
+            "text": "againstID: 3011\ndeclaredByID: 1011\nexpireTimeStamp: 132202234630922771\n",
             "is_read": false,
             "is_sent": false
         },
@@ -750,7 +750,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "iskValue: 10000000.0\nownerID1: 3001\nownerID2: 3011\nwarNegotiationID: 453736\n",
+            "text": "iskValue: 10000000.0\nownerID1: 3001\nownerID2: 3011\nwarNegotiationID: 1234567\n",
             "is_read": false,
             "is_sent": false
         },

@@ -9,16 +9,10 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
 from eveuniverse.models import EveSolarSystem
 
-from allianceauth.eveonline.models import (
-    EveAllianceInfo,
-    EveCharacter,
-    EveCorporationInfo,
-)
-from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.testdata_factories import UserMainFactory
-from app_utils.testing import create_user_from_evecharacter, json_response_to_python
+from app_utils.testing import json_response_to_python
 
-from structures.models import Owner, Structure, Webhook
+from structures.models import Owner, Structure
 from structures.views import structures
 
 from ..testdata.factories_2 import (
@@ -32,8 +26,9 @@ from ..testdata.factories_2 import (
     StructureFactory,
     StructureTagFactory,
     UserMainDefaultFactory,
+    UserMainDefaultOwnerFactory,
+    WebhookFactory,
 )
-from ..testdata.helpers import create_structures, load_entities, set_owner_character
 from ..testdata.load_eveuniverse import load_eveuniverse
 from .utils import json_response_to_dict
 
@@ -282,7 +277,9 @@ class TestStructureListDataPermissions(TestCase):
 class TestIndexTagFilter(TestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.factory = RequestFactory()
         StructureTagFactory(name="tag_a", is_default=True)
+        cls.user = UserMainDefaultFactory()
 
     @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", True)
     def test_default_filter_enabled(self):
@@ -404,12 +401,8 @@ class TestStructurePowerModes(TestCase):
     def setUpTestData(cls):
         cls.factory = RequestFactory()
         load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-        AuthUtils.add_permission_to_user_by_name("structures.basic_access", cls.user)
-        AuthUtils.add_permission_to_user_by_name(
-            "structures.view_all_structures", cls.user
-        )
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=cls.user)
 
     def display_data_for_structure(self, structure_id: int):
         request = self.factory.get("/")
@@ -425,90 +418,100 @@ class TestStructurePowerModes(TestCase):
         return None
 
     def test_full_power(self):
-        structure_id = 1000000000001
-        structure = Structure.objects.get(id=structure_id)
-        structure.fuel_expires_at = now() + dt.timedelta(hours=1)
-        structure.save()
-        my_structure = self.display_data_for_structure(structure_id)
-        self.assertEqual(my_structure["power_mode_str"], "Full Power")
+        # given
+        structure = StructureFactory(
+            owner=self.owner, fuel_expires_at=now() + dt.timedelta(hours=1)
+        )
+        # when
+        obj = self.display_data_for_structure(structure.id)
+        # then
+        self.assertEqual(obj["power_mode_str"], "Full Power")
         self.assertEqual(
-            parse_datetime(my_structure["fuel_and_power"]["fuel_expires_at"]),
+            parse_datetime(obj["fuel_and_power"]["fuel_expires_at"]),
             structure.fuel_expires_at,
         )
-        self.assertIn("Full Power", my_structure["fuel_and_power"]["display"])
+        self.assertIn("Full Power", obj["fuel_and_power"]["display"])
 
     def test_low_power(self):
-        structure_id = 1000000000001
-        structure = Structure.objects.get(id=structure_id)
-        structure.fuel_expires_at = None
-        structure.last_online_at = now() - dt.timedelta(days=3)
-        structure.save()
-        my_structure = self.display_data_for_structure(structure_id)
-        self.assertEqual(my_structure["power_mode_str"], "Low Power")
-        self.assertIn("Low Power", my_structure["fuel_and_power"]["display"])
+        # given
+        structure = StructureFactory(
+            owner=self.owner,
+            fuel_expires_at=None,
+            last_online_at=now() - dt.timedelta(days=3),
+        )
+        # when
+        obj = self.display_data_for_structure(structure.id)
+        # then
+        self.assertEqual(obj["power_mode_str"], "Low Power")
+        self.assertIn("Low Power", obj["fuel_and_power"]["display"])
 
     def test_abandoned(self):
-        structure_id = 1000000000001
-        structure = Structure.objects.get(id=structure_id)
-        structure.fuel_expires_at = None
-        structure.last_online_at = now() - dt.timedelta(days=7, seconds=1)
-        structure.save()
-        my_structure = self.display_data_for_structure(structure_id)
-        self.assertEqual(my_structure["power_mode_str"], "Abandoned")
-        self.assertIn("Abandoned", my_structure["fuel_and_power"]["display"])
+        # given
+        structure = StructureFactory(
+            owner=self.owner,
+            fuel_expires_at=None,
+            last_online_at=now() - dt.timedelta(days=7, seconds=1),
+        )
+        # when
+        obj = self.display_data_for_structure(structure.id)
+        # then
+        self.assertEqual(obj["power_mode_str"], "Abandoned")
+        self.assertIn("Abandoned", obj["fuel_and_power"]["display"])
 
     def test_maybe_abandoned(self):
-        structure_id = 1000000000001
-        structure = Structure.objects.get(id=structure_id)
-        structure.fuel_expires_at = None
-        structure.last_online_at = None
-        structure.save()
-        my_structure = self.display_data_for_structure(structure_id)
-        self.assertEqual(my_structure["power_mode_str"], "Abandoned?")
-        self.assertIn("Abandoned?", my_structure["fuel_and_power"]["display"])
+        # given
+        structure = StructureFactory(
+            owner=self.owner, fuel_expires_at=None, last_online_at=None
+        )
+        # when
+        obj = self.display_data_for_structure(structure.id)
+        # then
+        self.assertEqual(obj["power_mode_str"], "Abandoned?")
+        self.assertIn("Abandoned?", obj["fuel_and_power"]["display"])
 
     def test_poco(self):
-        structure_id = 1200000000003
-        my_structure = self.display_data_for_structure(structure_id)
-        self.assertEqual(my_structure["power_mode_str"], "")
-        self.assertEqual(my_structure["fuel_and_power"]["display"], "")
+        # given
+        structure = PocoFactory(owner=self.owner)
+        # when
+        obj = self.display_data_for_structure(structure.id)
+        self.assertEqual(obj["power_mode_str"], "")
+        self.assertEqual(obj["fuel_and_power"]["display"], "")
 
     def test_starbase_online(self):
-        structure_id = 1300000000001
-        structure = Structure.objects.get(id=structure_id)
-        structure.fuel_expires_at = now() + dt.timedelta(hours=1)
-        structure.save()
-        my_structure = self.display_data_for_structure(structure_id)
-        self.assertEqual(my_structure["power_mode_str"], "")
+        # given
+        structure = StarbaseFactory(
+            owner=self.owner, fuel_expires_at=now() + dt.timedelta(hours=1)
+        )
+        # when
+        obj = self.display_data_for_structure(structure.id)
+        self.assertEqual(obj["power_mode_str"], "")
         self.assertEqual(
-            parse_datetime(my_structure["fuel_and_power"]["fuel_expires_at"]),
+            parse_datetime(obj["fuel_and_power"]["fuel_expires_at"]),
             structure.fuel_expires_at,
         )
 
     def test_starbase_offline(self):
-        structure_id = 1300000000001
-        structure = Structure.objects.get(id=structure_id)
-        structure.fuel_expires_at = None
-        structure.save()
-        my_structure = self.display_data_for_structure(structure_id)
-        self.assertEqual(my_structure["power_mode_str"], "")
-        self.assertIn("-", my_structure["fuel_and_power"]["display"])
+        # given
+        structure = StarbaseFactory(
+            owner=self.owner, fuel_expires_at=None, state=Structure.State.POS_OFFLINE
+        )
+        # when
+        obj = self.display_data_for_structure(structure.id)
+        # then
+        self.assertEqual(obj["power_mode_str"], "")
+        self.assertIn("-", obj["fuel_and_power"]["display"])
 
 
 class TestAddStructureOwner(TestCase):
     @classmethod
     def setUpTestData(cls):
-        load_eveuniverse()
-        load_entities([EveCorporationInfo, EveAllianceInfo, EveCharacter, Webhook])
-        cls.user, cls.character_ownership = create_user_from_evecharacter(
-            1001,
-            permissions=["structures.basic_access", "structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        cls.character = cls.character_ownership.character
         cls.factory = RequestFactory()
+        load_eveuniverse()
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.character = cls.user.profile.main_character
+        cls.character_ownership = cls.character.character_ownership
 
-    def _add_structure_owner(self, token=None, user=None):
+    def _add_structure_owner_view(self, token=None, user=None):
         # given
         request = self.factory.get(reverse("structures:add_structure_owner"))
         if not user:
@@ -527,70 +530,35 @@ class TestAddStructureOwner(TestCase):
     @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
     @patch(VIEWS_PATH + ".notify_admins")
     @patch(VIEWS_PATH + ".messages")
-    def test_should_add_new_structure_owner_and_notify_admins(
+    def test_should_add_new_owner_and_notify_admins(
         self, mock_messages, mock_notify_admins, mock_update_all_for_owner
     ):
+        # given
+        webhook = WebhookFactory(is_default=True)
         # when
-        response = self._add_structure_owner()
+        response = self._add_structure_owner_view()
         # then
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("structures:index"))
         self.assertTrue(mock_messages.info.called)
         self.assertTrue(mock_notify_admins.called)
-        owner = Owner.objects.first()
+        new_owner = Owner.objects.first()
         self.assertSetEqual(
             {self.character_ownership.pk},
-            set(owner.characters.values_list("character_ownership", flat=True)),
+            set(new_owner.characters.values_list("character_ownership", flat=True)),
         )
-        self.assertEqual(owner.webhooks.first().name, "Test Webhook 1")
+        self.assertIn(webhook, new_owner.webhooks.all())
         self.assertTrue(mock_update_all_for_owner.delay.called)
 
     @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
     @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
     @patch(VIEWS_PATH + ".notify_admins")
     @patch(VIEWS_PATH + ".messages")
-    def test_should_add_character_to_existing_structure_owner_and_reactive(
-        self, mock_messages, mock_notify_admins, mock_update_all_for_owner
-    ):
-        # given
-        owner = OwnerFactory(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2102),
-            is_active=False,
-        )
-        _, character_ownership_1011 = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        owner.add_character(character_ownership_1011)
-        user_1102, character_ownership_1102 = create_user_from_evecharacter(
-            1102,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        # when
-        response = self._add_structure_owner(user=user_1102)
-        # then
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("structures:index"))
-        self.assertTrue(mock_messages.info.called)
-        self.assertFalse(mock_update_all_for_owner.delay.called)
-        owner.refresh_from_db()
-        self.assertSetEqual(
-            {character_ownership_1011.pk, character_ownership_1102.pk},
-            set(owner.characters.values_list("character_ownership", flat=True)),
-        )
-        self.assertTrue(owner.is_active)
-
-    @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
-    @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
-    @patch(VIEWS_PATH + ".notify_admins")
-    @patch(VIEWS_PATH + ".messages")
-    def test_should_add_new_structure_owner_and_not_notify_admins(
+    def test_should_add_new_owner_and_not_notify_admins(
         self, mock_messages, mock_notify_admins, mock_update_all_for_owner
     ):
         # when
-        response = self._add_structure_owner()
+        response = self._add_structure_owner_view()
         # then
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("structures:index"))
@@ -611,113 +579,143 @@ class TestAddStructureOwner(TestCase):
         self, mock_messages, mock_notify_admins, mock_update_all_for_owner
     ):
         # given
-        Webhook.objects.filter(name="Test Webhook 1").update(is_default=False)
+        WebhookFactory(is_default=False)
         # when
-        response = self._add_structure_owner()
+        response = self._add_structure_owner_view()
         # then
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("structures:index"))
         self.assertTrue(mock_messages.info.called)
         self.assertFalse(mock_notify_admins.called)
-        my_owner = Owner.objects.get(
+        new_owner = Owner.objects.get(
             characters__character_ownership=self.character_ownership
         )
-        self.assertIsNone(my_owner.webhooks.first())
+        self.assertFalse(new_owner.webhooks.exists())
         self.assertTrue(mock_update_all_for_owner.delay.called)
-
-        # webhook.is_default = True
-        # webhook.save()
 
     @patch(VIEWS_PATH + ".messages")
     def test_should_report_error_when_token_does_not_belong_to_user(
         self, mock_messages
     ):
         # given
-        other_user, _ = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.basic_access", "structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
+        other_user = UserMainDefaultOwnerFactory()
         # when
         my_token = other_user.token_set.first()
-        response = self._add_structure_owner(token=my_token)
+        response = self._add_structure_owner_view(token=my_token)
         # then
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("structures:index"))
         self.assertTrue(mock_messages.error.called)
 
+    @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
+    @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
+    @patch(VIEWS_PATH + ".notify_admins")
+    @patch(VIEWS_PATH + ".messages")
+    def test_should_add_another_character_to_existing_owner_and_reactivate(
+        self, mock_messages, mock_notify_admins, mock_update_all_for_owner
+    ):
+        # given
+        owner = OwnerFactory(
+            user=self.user, characters=[self.character], is_active=False
+        )
+        character_2 = EveCharacterFactory(corporation=owner.corporation)
+        user_2 = UserMainDefaultOwnerFactory(main_character__character=character_2)
+        # when
+        response = self._add_structure_owner_view(user=user_2)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structures:index"))
+        self.assertTrue(mock_messages.info.called)
+        self.assertFalse(mock_update_all_for_owner.delay.called)
+        owner.refresh_from_db()
+        character_ownerships = set(
+            owner.characters.values_list("character_ownership", flat=True)
+        )
+        self.assertSetEqual(
+            {self.character_ownership.pk, character_2.character_ownership.pk},
+            character_ownerships,
+        )
+        self.assertTrue(owner.is_active)
+
 
 class TestStatus(TestCase):
     @classmethod
     def setUpTestData(cls):
-        load_eveuniverse()
-        create_structures()
-        my_user, _ = set_owner_character(character_id=1001)
-        AuthUtils.add_permission_to_user_by_name("structures.basic_access", my_user)
         cls.factory = RequestFactory()
+        # Owner.objects.filter(is_included_in_service_status=True)
 
     def test_view_service_status_ok(self):
-        for owner in Owner.objects.filter(is_included_in_service_status=True):
-            owner.structures_last_update_at = now()
-            owner.notifications_last_update_at = now()
-            owner.forwarding_last_update_at = now()
-            owner.assets_last_update_at = now()
-            owner.save()
-
+        # given
+        OwnerFactory(
+            structures_last_update_at=now(),
+            notifications_last_update_at=now(),
+            forwarding_last_update_at=now(),
+            assets_last_update_at=now(),
+        )
         request = self.factory.get(reverse("structures:service_status"))
+        # when
         response = structures.service_status(request)
+        # then
         self.assertEqual(response.status_code, 200)
 
     @patch(OWNERS_PATH + ".STRUCTURES_STRUCTURE_SYNC_GRACE_MINUTES", 30)
     def test_view_service_status_fail_structures(self):
-        for owner in Owner.objects.filter(is_included_in_service_status=True):
-            owner.structures_last_update_at = now() - dt.timedelta(minutes=31)
-            owner.notifications_last_update_at = now()
-            owner.forwarding_last_update_at = now()
-            owner.assets_last_update_at = now()
-            owner.save()
-
+        # given
+        OwnerFactory(
+            structures_last_update_at=now() - dt.timedelta(minutes=31),
+            notifications_last_update_at=now(),
+            forwarding_last_update_at=now(),
+            assets_last_update_at=now(),
+        )
         request = self.factory.get(reverse("structures:service_status"))
+        # when
         response = structures.service_status(request)
+        # then
         self.assertEqual(response.status_code, 500)
 
     @patch(OWNERS_PATH + ".STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES", 30)
     def test_view_service_status_fail_notifications(self):
-        for owner in Owner.objects.filter(is_included_in_service_status=True):
-            owner.structures_last_update_at = now()
-            owner.notifications_last_update_at = now() - dt.timedelta(minutes=31)
-            owner.forwarding_last_update_at = now()
-            owner.assets_last_update_at = now()
-            owner.save()
-
+        # given
+        OwnerFactory(
+            structures_last_update_at=now(),
+            notifications_last_update_at=now() - dt.timedelta(minutes=31),
+            forwarding_last_update_at=now(),
+            assets_last_update_at=now(),
+        )
         request = self.factory.get(reverse("structures:service_status"))
+        # when
         response = structures.service_status(request)
+        # then
         self.assertEqual(response.status_code, 500)
 
     @patch(OWNERS_PATH + ".STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES", 30)
     def test_view_service_status_fail_forwarding(self):
-        for owner in Owner.objects.filter(is_included_in_service_status=True):
-            owner.structures_last_update_at = now()
-            owner.notifications_last_update_at = now()
-            owner.forwarding_last_update_at = now() - dt.timedelta(minutes=31)
-            owner.assets_last_update_at = now()
-            owner.save()
-
+        # given
+        OwnerFactory(
+            structures_last_update_at=now(),
+            notifications_last_update_at=now(),
+            forwarding_last_update_at=now() - dt.timedelta(minutes=31),
+            assets_last_update_at=now(),
+        )
         request = self.factory.get(reverse("structures:service_status"))
+        # when
         response = structures.service_status(request)
+        # then
         self.assertEqual(response.status_code, 500)
 
     @patch(OWNERS_PATH + ".STRUCTURES_STRUCTURE_SYNC_GRACE_MINUTES", 30)
     def test_view_service_status_fail_assets(self):
-        for owner in Owner.objects.filter(is_included_in_service_status=True):
-            owner.structures_last_update_at = now()
-            owner.notifications_last_update_at = now()
-            owner.forwarding_last_update_at = now()
-            owner.assets_last_update_at = now() - dt.timedelta(minutes=31)
-            owner.save()
-
+        # given
+        OwnerFactory(
+            structures_last_update_at=now(),
+            notifications_last_update_at=now(),
+            forwarding_last_update_at=now(),
+            assets_last_update_at=now() - dt.timedelta(minutes=31),
+        )
         request = self.factory.get(reverse("structures:service_status"))
+        # when
         response = structures.service_status(request)
+        # then
         self.assertEqual(response.status_code, 500)
 
 

@@ -3,7 +3,7 @@
 import functools
 from collections import defaultdict
 from enum import Enum, IntEnum
-from typing import Dict, Sequence, Union
+from typing import Dict, Sequence, Set, Union
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -194,16 +194,18 @@ def _construct_ajax_url(selection: StructureSelection, tags):
 @permission_required("structures.basic_access")
 def structure_list_data(request: HttpRequest, selection: str) -> JsonResponse:
     """Return structure list in JSON for AJAX call in structure_list view."""
-    tags = _current_tags(request)
-    structures_qs = _structures_query(request.user, selection, tags)
+    tag_names = _current_tags(request)
+    structures_qs = _structures_query(request.user, selection, tag_names)
 
     serializer = StructureListSerializer(queryset=structures_qs, request=request)
     return JsonResponse({"data": serializer.to_list()})
 
 
-def _structures_query(user: User, selection: Union[StructureSelection, str], tags):
+def _structures_query(
+    user: User, selection: Union[StructureSelection, str], tag_names: Set[str]
+):
     """Return query for a variant and user and active tags."""
-    structures_qs = Structure.objects.visible_for_user(user, tags)
+    structures_qs = Structure.objects.visible_for_user(user).filter_tags(tag_names)
 
     selection = StructureSelection(selection)
     if selection == StructureSelection.STRUCTURES:
@@ -232,11 +234,11 @@ def _structures_query(user: User, selection: Union[StructureSelection, str], tag
     return structures_qs
 
 
-def _current_tags(request):
+def _current_tags(request) -> Set[str]:
     """Return currently enabled tags."""
     tags_raw = request.GET.get(QUERY_PARAM_TAGS)
-    tags = tags_raw.split(",") if tags_raw else None
-    return tags
+    tags = tags_raw.split(",") if tags_raw else []
+    return set(tags)
 
 
 class FakeEveType:

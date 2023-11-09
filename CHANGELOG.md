@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Icons too small on summary page
 - Icons too small on poco page
 - Shows structure as reinforced in several wrong states
+- Tags only work for users with view_everything permission
 
 ## [2.6.2] - 2023-10-31
 

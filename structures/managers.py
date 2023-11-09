@@ -237,16 +237,10 @@ class StructureQuerySet(models.QuerySet):
             "eve_type__eve_group__eve_category",
         )
 
-    def visible_for_user(
-        self, user: User, tags: Optional[list] = None
-    ) -> models.QuerySet:
+    def visible_for_user(self, user: User) -> models.QuerySet:
         """Return structures which the given user have permission to view."""
         if user.has_perm("structures.view_all_structures"):
             structures_query = self.select_related_defaults()
-            if tags:
-                structures_query = structures_query.filter(
-                    tags__name__in=tags
-                ).distinct()
 
         else:
             if user.has_perm("structures.view_corporation_structures") or user.has_perm(

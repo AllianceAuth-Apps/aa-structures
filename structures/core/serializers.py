@@ -40,9 +40,7 @@ class _AbstractStructureListSerializer(ABC):
 
     ICON_RENDER_SIZE = 64
 
-    def __init__(
-        self, queryset: models.QuerySet, request: Optional[HttpRequest] = None
-    ):
+    def __init__(self, queryset: models.QuerySet, request: HttpRequest):
         self.queryset = queryset
         self._request = request
 
@@ -377,9 +375,7 @@ class _AbstractStructureListSerializer(ABC):
 
 
 class StructureListSerializer(_AbstractStructureListSerializer):
-    def __init__(
-        self, queryset: models.QuerySet, request: Optional[HttpRequest] = None
-    ):
+    def __init__(self, queryset: models.QuerySet, request: HttpRequest):
         super().__init__(queryset, request=request)
         self.queryset = self.queryset.prefetch_related("tags")
 
@@ -401,7 +397,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
     def __init__(
         self,
         queryset: models.QuerySet,
-        request: Optional[HttpRequest] = None,
+        request: HttpRequest,
         character: Optional[EveCharacter] = None,
     ):
         super().__init__(queryset, request=request)

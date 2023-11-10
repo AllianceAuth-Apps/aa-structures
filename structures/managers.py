@@ -240,39 +240,35 @@ class StructureQuerySet(models.QuerySet):
     def visible_for_user(self, user: User) -> models.QuerySet:
         """Return structures which the given user have permission to view."""
         if user.has_perm("structures.view_all_structures"):
-            structures_query = self.select_related_defaults()
+            return self
 
-        else:
-            if user.has_perm("structures.view_corporation_structures") or user.has_perm(
-                "structures.view_alliance_structures"
-            ):
-                corporation_ids = {
-                    character_ownership.character.corporation_id
-                    for character_ownership in user.character_ownerships.all()  # type: ignore
-                }
-                corporations = list(
-                    EveCorporationInfo.objects.select_related("alliance").filter(
-                        corporation_id__in=corporation_ids
-                    )
+        if user.has_perm("structures.view_corporation_structures") or user.has_perm(
+            "structures.view_alliance_structures"
+        ):
+            corporation_ids = {
+                character_ownership.character.corporation_id
+                for character_ownership in user.character_ownerships.all()  # type: ignore
+            }
+            corporations = list(
+                EveCorporationInfo.objects.select_related("alliance").filter(
+                    corporation_id__in=corporation_ids
                 )
-            else:
-                corporations = []
-
-            if user.has_perm("structures.view_alliance_structures"):
-                alliances = {
-                    corporation.alliance
-                    for corporation in corporations
-                    if corporation.alliance
-                }
-                for alliance in alliances:
-                    corporations += list(alliance.evecorporationinfo_set.all())
-
-                corporations = list(set(corporations))
-
-            structures_query = self.select_related_defaults().filter(
-                owner__corporation__in=corporations
             )
-        return structures_query
+        else:
+            corporations = []
+
+        if user.has_perm("structures.view_alliance_structures"):
+            alliances = {
+                corporation.alliance
+                for corporation in corporations
+                if corporation.alliance
+            }
+            for alliance in alliances:
+                corporations += list(alliance.evecorporationinfo_set.all())
+
+            corporations = list(set(corporations))
+
+        return self.filter(owner__corporation__in=corporations)
 
     def filter_tags(self, tag_names: Iterable[str]) -> models.QuerySet:
         """Apply filter for given tags."""

@@ -82,7 +82,7 @@ def public_poco_list_data(request: HttpRequest, character_id: int) -> JsonRespon
 
 
 def _public_pocos_query():
-    pocos = Structure.objects.filter(
+    pocos = Structure.objects.select_related_defaults().filter(
         eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL,
         owner__are_pocos_public=True,
     )

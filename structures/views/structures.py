@@ -205,7 +205,11 @@ def _structures_query(
     user: User, selection: Union[StructureSelection, str], tag_names: Set[str]
 ):
     """Return query for a variant and user and active tags."""
-    structures_qs = Structure.objects.visible_for_user(user).filter_tags(tag_names)
+    structures_qs = (
+        Structure.objects.visible_for_user(user)
+        .select_related_defaults()
+        .filter_tags(tag_names)
+    )
 
     selection = StructureSelection(selection)
     if selection == StructureSelection.STRUCTURES:

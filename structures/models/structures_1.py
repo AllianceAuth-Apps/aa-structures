@@ -619,15 +619,18 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
         """Needed fuel blocks per day."""
         if not self.fuel_expires_at:
             return None
+
         fuel_quantity = self.structure_fuel_quantity
         if not fuel_quantity:
             return None
+
         assets_last_updated_at = self.items.filter(
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             eve_type__eve_group_id=EveGroupId.FUEL_BLOCK,
         ).aggregate(Min("last_updated_at"))["last_updated_at__min"]
         if not assets_last_updated_at:
             return None
+
         try:
             return math.ceil(
                 fuel_quantity

@@ -217,6 +217,15 @@ class TestStructure(NoSocketsTestCase):
         expected = "Amamake - Test Structure Alpha"
         self.assertEqual(str(obj), expected)
 
+    def test_str_upwell_wo_solar_system(self):
+        obj = StructureFactory.build(
+            owner=self.owner,
+            eve_solar_system=None,
+            name="Test Structure Alpha",
+        )
+        expected = "? - Test Structure Alpha"
+        self.assertEqual(str(obj), expected)
+
     def test_str_poco(self):
         obj = PocoFactory.build(eve_planet_name="Amamake V")
         expected = "Amamake V - Customs Office (Amamake V)"
@@ -228,6 +237,10 @@ class TestStructure(NoSocketsTestCase):
         )
         expected = "Amamake II - Moon 1 - Home Sweat Home"
         self.assertEqual(str(obj), expected)
+
+    def test_repr(self):
+        obj = StructureFactory.build()
+        self.assertTrue(repr(obj))
 
     def test_structure_is_full_power(self):
         structure = StructureFactory.build(owner=self.owner)
@@ -345,6 +358,12 @@ class TestStructure(NoSocketsTestCase):
         obj = StructureFactory.build(eve_solar_system_name="Amamake")
         # when/then
         self.assertEqual(obj.location_name, "Amamake")
+
+    def test_should_return_unknown_location(self):
+        # given
+        obj = StructureFactory.build(eve_solar_system=None)
+        # when/then
+        self.assertEqual(obj.location_name, "?")
 
     def test_is_poco(self):
         # given
@@ -599,6 +618,28 @@ class TestStructureFuel(NoSocketsTestCase):
                 eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
                 location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
                 quantity=6309,
+            )
+        # when
+        result = structure.structure_fuel_usage()
+        # then
+        self.assertIsNone(result)
+
+    def test_should_handle_zero_hours_remaining(self):
+        # given
+        my_now = now()
+        structure = StructureFactory(
+            owner=self.owner,
+            eve_type_name="Astrahus",
+            fuel_expires_at=my_now,
+        )
+        with patch("django.utils.timezone.now") as mock_now:
+            mock_now.return_value = my_now
+            StructureItemFactory(
+                structure=structure,
+                eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+                location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
+                quantity=1,
+                last_updated_at=my_now,
             )
         # when
         result = structure.structure_fuel_usage()

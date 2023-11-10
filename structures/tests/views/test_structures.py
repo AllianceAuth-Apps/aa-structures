@@ -36,6 +36,107 @@ VIEWS_PATH = "structures.views.structures"
 OWNERS_PATH = "structures.models.owners"
 
 
+@patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", False)
+class TestIndexRedirect(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.factory = RequestFactory()
+
+    def test_should_redirect_to_public_view(self):
+        # given
+        user = UserMainFactory(
+            permissions__=[
+                "structures.basic_access",
+            ],
+        )
+        request = self.factory.get("/")
+        request.user = user
+
+        # when
+        response = structures.index(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structures:public"))
+
+    def test_should_redirect_to_structure_list_view_1(self):
+        # given
+        user = UserMainFactory(
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_corporation_structures",
+            ],
+        )
+        request = self.factory.get("/")
+        request.user = user
+        # when
+        response = structures.index(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structures:structure_list"))
+
+    def test_should_redirect_to_structure_list_view_2(self):
+        # given
+        user = UserMainFactory(
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_alliance_structures",
+            ],
+        )
+        request = self.factory.get("/")
+        request.user = user
+        # when
+        response = structures.index(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structures:structure_list"))
+
+    def test_should_redirect_to_structure_list_view_3(self):
+        # given
+        user = UserMainFactory(
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_all_structures",
+            ],
+        )
+        request = self.factory.get("/")
+        request.user = user
+        # when
+        response = structures.index(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structures:structure_list"))
+
+
+class TestIndexTagFilter(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.factory = RequestFactory()
+        StructureTagFactory(name="tag_a", is_default=True)
+        cls.user = UserMainDefaultFactory()
+
+    @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", True)
+    def test_default_filter_enabled(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = structures.index(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/structures/list?tags=tag_a")
+
+    @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", False)
+    def test_default_filter_disabled(self):
+        # given
+        request = self.factory.get("/")
+        request.user = self.user
+        # when
+        response = structures.index(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/structures/list")
+
+
 class TestStructureListDataSerialization(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -272,36 +373,6 @@ class TestStructureListDataPermissions(TestCase):
         data = json_response_to_dict(response)
         structure = data[structure.id]
         self.assertNotIn("Unanchoring until", structure["state_details"])
-
-
-class TestIndexTagFilter(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.factory = RequestFactory()
-        StructureTagFactory(name="tag_a", is_default=True)
-        cls.user = UserMainDefaultFactory()
-
-    @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", True)
-    def test_default_filter_enabled(self):
-        # given
-        request = self.factory.get(reverse("structures:index"))
-        request.user = self.user
-        # when
-        response = structures.index(request)
-        # then
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/structures/list?tags=tag_a")
-
-    @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", False)
-    def test_default_filter_disabled(self):
-        # given
-        request = self.factory.get(reverse("structures:index"))
-        request.user = self.user
-        # when
-        response = structures.index(request)
-        # then
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/structures/list")
 
 
 class TestStructureListTagFilters(TestCase):

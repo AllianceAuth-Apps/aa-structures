@@ -10,6 +10,7 @@ from random import randrange
 from typing import Optional, Tuple
 from unittest.mock import Mock
 
+import pytz
 from bravado.exception import HTTPNotFound
 from bs4 import BeautifulSoup
 from markdown import markdown
@@ -888,3 +889,11 @@ def clone_notification(obj: Notification) -> Notification:
         sender=obj.sender, notif_type=obj.notif_type, owner=obj.owner, text=obj.text
     )
     return new_object
+
+
+def datetime_to_ldap(my_dt: dt.datetime) -> int:
+    """Return a standard datetime as ldap datetime."""
+    return (
+        ((my_dt - dt.datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds())
+        + 11644473600
+    ) * 10000000

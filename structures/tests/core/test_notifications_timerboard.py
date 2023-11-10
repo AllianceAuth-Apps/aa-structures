@@ -1,21 +1,21 @@
+from unittest.mock import Mock, patch
+
 from app_utils.django import app_labels
+from app_utils.testing import NoSocketsTestCase
+
+from structures.core import notification_timers
+from structures.models import Notification
+from structures.tests.testdata.factories import create_webhook
+from structures.tests.testdata.factories_2 import GeneratedNotificationFactory
+from structures.tests.testdata.helpers import (
+    create_structures,
+    load_notification_entities,
+    set_owner_character,
+)
+from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 if "timerboard" in app_labels():
-    from unittest.mock import Mock, patch
-
     from allianceauth.timerboard.models import Timer as AuthTimer
-    from app_utils.testing import NoSocketsTestCase
-
-    from structures.core import notification_timers
-    from structures.models import Notification
-    from structures.tests.testdata.factories import create_webhook
-    from structures.tests.testdata.factories_2 import GeneratedNotificationFactory
-    from structures.tests.testdata.helpers import (
-        create_structures,
-        load_notification_entities,
-        set_owner_character,
-    )
-    from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
     MODULE_PATH = "structures.core.notification_timers"
 

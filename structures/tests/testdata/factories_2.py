@@ -39,6 +39,8 @@ from structures.models import (
     Webhook,
 )
 
+# from .helpers import datetime_to_ldap  # TODO: Use for notifications
+
 T = TypeVar("T")
 
 
@@ -299,6 +301,23 @@ class StructureFactory(
 
         elif extracted:
             obj.tags.add(*extracted)
+
+
+class RefineryFactory(StructureFactory):
+    class Params:
+        eve_moon_name = "Amamake IV - Moon 1"
+
+    @factory.lazy_attribute
+    def eve_moon(self):
+        return EveMoon.objects.get(name=self.eve_moon_name)
+
+    @factory.lazy_attribute
+    def eve_solar_system(self):
+        return self.eve_moon.eve_planet.eve_solar_system
+
+    @factory.lazy_attribute
+    def eve_type(self):
+        return EveType.objects.get(name="Athanor")
 
 
 class StarbaseFactory(StructureFactory):
@@ -567,6 +586,152 @@ class NotificationFactory(
         return kwargs
 
 
+class NotificationMoonMiningExtractionStartedFactory(NotificationFactory):
+    class Params:
+        auto_time = 132186924601059151
+        ore_volume_by_type = {
+            46300: 1288475.124715103,
+            46301: 544691.7637724016,
+            46302: 526825.4047522942,
+            46303: 528996.6386983792,
+        }
+        ready_time = 132186816601059151
+        structure = None
+        started_by = None
+
+    notif_type = NotificationType.MOONMINING_EXTRACTION_STARTED
+
+    @factory.lazy_attribute
+    def text(self):
+        started_by = self.started_by or EveEntityCharacterFactory()
+        structure = self.structure or RefineryFactory(owner=self.owner)
+        data = {
+            "autoTime": self.auto_time,
+            "moonID": structure.eve_moon.id,
+            "oreVolumeByType": self.ore_volume_by_type,
+            "readyTime": self.ready_time,
+            "solarSystemID": structure.eve_solar_system.id,
+            "startedBy": started_by.id,
+            "startedByLink": (
+                f'<a href="showinfo:1383\\/\\/{started_by.id}">'
+                f"{started_by.name}<\\/a>"
+            ),
+            "structureID": structure.id,
+            "structureLink": (
+                f'<a href="showinfo:{structure.eve_type.id}\\/\\/'
+                f'{structure.id}">{structure.name}<\\/a>'
+            ),
+            "structureName": structure.name,
+            "structureTypeID": structure.eve_type.id,
+        }
+        return yaml.dump(data)
+
+
+class NotificationMoonMiningExtractionCanceledFactory(NotificationFactory):
+    class Params:
+        canceled_by = None
+        structure = None
+
+    notif_type = NotificationType.MOONMINING_EXTRACTION_CANCELLED
+
+    @factory.lazy_attribute
+    def text(self):
+        canceled_by = self.canceled_by or EveEntityCharacterFactory()
+        structure = self.structure or RefineryFactory(owner=self.owner)
+
+        data = {
+            "cancelledBy": canceled_by.id,
+            "cancelledByLink": (
+                f'<a href="showinfo:1383\\/\\/{canceled_by.id}">'
+                f"{canceled_by.name}<\\/a>"
+            ),
+            "moonID": structure.eve_moon.id,
+            "solarSystemID": structure.eve_solar_system.id,
+            "structureID": structure.id,
+            "structureLink": (
+                f'<a href="showinfo:{structure.eve_type.id}\\/\\/'
+                f'{structure.id}">{structure.name}<\\/a>'
+            ),
+            "structureName": structure.name,
+            "structureTypeID": structure.eve_type.id,
+        }
+        return yaml.dump(data)
+
+
+class NotificationOrbitalReinforcedFactory(NotificationFactory):
+    class Params:
+        aggressor_alliance = None
+        aggressor_corporation = None
+        aggressor_character = None
+        structure = None
+
+    notif_type = NotificationType.ORBITAL_REINFORCED
+
+    @factory.lazy_attribute
+    def text(self):
+        structure = self.structure or PocoFactory(owner=self.owner)
+        aggressor_alliance = self.aggressor_alliance or EveEntityAllianceFactory()
+        aggressor_corporation = (
+            self.aggressor_corporation or EveEntityCorporationFactory()
+        )
+        aggressor_character = self.aggressor_character or EveEntityCharacterFactory()
+        data = {
+            "aggressorAllianceID": aggressor_alliance.id,
+            "aggressorCorpID": aggressor_corporation.id,
+            "aggressorID": aggressor_character.id,
+            "planetID": structure.eve_planet.id,
+            "planetTypeID": structure.eve_planet.eve_type.id,
+            "reinforceExitTime": 132154723470000000,  # TODO: make variable
+            "solarSystemID": structure.eve_solar_system.id,
+            "typeID": structure.eve_type.id,
+        }
+        return yaml.dump(data)
+
+
+class NotificationStructureLostShieldFactory(NotificationFactory):
+    class Params:
+        structure = None
+
+    notif_type = NotificationType.STRUCTURE_LOST_SHIELD
+
+    @factory.lazy_attribute
+    def text(self):
+        structure = self.structure or StructureFactory(owner=self.owner)
+        data = {
+            "solarsystemID": structure.eve_solar_system.id,
+            "structureID": structure.id,
+            "structureShowInfoData": [
+                "showinfo",
+                structure.eve_type.id,
+                structure.id,
+            ],
+            "structureTypeID": structure.eve_type.id,
+            "timeLeft": 1727805401093,
+            "timestamp": 132148470780000000,
+            "vulnerableTime": 9000000000,
+        }
+        return yaml.dump(data)
+
+
+class NotificationSovStructureReinforcedFactory(NotificationFactory):
+    class Params:
+        campaign_event_type = 1
+        decloak_time = 131897990021334067
+        eve_solar_system_name = "1-PGSG"
+
+    notif_type = NotificationType.SOV_STRUCTURE_REINFORCED
+
+    @factory.lazy_attribute
+    def text(self):
+        eve_solar_system = EveSolarSystem.objects.get(name=self.eve_solar_system_name)
+        data = {
+            "campaignEventType": self.campaign_event_type,
+            "decloakTime": self.decloak_time,
+            "solarSystemID": eve_solar_system.id,
+        }
+        return yaml.dump(data)
+
+
 class GeneratedNotificationFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[GeneratedNotification]
 ):
@@ -589,6 +754,7 @@ class GeneratedNotificationFactory(
         """Set this param to False to disable."""
         if not create or extracted is False:
             return
+
         reinforced_until = dt.datetime.fromisoformat(obj.details["reinforced_until"])
         starbase = StarbaseFactory(
             owner=obj.owner,

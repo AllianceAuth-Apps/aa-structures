@@ -1,26 +1,29 @@
+import re
+from unittest.mock import patch
+
+from requests.exceptions import HTTPError
+
+from django.contrib.auth.models import Group
+
 from app_utils.django import app_labels
+from app_utils.testing import NoSocketsTestCase
+
+from structures.models import Notification
+from structures.tests.testdata.factories_2 import (
+    OwnerFactory,
+    StructureFactory,
+    WebhookFactory,
+)
+from structures.tests.testdata.helpers import (
+    clone_notification,
+    load_eve_entities,
+    load_notification_entities,
+)
+from structures.tests.testdata.load_eveuniverse import load_eveuniverse
+
+MODULE_PATH = "structures.models.notifications"
 
 if "discord" in app_labels():
-    import re
-    from unittest.mock import patch
-
-    from requests.exceptions import HTTPError
-
-    from django.contrib.auth.models import Group
-
-    from app_utils.testing import NoSocketsTestCase
-
-    from structures.models import Notification
-    from structures.tests.testdata.factories import create_webhook
-    from structures.tests.testdata.helpers import (
-        create_structures,
-        load_entities,
-        load_notification_entities,
-        set_owner_character,
-    )
-    from structures.tests.testdata.load_eveuniverse import load_eveuniverse
-
-    MODULE_PATH = "structures.models.notifications"
 
     @patch(MODULE_PATH + ".Notification._import_discord")
     @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
@@ -28,12 +31,12 @@ if "discord" in app_labels():
         @classmethod
         def setUpTestData(cls):
             load_eveuniverse()
-            load_entities()
+            load_eve_entities()
             cls.group_1 = Group.objects.create(name="Dummy Group 1")
             cls.group_2 = Group.objects.create(name="Dummy Group 2")
-            create_structures(dont_load_entities=True)
-            _, cls.owner = set_owner_character(character_id=1001)
+            cls.owner = OwnerFactory()
             load_notification_entities(cls.owner)
+            StructureFactory(id=1000000000001)
 
         @staticmethod
         def _my_group_to_role(group: Group) -> dict:
@@ -47,9 +50,11 @@ if "discord" in app_labels():
             mock_import_discord.return_value.objects.group_to_role.side_effect = (
                 self._my_group_to_role
             )
-            webhook = create_webhook()
+            webhook = WebhookFactory()
             webhook.ping_groups.add(self.group_1)
-            obj = Notification.objects.get(notification_id=1000000509)
+            obj = clone_notification(
+                Notification.objects.get(notification_id=1000000509)
+            )
             # when
             result = obj.send_to_webhook(webhook)
             # then
@@ -64,9 +69,11 @@ if "discord" in app_labels():
             mock_import_discord.return_value.objects.group_to_role.side_effect = (
                 self._my_group_to_role
             )
-            webhook = create_webhook()
+            webhook = WebhookFactory()
             self.owner.ping_groups.add(self.group_2)
-            obj = Notification.objects.get(notification_id=1000000509)
+            obj = clone_notification(
+                Notification.objects.get(notification_id=1000000509)
+            )
             # when
             result = obj.send_to_webhook(webhook)
             # then
@@ -81,10 +88,12 @@ if "discord" in app_labels():
             mock_import_discord.return_value.objects.group_to_role.side_effect = (
                 self._my_group_to_role
             )
-            webhook = create_webhook()
+            webhook = WebhookFactory()
             webhook.ping_groups.add(self.group_1)
             self.owner.ping_groups.add(self.group_2)
-            obj = Notification.objects.get(notification_id=1000000509)
+            obj = clone_notification(
+                Notification.objects.get(notification_id=1000000509)
+            )
             # when
             result = obj.send_to_webhook(webhook)
             # then
@@ -100,8 +109,10 @@ if "discord" in app_labels():
             mock_import_discord.return_value.objects.group_to_role.side_effect = (
                 self._my_group_to_role
             )
-            webhook = create_webhook()
-            obj = Notification.objects.get(notification_id=1000000509)
+            webhook = WebhookFactory()
+            obj = clone_notification(
+                Notification.objects.get(notification_id=1000000509)
+            )
             # when
             result = obj.send_to_webhook(webhook)
             # then
@@ -116,9 +127,11 @@ if "discord" in app_labels():
             mock_import_discord.return_value.objects.group_to_role.side_effect = (
                 HTTPError
             )
-            webhook = create_webhook()
+            webhook = WebhookFactory()
             webhook.ping_groups.add(self.group_1)
-            obj = Notification.objects.get(notification_id=1000000509)
+            obj = clone_notification(
+                Notification.objects.get(notification_id=1000000509)
+            )
             # when
             result = obj.send_to_webhook(webhook)
             # then

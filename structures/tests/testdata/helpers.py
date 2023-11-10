@@ -880,3 +880,11 @@ def load_eve_entities():
         EveEntity.objects.bulk_create(objs)
     logger.info("Loaded %d EveEntity objects", len(objs))
     return objs
+
+
+def clone_notification(obj: Notification) -> Notification:
+    """Return clone of a Notification."""
+    new_object = NotificationFactory(
+        sender=obj.sender, notif_type=obj.notif_type, owner=obj.owner, text=obj.text
+    )
+    return new_object

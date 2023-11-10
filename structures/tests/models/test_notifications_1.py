@@ -17,6 +17,7 @@ from structures.tests.testdata.factories_2 import (
     WebhookFactory,
 )
 from structures.tests.testdata.helpers import (
+    clone_notification,
     load_eve_entities,
     load_notification_entities,
 )
@@ -588,14 +589,6 @@ class TestNotificationSendToWebhook(NoSocketsTestCase):
         self.assertEqual(kwargs["embeds"][0].color, Webhook.Color.DANGER)
 
 
-def _clone_notification(obj: Notification) -> Notification:
-    """Return clone of a Notification."""
-    new_object = NotificationFactory(
-        sender=obj.sender, notif_type=obj.notif_type, owner=obj.owner, text=obj.text
-    )
-    return new_object
-
-
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestNotificationSendMessage(NoSocketsTestCase):
     @classmethod
@@ -609,7 +602,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_can_send_message_normal(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
+        obj = clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then
@@ -655,7 +648,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         types_tested = set()
         # when /then
         for notif in Notification.objects.all():
-            obj = _clone_notification(notif)
+            obj = clone_notification(notif)
             with self.subTest(notif_type=obj.notif_type):
                 if obj.notif_type in NotificationType.values:
                     self.assertFalse(obj.is_sent)
@@ -693,7 +686,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_send_notification_without_existing_structure(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = _clone_notification(Notification.objects.get(notification_id=1000000505))
+        obj = clone_notification(Notification.objects.get(notification_id=1000000505))
         # when
         obj.send_to_webhook(self.webhook)
         # then
@@ -706,7 +699,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_notification_with_null_aggressor_alliance(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
+        obj = clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then
@@ -716,7 +709,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_can_send_message_with_setting_avatar(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
+        obj = clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then
@@ -729,7 +722,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_can_send_message_without_setting_avatar(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
+        obj = clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then

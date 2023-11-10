@@ -1,7 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
 
+from app_utils.testing import add_character_to_user
+
 from ..testdata.factories import (
+    EveCharacterFactory,
     JumpGateFactory,
     OwnerFactory,
     PocoFactory,
@@ -60,8 +63,11 @@ class TestPocoView(TestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        cls.user = UserMainBasicFactory()
+        character = EveCharacterFactory(character_name="Bruce Wayne")
+        cls.user = UserMainBasicFactory(main_character__character=character)
         cls.owner = OwnerFactory(are_pocos_public=True)
+        cls.alt_character = EveCharacterFactory(character_name="Peter Parker")
+        add_character_to_user(cls.user, cls.alt_character)
 
     def test_should_be_able_to_open_page(self):
         # given
@@ -74,3 +80,5 @@ class TestPocoView(TestCase):
         # then
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["pocos_count"], 2)
+        characters = {obj["character_name"] for obj in response.context["characters"]}
+        self.assertEqual(characters, {"Bruce Wayne", "Peter Parker"})

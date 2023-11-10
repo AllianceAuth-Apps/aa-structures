@@ -2,18 +2,12 @@
 
 from typing import Optional
 
-from structures.app_settings import (
-    STRUCTURES_DEFAULT_PAGE_LENGTH,
-    STRUCTURES_PAGING_ENABLED,
-)
 from structures.models import Owner
 
 
 def add_common_context(context: Optional[dict] = None) -> dict:
     """Add common context and return it."""
     new_context = {
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
         "last_updated": Owner.objects.structures_last_updated(),
     }
     if context:

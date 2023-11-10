@@ -485,9 +485,9 @@ class OwnerAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    @admin.display(ordering="x_characters_count", description=_("characters"))
+    @admin.display(ordering="characters_count_2", description=_("characters"))
     def _characters(self, obj: Owner) -> int:
-        return obj.x_characters_count
+        return obj.characters_count_2
 
     @admin.display(description=_("default pings"), boolean=True)
     def _has_default_pings_enabled(self, obj: Owner):

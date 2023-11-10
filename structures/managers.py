@@ -183,7 +183,7 @@ class OwnerQuerySet(models.QuerySet):
     def annotate_characters_count(self) -> models.QuerySet:
         """Add character count annotation."""
         return self.annotate(
-            x_characters_count=Count(
+            characters_count_2=Count(
                 "characters",
                 filter=Q(characters__character_ownership__isnull=False),
                 distinct=True,

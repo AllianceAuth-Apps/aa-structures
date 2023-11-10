@@ -18,7 +18,7 @@ from structures.models import (
     StructureService,
     StructureTag,
 )
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveCharacterFactory,
     EveCorporationInfoFactory,
     EveEntityCorporationFactory,

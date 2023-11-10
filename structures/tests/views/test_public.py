@@ -2,7 +2,7 @@ from django.test import RequestFactory, TestCase
 
 from structures.views import public
 
-from ..testdata.factories_2 import OwnerFactory, PocoFactory, UserMainBasicFactory
+from ..testdata.factories import OwnerFactory, PocoFactory, UserMainBasicFactory
 from ..testdata.load_eveuniverse import load_eveuniverse
 from .utils import json_response_to_dict
 

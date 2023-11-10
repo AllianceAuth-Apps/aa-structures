@@ -7,7 +7,7 @@ from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_types import NotificationType
 from structures.models import FuelAlert, JumpFuelAlert, Notification, Structure, Webhook
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     FuelAlertConfigFactory,
     FuelAlertFactory,

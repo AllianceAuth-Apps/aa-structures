@@ -10,7 +10,7 @@ from eveuniverse.models import EveSolarSystem
 from app_utils.testing import NoSocketsTestCase
 
 from structures.models import Owner, OwnerCharacter
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,

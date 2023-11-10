@@ -10,7 +10,7 @@ from structures import tasks
 from structures.core.notification_types import NotificationType
 from structures.models import Owner, Webhook
 
-from .testdata.factories_2 import (
+from .testdata.factories import (
     FuelAlertConfigFactory,
     JumpFuelAlertConfigFactory,
     NotificationFactory,

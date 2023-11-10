@@ -17,7 +17,7 @@ from eveuniverse.models import EveEntity
 from structures.core.notification_types import NotificationType
 from structures.models import Notification, Owner
 
-from .factories_2 import NotificationFactory
+from .factories import NotificationFactory
 
 _current_folder = Path(__file__).parent
 _FILENAME_EVEUNIVERSE_TESTDATA = "eveuniverse.json"

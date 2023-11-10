@@ -17,7 +17,7 @@ from structures import tasks
 from structures.core.notification_types import NotificationType
 from structures.models import Structure
 
-from .testdata.factories_2 import (
+from .testdata.factories import (
     EveEntityAllianceFactory,
     EveEntityCorporationFactory,
     NotificationFactory,

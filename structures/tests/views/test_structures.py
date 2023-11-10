@@ -15,7 +15,7 @@ from app_utils.testing import json_response_to_python
 from structures.models import Owner, Structure
 from structures.views import structures
 
-from ..testdata.factories_2 import (
+from ..testdata.factories import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,

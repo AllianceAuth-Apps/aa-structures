@@ -6,7 +6,7 @@ from app_utils.testing import NoSocketsTestCase
 
 from structures.core.serializers import PocoListSerializer, StructureListSerializer
 from structures.models import Structure
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     OwnerFactory,
     PocoFactory,
     StarbaseFactory,

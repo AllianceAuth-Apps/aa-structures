@@ -5,7 +5,7 @@ from app_utils.testing import NoSocketsTestCase
 
 from structures.constants import EveCorporationId
 from structures.models import PocoDetails, Structure
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     OwnerFactory,
     PocoFactory,

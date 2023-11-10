@@ -5,7 +5,7 @@ from app_utils.testing import NoSocketsTestCase
 
 from structures.core import notification_timers
 from structures.models import Notification
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     GeneratedNotificationFactory,
     OwnerFactory,
     RefineryFactory,

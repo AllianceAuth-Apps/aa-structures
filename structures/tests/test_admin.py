@@ -26,7 +26,7 @@ from structures.models import (
     Webhook,
 )
 
-from .testdata.factories_2 import (
+from .testdata.factories import (
     EveAllianceInfoFactory,
     EveCorporationInfoFactory,
     FuelAlertConfigFactory,

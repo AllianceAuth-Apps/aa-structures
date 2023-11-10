@@ -13,7 +13,7 @@ from structures.constants import EveTypeId
 from structures.core import notification_timers
 from structures.core.notification_types import NotificationType
 from structures.models import Structure
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveEntityAllianceFactory,
     EveEntityCharacterFactory,
     GeneratedNotificationFactory,

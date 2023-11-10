@@ -17,7 +17,7 @@ from structures.core.notification_embeds.war_embeds import (
 )
 from structures.core.notification_types import NotificationType
 from structures.models.notifications import Notification, Webhook
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveAllianceInfoFactory,
     EveCorporationInfoFactory,
     EveEntityAllianceFactory,

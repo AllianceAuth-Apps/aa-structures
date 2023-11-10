@@ -8,7 +8,7 @@ from django.test import TestCase
 
 from app_utils.json import JSONDateTimeDecoder
 
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     UserMainDefaultOwnerFactory,
     WebhookFactory,
 )

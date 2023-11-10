@@ -13,7 +13,7 @@ from app_utils.testing import BravadoResponseStub, NoSocketsTestCase, queryset_p
 
 from structures.core.notification_types import NotificationType
 from structures.models import Notification, StructureItem
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveCharacterFactory,
     EveCorporationInfoFactory,
     EveEntityCorporationFactory,

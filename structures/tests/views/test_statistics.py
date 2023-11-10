@@ -2,7 +2,7 @@ from django.test import RequestFactory, TestCase
 
 from structures.views import statistics
 
-from ..testdata.factories_2 import (
+from ..testdata.factories import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,

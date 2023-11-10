@@ -10,7 +10,7 @@ from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import Structure, StructureService
 from structures.tests import to_json
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     FuelAlertConfigFactory,
     OwnerFactory,

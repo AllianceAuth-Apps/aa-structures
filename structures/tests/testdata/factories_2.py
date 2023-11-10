@@ -22,6 +22,7 @@ from structures.constants import EveTypeId
 from structures.core.notification_types import NotificationType
 from structures.models import (
     EveSovereigntyMap,
+    FuelAlert,
     FuelAlertConfig,
     GeneratedNotification,
     JumpFuelAlertConfig,
@@ -138,6 +139,16 @@ class FuelAlertConfigFactory(
     start = 48
     end = 0
     repeat = 12
+
+
+class FuelAlertFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[FuelAlert]
+):
+    class Meta:
+        model = FuelAlert
+
+    config = factory.SubFactory(FuelAlertConfigFactory)
+    hours = 12
 
 
 class JumpFuelAlertConfigFactory(

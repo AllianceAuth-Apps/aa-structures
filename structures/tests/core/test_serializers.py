@@ -2,17 +2,17 @@ from typing import List
 
 from django.test import RequestFactory
 
-from app_utils.testing import NoSocketsTestCase, create_user_from_evecharacter
+from app_utils.testing import NoSocketsTestCase
 
 from structures.core.serializers import PocoListSerializer, StructureListSerializer
 from structures.models import Structure
-from structures.tests.testdata.factories import (
-    create_owner_from_user,
-    create_poco,
-    create_starbase,
-    create_upwell_structure,
+from structures.tests.testdata.factories_2 import (
+    OwnerFactory,
+    PocoFactory,
+    StarbaseFactory,
+    StructureFactory,
+    UserMainDefaultFactory,
 )
-from structures.tests.testdata.helpers import load_entities
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 
@@ -24,16 +24,15 @@ class TestStructureListSerializer(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         cls.factory = RequestFactory()
-        load_entities()
         load_eveuniverse()
-        cls.user, _ = create_user_from_evecharacter(1001)
-        cls.owner = create_owner_from_user(cls.user)
+        user = UserMainDefaultFactory()
+        cls.owner = OwnerFactory(user=user)
         cls.request = cls.factory.get("/")
-        cls.request.user = cls.user
+        cls.request.user = user
 
     def test_should_show_not_reinforced_for_structure(self):
         # given
-        structure = create_upwell_structure(owner=self.owner)
+        structure = StructureFactory(owner=self.owner)
         # when
         data = StructureListSerializer(
             queryset=Structure.objects.all(), request=self.request
@@ -44,7 +43,7 @@ class TestStructureListSerializer(NoSocketsTestCase):
 
     def test_should_show_reinforced_for_structure(self):
         # given
-        structure = create_upwell_structure(
+        structure = StructureFactory(
             owner=self.owner, state=Structure.State.ARMOR_REINFORCE
         )
         # when
@@ -57,7 +56,7 @@ class TestStructureListSerializer(NoSocketsTestCase):
 
     def test_should_show_not_reinforced_for_starbase(self):
         # given
-        structure = create_starbase(owner=self.owner)
+        structure = StarbaseFactory(owner=self.owner)
         # when
         data = StructureListSerializer(
             queryset=Structure.objects.all(), request=self.request
@@ -68,7 +67,7 @@ class TestStructureListSerializer(NoSocketsTestCase):
 
     def test_should_show_reinforced_for_starbase(self):
         # given
-        structure = create_starbase(
+        structure = StarbaseFactory(
             owner=self.owner, state=Structure.State.POS_REINFORCED
         )
         # when
@@ -84,16 +83,15 @@ class TestPocoListSerializer(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         cls.factory = RequestFactory()
-        load_entities()
         load_eveuniverse()
-        cls.user, _ = create_user_from_evecharacter(1001)
-        cls.owner = create_owner_from_user(cls.user)
+        user = UserMainDefaultFactory()
+        cls.owner = OwnerFactory(user=user)
         cls.request = cls.factory.get("/")
-        cls.request.user = cls.user
+        cls.request.user = user
 
     def test_should_extract_planet_type(self):
         # given
-        structure = create_poco(owner=self.owner)
+        structure = PocoFactory(owner=self.owner)
         # when
         data = PocoListSerializer(
             queryset=Structure.objects.all(), request=self.request

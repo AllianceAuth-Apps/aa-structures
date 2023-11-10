@@ -245,10 +245,11 @@ class StructureQuerySet(models.QuerySet):
         if user.has_perm("structures.view_corporation_structures") or user.has_perm(
             "structures.view_alliance_structures"
         ):
-            corporation_ids = {
-                character_ownership.character.corporation_id
-                for character_ownership in user.character_ownerships.all()  # type: ignore
-            }
+            corporation_ids = set(
+                user.character_ownerships.values_list(
+                    "character__corporation_id", flat=True
+                )
+            )
             corporations = list(
                 EveCorporationInfo.objects.select_related("alliance").filter(
                     corporation_id__in=corporation_ids

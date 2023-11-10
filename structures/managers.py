@@ -461,40 +461,37 @@ class StructureTagManager(models.Manager):
         self, solar_system: EveSolarSystem
     ) -> Tuple[Any, bool]:
         """Get or create tag for a space type."""
-        from .models import EveSpaceType
-
-        space_type = EveSpaceType.from_solar_system(solar_system)
-        params = self.model.SPACE_TYPE_MAP.get(space_type)
-        if params:
-            try:
-                obj = self.get(name=params["name"])
-                return obj, False
-            except self.model.DoesNotExist:
-                return self.update_or_create_for_space_type(solar_system)
-        return None, None
+        params = self._obj_params_from_solar_system(solar_system)
+        try:
+            obj = self.get(name=params["name"])
+            return obj, False
+        except self.model.DoesNotExist:
+            return self.update_or_create_for_space_type(solar_system)
 
     def update_or_create_for_space_type(
         self, solar_system: EveSolarSystem
     ) -> Tuple[Any, bool]:
         """Update or create tag for a space type."""
+        params = self._obj_params_from_solar_system(solar_system)
+        return self.update_or_create(
+            name=params["name"],
+            defaults={
+                "style": params["style"],
+                "description": ("this tag represents a space type. system generated."),
+                "order": 50,
+                "is_user_managed": False,
+                "is_default": False,
+            },
+        )
+
+    def _obj_params_from_solar_system(self, solar_system):
         from .models import EveSpaceType
 
         space_type = EveSpaceType.from_solar_system(solar_system)
         params = self.model.SPACE_TYPE_MAP.get(space_type)
-        if params:
-            return self.update_or_create(
-                name=params["name"],
-                defaults={
-                    "style": params["style"],
-                    "description": (
-                        "this tag represents a space type. system generated."
-                    ),
-                    "order": 50,
-                    "is_user_managed": False,
-                    "is_default": False,
-                },
-            )
-        return None, None
+        if not params:
+            raise ValueError("Unknown space type")
+        return params
 
     def get_or_create_for_sov(self) -> Tuple[Any, bool]:
         """Get or create sovereignty tag."""

@@ -11,6 +11,7 @@ from app_utils.testing import NoSocketsTestCase
 from structures.constants import EveCorporationId, EveTypeId
 from structures.core.notification_types import NotificationType
 from structures.models import (
+    EveSpaceType,
     JumpFuelAlertConfig,
     PocoDetails,
     Structure,
@@ -907,6 +908,7 @@ class TestStructureTags(NoSocketsTestCase):
         self.assertIn(sov_tag, list(obj.tags.all()))
 
     def test_can_update_generated_tags(self):
+        # given
         obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
         null_tag = StructureTag.objects.get(name=StructureTag.NAME_NULLSEC_TAG)
         self.assertIn(null_tag, list(obj.tags.all()))
@@ -920,13 +922,48 @@ class TestStructureTags(NoSocketsTestCase):
         sov_tag.style = StructureTag.Style.RED
         sov_tag.save()
 
+        # when
         obj.update_generated_tags(recreate_tags=True)
+
+        # then
         null_tag.refresh_from_db()
         self.assertEqual(null_tag.style, StructureTag.Style.RED)
         self.assertEqual(null_tag.order, 50)
         sov_tag.refresh_from_db()
         self.assertEqual(sov_tag.style, StructureTag.Style.DARK_BLUE)
         self.assertEqual(sov_tag.order, 20)
+
+    def test_can_handle_unknown_space_type_for_existing_tags(self):
+        # given
+        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        obj.tags.clear()
+        # when
+        with patch(
+            "structures.models.eveuniverse.EveSpaceType.from_solar_system"
+        ) as mock:
+            mock.return_value = EveSpaceType.UNKNOWN
+            obj.update_generated_tags()
+
+        # then
+        self.assertEqual(obj.tags.count(), 1)
+        sov_tag = StructureTag.objects.get(name=StructureTag.NAME_SOV_TAG)
+        self.assertIn(sov_tag, list(obj.tags.all()))
+
+    def test_can_handle_unknown_space_type_when_recreating_tags(self):
+        # given
+        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        obj.tags.clear()
+        # when
+        with patch(
+            "structures.models.eveuniverse.EveSpaceType.from_solar_system"
+        ) as mock:
+            mock.return_value = EveSpaceType.UNKNOWN
+            obj.update_generated_tags(recreate_tags=True)
+
+        # then
+        self.assertEqual(obj.tags.count(), 1)
+        sov_tag = StructureTag.objects.get(name=StructureTag.NAME_SOV_TAG)
+        self.assertIn(sov_tag, list(obj.tags.all()))
 
 
 class TestStructureTag(NoSocketsTestCase):

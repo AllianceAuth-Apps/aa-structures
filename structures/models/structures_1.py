@@ -39,7 +39,7 @@ class StructureTag(models.Model):
     NAME_HIGHSEC_TAG = gettext_noop("highsec")
     NAME_LOWSEC_TAG = gettext_noop("lowsec")
     NAME_NULLSEC_TAG = gettext_noop("nullsec")
-    NAME_W_SPACE_TAG = gettext_noop("w_space")
+    NAME_W_SPACE_TAG = gettext_noop("w-space")
 
     class Style(models.TextChoices):
         """A boostrap like style."""
@@ -735,7 +735,7 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
         return self.PowerMode(self.power_mode).label if self.power_mode else ""
 
     def update_generated_tags(self, recreate_tags=False):
-        """updates all generated tags for this structure
+        """Update generated tags for this structure.
 
         recreate_tags: when set true all tags will be re-created,
         otherwise just re-added if they are missing
@@ -746,11 +746,18 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
             else "get_or_create_for_space_type"
         )
 
-        space_type_tag, _ = getattr(StructureTag.objects, method_name)(
-            self.eve_solar_system
-        )
+        try:
+            space_type_tag, _ = getattr(StructureTag.objects, method_name)(
+                self.eve_solar_system
+            )
+        except ValueError:
+            logger.warning(
+                "%s: Can not generate tag for unknown space type of this solar system.",
+                self.eve_solar_system,
+            )
+        else:
+            self.tags.add(space_type_tag)
 
-        self.tags.add(space_type_tag)
         if self.owner_has_sov():
             method_name = (
                 "update_or_create_for_sov" if recreate_tags else "get_or_create_for_sov"

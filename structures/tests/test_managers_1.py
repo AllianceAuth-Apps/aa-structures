@@ -11,6 +11,7 @@ from app_utils.testing import NoSocketsTestCase
 from structures.core.notification_types import NotificationType
 from structures.models import (
     EveSovereigntyMap,
+    EveSpaceType,
     Structure,
     StructureService,
     StructureTag,
@@ -699,11 +700,25 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertFalse(created)
         self.assertEqual(structure, tag)
 
-    def test_can_get_space_type_tag_that_does_not_exist(self):
+    def test_raise_error_for_unknown_space_type_when_trying_to_get(self):
+        # given
         solar_system = EveSolarSystem.objects.get(name="Amamake")
+
+        with patch(
+            "structures.models.eveuniverse.EveSpaceType.from_solar_system"
+        ) as mock:
+            mock.return_value = EveSpaceType.UNKNOWN
+            with self.assertRaises(ValueError):
+                StructureTag.objects.get_or_create_for_space_type(solar_system)
+
+    def test_can_get_space_type_tag_that_does_not_exist(self):
+        # given
+        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        # when
         structure, created = StructureTag.objects.get_or_create_for_space_type(
             solar_system
         )
+        # then
         self.assertTrue(created)
         self.assertEqual(structure.name, StructureTag.NAME_LOWSEC_TAG)
         self.assertEqual(structure.style, StructureTag.Style.ORANGE)
@@ -712,6 +727,7 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertEqual(structure.order, 50)
 
     def test_can_update_space_type_tag(self):
+        # given
         solar_system = EveSolarSystem.objects.get(name="Amamake")
         StructureTagFactory(
             name=StructureTag.NAME_LOWSEC_TAG,
@@ -720,9 +736,11 @@ class TestStructureTagManager(NoSocketsTestCase):
             is_default=True,
             order=100,
         )
+        # when
         structure, created = StructureTag.objects.update_or_create_for_space_type(
             solar_system
         )
+        # then
         self.assertFalse(created)
         self.assertEqual(structure.name, StructureTag.NAME_LOWSEC_TAG)
         self.assertEqual(structure.style, StructureTag.Style.ORANGE)
@@ -731,10 +749,13 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertEqual(structure.order, 50)
 
     def test_can_create_for_space_type_highsec(self):
+        # given
         solar_system = EveSolarSystem.objects.get(name="Osoggur")
+        # when
         structure, created = StructureTag.objects.update_or_create_for_space_type(
             solar_system
         )
+        # then
         self.assertTrue(created)
         self.assertEqual(structure.name, StructureTag.NAME_HIGHSEC_TAG)
         self.assertEqual(structure.style, StructureTag.Style.GREEN)
@@ -743,10 +764,13 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertEqual(structure.order, 50)
 
     def test_can_create_for_space_type_nullsec(self):
+        # given
         solar_system = EveSolarSystem.objects.get(name="1-PGSG")
+        # when
         structure, created = StructureTag.objects.update_or_create_for_space_type(
             solar_system
         )
+        # then
         self.assertTrue(created)
         self.assertEqual(structure.name, StructureTag.NAME_NULLSEC_TAG)
         self.assertEqual(structure.style, StructureTag.Style.RED)
@@ -755,10 +779,13 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertEqual(structure.order, 50)
 
     def test_can_create_for_space_type_w_space(self):
+        # given
         solar_system = EveSolarSystem.objects.get(name="Thera")
+        # when
         structure, created = StructureTag.objects.update_or_create_for_space_type(
             solar_system
         )
+        # then
         self.assertTrue(created)
         self.assertEqual(structure.name, StructureTag.NAME_W_SPACE_TAG)
         self.assertEqual(structure.style, StructureTag.Style.LIGHT_BLUE)
@@ -767,13 +794,18 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertEqual(structure.order, 50)
 
     def test_can_get_existing_sov_tag(self):
+        # given
         tag = StructureTagFactory(name="sov")
+        # when
         structure, created = StructureTag.objects.update_or_create_for_sov()
+        # then
         self.assertFalse(created)
         self.assertEqual(structure, tag)
 
     def test_can_get_non_existing_sov_tag(self):
+        # when
         structure, created = StructureTag.objects.update_or_create_for_sov()
+        # then
         self.assertTrue(created)
         self.assertEqual(structure.name, "sov")
         self.assertEqual(structure.style, StructureTag.Style.DARK_BLUE)
@@ -782,6 +814,7 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertEqual(structure.order, 20)
 
     def test_can_update_sov_tag(self):
+        # given
         StructureTagFactory(
             name="sov",
             style=StructureTag.Style.GREEN,
@@ -789,7 +822,9 @@ class TestStructureTagManager(NoSocketsTestCase):
             is_default=True,
             order=100,
         )
+        # when
         structure, created = StructureTag.objects.update_or_create_for_sov()
+        # then
         self.assertFalse(created)
         self.assertEqual(structure.name, "sov")
         self.assertEqual(structure.style, StructureTag.Style.DARK_BLUE)
@@ -797,32 +832,47 @@ class TestStructureTagManager(NoSocketsTestCase):
         self.assertEqual(structure.is_default, False)
         self.assertEqual(structure.order, 20)
 
-    """
-    def test_update_nullsec_tag(self):
-        solar_system = EveSolarSystem.objects.get(id=30000474)
-        structure, created = \
-            StructureTag.objects.get_or_create_for_space_type(solar_system)
-        self.assertEqual(structure.name, StructureTag.NAME_NULLSEC_TAG)
-        self.assertEqual(structure.style, StructureTag.Style.RED)
-        self.assertEqual(structure.is_user_managed, False)
-        self.assertEqual(structure.is_default, False)
-        self.assertEqual(structure.order, 50)
+    def test_should_raise_error_for_unknown_space_type_when_trying_to_update(self):
+        # given
+        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        StructureTagFactory(
+            name=StructureTag.NAME_LOWSEC_TAG,
+            style=StructureTag.Style.GREEN,
+            is_default=True,
+        )
+        # when
+        with patch(
+            "structures.models.eveuniverse.EveSpaceType.from_solar_system"
+        ) as mock:
+            mock.return_value = EveSpaceType.UNKNOWN
+            with self.assertRaises(ValueError):
+                StructureTag.objects.update_or_create_for_space_type(solar_system)
 
-        structure.style = StructureTag.Style.GREEN
-        structure.is_user_managed = True
-        structure.order = 100
-        structure.save()
+    # FIXME
+    # def test_update_nullsec_tag(self):
+    #     solar_system = EveSolarSystem.objects.get(id=30000474)
+    #     structure, created = \
+    #         StructureTag.objects.get_or_create_for_space_type(solar_system)
+    #     self.assertEqual(structure.name, StructureTag.NAME_NULLSEC_TAG)
+    #     self.assertEqual(structure.style, StructureTag.Style.RED)
+    #     self.assertEqual(structure.is_user_managed, False)
+    #     self.assertEqual(structure.is_default, False)
+    #     self.assertEqual(structure.order, 50)
 
-        structure, created = \
-            StructureTag.objects.get_or_create_for_space_type(solar_system)
+    #     structure.style = StructureTag.Style.GREEN
+    #     structure.is_user_managed = True
+    #     structure.order = 100
+    #     structure.save()
 
-        self.assertFalse(created)
-        self.assertEqual(structure.name, StructureTag.NAME_NULLSEC_TAG)
-        self.assertEqual(structure.style, StructureTag.Style.RED)
-        self.assertEqual(structure.is_user_managed, False)
-        self.assertEqual(structure.is_default, False)
-        self.assertEqual(structure.order, 50)
-    """
+    #     structure, created = \
+    #         StructureTag.objects.get_or_create_for_space_type(solar_system)
+
+    #     self.assertFalse(created)
+    #     self.assertEqual(structure.name, StructureTag.NAME_NULLSEC_TAG)
+    #     self.assertEqual(structure.style, StructureTag.Style.RED)
+    #     self.assertEqual(structure.is_user_managed, False)
+    #     self.assertEqual(structure.is_default, False)
+    #     self.assertEqual(structure.order, 50)
 
 
 class TestWebhookManager(NoSocketsTestCase):

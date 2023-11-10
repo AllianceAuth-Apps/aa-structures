@@ -1,5 +1,6 @@
 import datetime as dt
 from unittest import mock
+from unittest.mock import patch
 
 from django.utils.timezone import now
 
@@ -43,7 +44,9 @@ class TestGeneratedNotification(NoSocketsTestCase):
         webhook.notification_types = [NotificationType.TOWER_REINFORCED_EXTRA]
         webhook.save()
         # when
-        result = notif.send_to_configured_webhooks()
+        with patch(MODULE_PATH + ".Webhook.send_message") as mock:
+            mock.return_value = 1
+            result = notif.send_to_configured_webhooks()
         # then
         self.assertTrue(result)
 

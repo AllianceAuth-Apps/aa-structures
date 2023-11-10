@@ -1,4 +1,6 @@
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory
+
+from app_utils.testing import NoSocketsTestCase
 
 from structures.views import public
 
@@ -7,7 +9,7 @@ from ..testdata.load_eveuniverse import load_eveuniverse
 from .utils import json_response_to_dict
 
 
-class TestPocoListData(TestCase):
+class TestPocoListDataView(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         cls.factory = RequestFactory()

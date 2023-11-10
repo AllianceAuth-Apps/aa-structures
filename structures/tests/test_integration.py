@@ -6,6 +6,7 @@ from unittest.mock import patch
 import yaml
 
 from django.test import TestCase, override_settings
+from django.urls import reverse
 from django.utils.timezone import now
 from eveuniverse.models import EveSolarSystem
 
@@ -22,9 +23,11 @@ from .testdata.factories import (
     EveEntityCorporationFactory,
     NotificationFactory,
     OwnerFactory,
+    PocoFactory,
     RawNotificationFactory,
     StarbaseFactory,
     StructureFactory,
+    UserMainBasicFactory,
     WebhookFactory,
     datetime_to_esi,
 )
@@ -613,3 +616,23 @@ class TestTasks(TestCase):
         self.assertEqual(len(embeds), 1)
         embed = embeds[0]
         self.assertIn("Territorial Claim Unit", embed.title)
+
+
+class TestPocoView(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        load_eveuniverse()
+        cls.user = UserMainBasicFactory()
+        cls.owner = OwnerFactory(are_pocos_public=True)
+
+    def test_should_be_able_to_open_page(self):
+        # given
+        PocoFactory(owner=self.owner)
+        PocoFactory(owner=self.owner)
+        PocoFactory()
+        self.client.force_login(self.user)
+        # when
+        response = self.client.get(reverse("structures:public"))
+        # then
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["pocos_count"], 2)

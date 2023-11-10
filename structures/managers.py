@@ -91,7 +91,7 @@ class EveSovereigntyMapManager(models.Manager):
 
 class NotificationBaseQuerySet(models.QuerySet):
     def annotate_can_be_rendered(self) -> models.QuerySet:
-        """annotates field indicating if a notification can be rendered"""
+        """Annotate field indicating if a notification can be rendered."""
 
         return self.annotate(
             can_be_rendered_2=Case(

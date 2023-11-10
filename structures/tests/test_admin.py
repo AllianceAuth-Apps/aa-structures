@@ -12,6 +12,7 @@ from structures.admin import (
     OwnerAdmin,
     OwnerAllianceFilter,
     OwnerCorporationsFilter,
+    RenderableNotificationFilter,
     StructureAdmin,
     StructureFuelAlertConfigAdmin,
     WebhookAdmin,
@@ -235,8 +236,9 @@ class TestStructureFuelAlertAdmin(TestCase):
 class TestNotificationAdmin(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.modeladmin = NotificationAdmin(model=Notification, admin_site=AdminSite())
+        cls.factory = RequestFactory()
         load_eveuniverse()
+        cls.modeladmin = NotificationAdmin(model=Notification, admin_site=AdminSite())
         cls.user = SuperuserFactory()
         cls.owner = OwnerFactory()
 
@@ -321,6 +323,34 @@ class TestNotificationAdmin(TestCase):
         # then
         self.assertEqual(mock_process_for_timerboard.call_count, 1)
         self.assertTrue(mock_message_user.called)
+
+    def test_filter_renderable_notifications(self):
+        class NotificationAdminTest(admin.ModelAdmin):
+            list_filter = (RenderableNotificationFilter,)
+
+        # create test data
+        positive_notif = NotificationFactory(
+            owner=self.owner,
+            notif_type=NotificationType.WAR_CORPORATION_BECAME_ELIGIBLE,
+        )
+        NotificationFactory(owner=self.owner, notif_type="unknown")
+        modeladmin = NotificationAdminTest(Notification, AdminSite())
+
+        # Make sure the lookups are correct
+        request = self.factory.get("/")
+        request.user = self.user
+        changelist = modeladmin.get_changelist_instance(request)
+        filterspec = changelist.get_filters(request)[0][0]
+        expected = [("yes", "yes"), ("no", "no")]
+        self.assertEqual(filterspec.lookup_choices, expected)
+
+        # Make sure the correct queryset is returned
+        request = self.factory.get("/", {"notification_renderable": "yes"})
+        request.user = self.user
+        changelist = modeladmin.get_changelist_instance(request)
+        queryset = changelist.get_queryset(request)
+        expected = Notification.objects.filter(pk=positive_notif.pk)
+        self.assertSetEqual(set(queryset), set(expected))
 
 
 class TestOwnerAdmin(TestCase):

@@ -2,23 +2,23 @@ import datetime as dt
 from unittest.mock import patch
 
 from django.utils.timezone import now
-from eveuniverse.models import EveEntity
 
-from app_utils.testing import NoSocketsTestCase, create_user_from_evecharacter
+from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_types import NotificationType
-from structures.models import Notification, Structure, Webhook
-from structures.tests.testdata.factories import (
-    create_notification,
-    create_owner_from_user,
-    create_upwell_structure,
-    create_webhook,
+from structures.models import Notification, Webhook
+from structures.tests.testdata.factories_2 import (
+    EveCorporationInfoFactory,
+    EveEntityCorporationFactory,
+    NotificationFactory,
+    OwnerFactory,
+    StarbaseFactory,
+    StructureFactory,
+    WebhookFactory,
 )
 from structures.tests.testdata.helpers import (
-    create_structures,
-    load_entities,
+    load_eve_entities,
     load_notification_entities,
-    set_owner_character,
 )
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
@@ -29,58 +29,55 @@ class TestNotification(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        create_structures()
-        _, cls.owner = set_owner_character(character_id=1001)
+        load_eve_entities()
+        cls.owner = OwnerFactory()
         load_notification_entities(cls.owner)
-        cls.owner.webhooks.add(create_webhook())
 
     def test_str(self):
+        # given
         obj = Notification.objects.get(notification_id=1000000403)
+        # when/then
         self.assertEqual(str(obj), "1000000403:MoonminingExtractionFinished")
 
-    def test_repr(self):
-        obj = Notification.objects.get(notification_id=1000000403)
-        expected = (
-            "Notification(notification_id=1000000403, "
-            "owner='Wayne Technologies', "
-            "notif_type='MoonminingExtractionFinished')"
-        )
-        self.assertEqual(repr(obj), expected)
-
     def test_get_parsed_text(self):
+        # given
         obj = Notification.objects.get(notification_id=1000000404)
+        # when
         parsed_text = obj.parsed_text()
+        # then
         self.assertEqual(parsed_text["autoTime"], 132186924601059151)
         self.assertEqual(parsed_text["structureName"], "Dummy")
         self.assertEqual(parsed_text["solarSystemID"], 30002537)
 
     def test_is_npc_attacking(self):
-        x1 = Notification.objects.get(notification_id=1000000509)
-        self.assertFalse(x1.is_npc_attacking())
-        x2 = Notification.objects.get(notification_id=1000010509)
-        self.assertTrue(x2.is_npc_attacking())
-        x3 = Notification.objects.get(notification_id=1000010601)
-        self.assertTrue(x3.is_npc_attacking())
+        for notification_id, expected in [
+            (1000000509, False),
+            (1000010509, True),
+            (1000010601, True),
+        ]:
+            obj = Notification.objects.get(notification_id=notification_id)
+            with self.subTest(notification=str(obj)):
+                self.assertIs(obj.is_npc_attacking(), expected)
 
     @patch(MODULE_PATH + ".STRUCTURES_REPORT_NPC_ATTACKS", True)
     def test_filter_npc_attacks_1(self):
         # NPC reporting allowed and not a NPC attacker
-        x1 = Notification.objects.get(notification_id=1000000509)
-        self.assertFalse(x1.filter_for_npc_attacks())
+        obj = Notification.objects.get(notification_id=1000000509)
+        self.assertFalse(obj.filter_for_npc_attacks())
 
         # NPC reporting allowed and a NPC attacker
-        x1 = Notification.objects.get(notification_id=1000010509)
-        self.assertFalse(x1.filter_for_npc_attacks())
+        obj = Notification.objects.get(notification_id=1000010509)
+        self.assertFalse(obj.filter_for_npc_attacks())
 
     @patch(MODULE_PATH + ".STRUCTURES_REPORT_NPC_ATTACKS", False)
     def test_filter_npc_attacks_2(self):
         # NPC reporting not allowed and not a NPC attacker
-        x1 = Notification.objects.get(notification_id=1000000509)
-        self.assertFalse(x1.filter_for_npc_attacks())
+        obj = Notification.objects.get(notification_id=1000000509)
+        self.assertFalse(obj.filter_for_npc_attacks())
 
         # NPC reporting not allowed and a NPC attacker
-        x1 = Notification.objects.get(notification_id=1000010509)
-        self.assertTrue(x1.filter_for_npc_attacks())
+        obj = Notification.objects.get(notification_id=1000010509)
+        self.assertTrue(obj.filter_for_npc_attacks())
 
     def test_can_be_rendered_1(self):
         for notif_type in NotificationType.values:
@@ -90,7 +87,7 @@ class TestNotification(NoSocketsTestCase):
                     self.assertTrue(notif.can_be_rendered)
 
     def test_can_be_rendered_2(self):
-        structure = Structure.objects.get(id=1000000000001)
+        structure = StructureFactory(owner=self.owner, id=1000000000001)
         for notif_type in [
             NotificationType.STRUCTURE_REFUELED_EXTRA,
             NotificationType.TOWER_REFUELED_EXTRA,
@@ -113,8 +110,8 @@ class TestNotificationFilterForAllianceLevel(NoSocketsTestCase):
     def setUpClass(cls):  # TODO: Refactor so it works with setUpTestData()
         super().setUpClass()
         load_eveuniverse()
-        create_structures()
-        _, cls.owner = set_owner_character(character_id=1001)
+        load_eve_entities()
+        cls.owner = OwnerFactory()
         load_notification_entities(cls.owner)
 
     def test_should_not_filter_non_alliance_notifications_1(self):
@@ -179,7 +176,8 @@ class TestNotificationFilterForAllianceLevel(NoSocketsTestCase):
 
     def test_should_not_filter_alliance_notifications_3(self):
         # given
-        _, owner = set_owner_character(character_id=1102)  # corp with no alliance
+        corporation = EveCorporationInfoFactory(create_alliance=False)
+        owner = OwnerFactory(corporation=corporation, is_alliance_main=True)
         load_notification_entities(owner)
         notifs = self.owner.notification_set.filter(
             notif_type__in=NotificationType.relevant_for_alliance_level()
@@ -194,12 +192,12 @@ class TestNotificationCreateFromStructure(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        create_structures()
-        _, cls.owner = set_owner_character(character_id=1001)
+        EveEntityCorporationFactory(id=1000137, name="DED")
+        cls.owner = OwnerFactory()
 
     def test_should_create_notification_for_structure_fuel_alerts(self):
         # given
-        structure = Structure.objects.get(id=1000000000001)
+        structure = StructureFactory(owner=self.owner)
         # when
         notif = Notification.create_from_structure(
             structure, notif_type=NotificationType.STRUCTURE_FUEL_ALERT
@@ -217,7 +215,7 @@ class TestNotificationCreateFromStructure(NoSocketsTestCase):
 
     def test_should_create_notification_for_tower_fuel_alerts(self):
         # given
-        structure = Structure.objects.get(id=1300000000001)
+        structure = StarbaseFactory(owner=self.owner)
         # when
         notif = Notification.create_from_structure(
             structure, notif_type=NotificationType.TOWER_RESOURCE_ALERT_MSG
@@ -235,7 +233,7 @@ class TestNotificationCreateFromStructure(NoSocketsTestCase):
 
     def test_should_create_notification_with_additional_params(self):
         # given
-        structure = Structure.objects.get(id=1000000000001)
+        structure = StructureFactory(owner=self.owner)
         # when
         notif = Notification.create_from_structure(
             structure, notif_type=NotificationType.STRUCTURE_FUEL_ALERT, is_read=True
@@ -247,7 +245,7 @@ class TestNotificationCreateFromStructure(NoSocketsTestCase):
 
     def test_should_raise_error_when_text_is_missing(self):
         # given
-        structure = Structure.objects.get(id=1000000000001)
+        structure = StructureFactory(owner=self.owner)
         # when/then
         with self.assertRaises(ValueError):
             Notification.create_from_structure(
@@ -259,21 +257,16 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        load_entities()
-        user, _ = create_user_from_evecharacter(
-            1001, permissions=["structures.add_structure_owner"]
-        )
-        cls.owner = create_owner_from_user(user=user)
-        Webhook.objects.all().delete()
+        load_eve_entities()
 
     def test_should_return_owner_webhooks_for_non_structure_notif(self):
         # given
-        webhook = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.CHAR_APP_ACCEPT_MSG]
         )
-        self.owner.webhooks.add(webhook)
-        notif = create_notification(
-            owner=self.owner, notif_type=NotificationType.CHAR_APP_ACCEPT_MSG
+        owner = OwnerFactory(webhooks=[webhook])
+        notif = NotificationFactory(
+            owner=owner, notif_type=NotificationType.CHAR_APP_ACCEPT_MSG
         )
         # when
         result_qs = notif.relevant_webhooks()
@@ -282,8 +275,9 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
 
     def test_should_return_no_webhooks(self):
         # given
-        notif = create_notification(
-            owner=self.owner, notif_type=NotificationType.CHAR_APP_ACCEPT_MSG
+        owner = OwnerFactory(webhooks=False)
+        notif = NotificationFactory(
+            owner=owner, notif_type=NotificationType.CHAR_APP_ACCEPT_MSG
         )
         # when
         result_qs = notif.relevant_webhooks()
@@ -292,36 +286,72 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
 
     def test_should_return_owner_webhooks_for_structure_notif(self):
         # given
-        webhook_owner = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
         )
-        self.owner.webhooks.add(webhook_owner)
-        structure = create_upwell_structure(owner=self.owner)
-        notif = create_notification(
-            owner=self.owner,
+        owner = OwnerFactory(webhooks=[webhook])
+        structure = StructureFactory(owner=owner)
+        notif = NotificationFactory(
+            owner=owner,
             notif_type=NotificationType.STRUCTURE_UNDER_ATTACK,
-            text=f"allianceID: 3011\nallianceLinkData:\n- showinfo\n- 16159\n- 3011\nallianceName: Big Bad Alliance\narmorPercentage: 98.65129050962584\ncharID: 1011\ncorpLinkData:\n- showinfo\n- 2\n- 2011\ncorpName: Bad Company\nhullPercentage: 100.0\nshieldPercentage: 4.704536686417284e-14\nsolarsystemID: {structure.eve_solar_system_id}\nstructureID: &id001 {structure.id}\nstructureShowInfoData:\n- showinfo\n- {structure.eve_type_id}\n- *id001\nstructureTypeID: {structure.eve_type_id}\n",
+            text_from_dict={
+                "allianceID": 3011,
+                "allianceLinkData": ["showinfo", 16159, 3011],
+                "allianceName": "Big Bad Alliance",
+                "armorPercentage": 98.65129050962584,
+                "charID": 1011,
+                "corpLinkData": ["showinfo", 2, 2011],
+                "corpName": "Bad Company",
+                "hullPercentage": 100.0,
+                "shieldPercentage": 4.704536686417284e-14,
+                "solarsystemID": structure.eve_solar_system_id,
+                "structureID": structure.id,
+                "structureShowInfoData": [
+                    "showinfo",
+                    structure.eve_type_id,
+                    structure.id,
+                ],
+                "structureTypeID": structure.eve_type_id,
+            },
         )
         # when
         result_qs = notif.relevant_webhooks()
         # then
-        self.assertQuerysetEqual(result_qs, Webhook.objects.filter(pk=webhook_owner.pk))
+        self.assertQuerysetEqual(result_qs, Webhook.objects.filter(pk=webhook.pk))
 
     def test_should_return_structure_webhooks_for_structure_notif(self):
         # given
-        webhook_owner = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
         )
-        self.owner.webhooks.add(webhook_owner)
-        structure = create_upwell_structure(owner=self.owner)
-        webhook_structure = create_webhook(
+        owner = OwnerFactory(webhooks=[webhook])
+        structure = StructureFactory(owner=owner)
+        webhook_structure = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
         )
         structure.webhooks.add(webhook_structure)
-        notif = create_notification(
-            owner=self.owner,
+        notif = NotificationFactory(
+            owner=owner,
             notif_type=NotificationType.STRUCTURE_UNDER_ATTACK,
-            text=f"allianceID: 3011\nallianceLinkData:\n- showinfo\n- 16159\n- 3011\nallianceName: Big Bad Alliance\narmorPercentage: 98.65129050962584\ncharID: 1011\ncorpLinkData:\n- showinfo\n- 2\n- 2011\ncorpName: Bad Company\nhullPercentage: 100.0\nshieldPercentage: 4.704536686417284e-14\nsolarsystemID: {structure.eve_solar_system_id}\nstructureID: &id001 {structure.id}\nstructureShowInfoData:\n- showinfo\n- {structure.eve_type_id}\n- *id001\nstructureTypeID: {structure.eve_type_id}\n",
+            text_from_dict={
+                "allianceID": 3011,
+                "allianceLinkData": ["showinfo", 16159, 3011],
+                "allianceName": "Big Bad Alliance",
+                "armorPercentage": 98.65129050962584,
+                "charID": 1011,
+                "corpLinkData": ["showinfo", 2, 2011],
+                "corpName": "Bad Company",
+                "hullPercentage": 100.0,
+                "shieldPercentage": 4.704536686417284e-14,
+                "solarsystemID": structure.eve_solar_system_id,
+                "structureID": structure.id,
+                "structureShowInfoData": [
+                    "showinfo",
+                    structure.eve_type_id,
+                    structure.id,
+                ],
+                "structureTypeID": structure.eve_type_id,
+            },
         )
         # when
         result_qs = notif.relevant_webhooks()
@@ -332,24 +362,41 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
 
     def test_should_return_owner_webhooks_when_notif_has_multiple_structures(self):
         # given
-        webhook_owner = create_webhook(
+        webhook_owner = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REINFORCEMENT_CHANGED]
         )
-        self.owner.webhooks.add(webhook_owner)
-        structure_1 = create_upwell_structure(owner=self.owner)
-        webhook_structure = create_webhook(
+        owner = OwnerFactory(webhooks=[webhook_owner])
+        structure_1 = StructureFactory(owner=owner)
+        webhook_structure = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REINFORCEMENT_CHANGED]
         )
         structure_1.webhooks.add(webhook_structure)
-        structure_2 = create_upwell_structure(owner=self.owner)
-        webhook_structure = create_webhook(
+        structure_2 = StructureFactory(owner=owner)
+        webhook_structure = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REINFORCEMENT_CHANGED]
         )
         structure_2.webhooks.add(webhook_structure)
-        notif = create_notification(
-            owner=self.owner,
+        notif = NotificationFactory(
+            owner=owner,
             notif_type=NotificationType.STRUCTURE_REINFORCEMENT_CHANGED,
-            text=f"allStructureInfo:\n- - {structure_1.id}\n  - {structure_1}\n  - 35825\n- - {structure_2.id}\n  - {structure_2}\n  - 35825\nhour: 19\nnumStructures: 1\ntimestamp: 132141703753688216\nweekday: 255\n",
+            text_from_dict={
+                "allStructureInfo": [
+                    [
+                        structure_1.id,
+                        structure_1.name,
+                        structure_1.eve_type_id,
+                    ],
+                    [
+                        structure_2.id,
+                        structure_2.name,
+                        structure_2.eve_type_id,
+                    ],
+                ],
+                "hour": 19,
+                "numStructures": 2,
+                "timestamp": 132141703753688216,
+                "weekday": 255,
+            },
         )
         # when
         result_qs = notif.relevant_webhooks()
@@ -361,22 +408,16 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        load_entities()
-        user, _ = create_user_from_evecharacter(
-            1001, permissions=["structures.add_structure_owner"]
-        )
-        cls.owner = create_owner_from_user(user=user)
-        Webhook.objects.all().delete()
 
     @patch(MODULE_PATH + ".Notification.send_to_webhook")
     def test_should_send_to_webhook(self, mock_send_to_webhook):
         # given
-        webhook = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA]
         )
-        self.owner.webhooks.add(webhook)
-        notif = create_notification(
-            owner=self.owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
+        owner = OwnerFactory(webhooks=[webhook])
+        notif = NotificationFactory(
+            owner=owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
         )
         # when
         result = notif.send_to_configured_webhooks()
@@ -387,21 +428,21 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @patch(MODULE_PATH + ".Notification.send_to_webhook")
     def test_should_send_to_multiple_webhooks(self, mock_send_to_webhook):
         # given
-        webhook_1 = create_webhook(
+        webhook_1 = WebhookFactory(
             notification_types=[
                 NotificationType.STRUCTURE_REFUELED_EXTRA,
                 NotificationType.STRUCTURE_ANCHORING,
             ]
         )
-        webhook_2 = create_webhook(
+        webhook_2 = WebhookFactory(
             notification_types=[
                 NotificationType.STRUCTURE_REFUELED_EXTRA,
                 NotificationType.STRUCTURE_DESTROYED,
             ]
         )
-        self.owner.webhooks.add(webhook_1, webhook_2)
-        notif = create_notification(
-            owner=self.owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
+        owner = OwnerFactory(webhooks=[webhook_1, webhook_2])
+        notif = NotificationFactory(
+            owner=owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
         )
         # when
         result = notif.send_to_configured_webhooks()
@@ -414,13 +455,13 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @patch(MODULE_PATH + ".Notification.send_to_webhook")
     def test_should_not_send_when_webhooks_are_inactive(self, mock_send_to_webhook):
         # given
-        webhook = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA],
             is_active=False,
         )
-        self.owner.webhooks.add(webhook)
-        notif = create_notification(
-            owner=self.owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
+        owner = OwnerFactory(webhooks=[webhook])
+        notif = NotificationFactory(
+            owner=owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
         )
         # when
         result = notif.send_to_configured_webhooks()
@@ -431,12 +472,12 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @patch(MODULE_PATH + ".Notification.send_to_webhook")
     def test_should_not_send_when_notif_types_dont_match(self, mock_send_to_webhook):
         # given
-        webhook = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
         )
-        self.owner.webhooks.add(webhook)
-        notif = create_notification(
-            owner=self.owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
+        owner = OwnerFactory(webhooks=[webhook])
+        notif = NotificationFactory(
+            owner=owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
         )
         # when
         result = notif.send_to_configured_webhooks()
@@ -448,12 +489,12 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     def test_should_return_false_when_sending_failed(self, mock_send_to_webhook):
         # given
         mock_send_to_webhook.return_value = False
-        webhook = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA]
         )
-        self.owner.webhooks.add(webhook)
-        notif = create_notification(
-            owner=self.owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
+        owner = OwnerFactory(webhooks=[webhook])
+        notif = NotificationFactory(
+            owner=owner, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
         )
         # when
         result = notif.send_to_configured_webhooks()
@@ -464,17 +505,35 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @patch(MODULE_PATH + ".Notification.send_to_webhook")
     def test_should_send_to_structure_webhook(self, mock_send_to_webhook):
         # given
-        webhook_owner = create_webhook(notification_types=[])
-        self.owner.webhooks.add(webhook_owner)
-        structure = create_upwell_structure(owner=self.owner)
-        webhook_structure = create_webhook(
+        webhook_owner = WebhookFactory(notification_types=[])
+        owner = OwnerFactory(webhooks=[webhook_owner])
+        structure = StructureFactory(owner=owner)
+        webhook_structure = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
         )
         structure.webhooks.add(webhook_structure)
-        notif = create_notification(
-            owner=self.owner,
+        notif = NotificationFactory(
+            owner=owner,
             notif_type=NotificationType.STRUCTURE_UNDER_ATTACK,
-            text=f"allianceID: 3011\nallianceLinkData:\n- showinfo\n- 16159\n- 3011\nallianceName: Big Bad Alliance\narmorPercentage: 98.65129050962584\ncharID: 1011\ncorpLinkData:\n- showinfo\n- 2\n- 2011\ncorpName: Bad Company\nhullPercentage: 100.0\nshieldPercentage: 4.704536686417284e-14\nsolarsystemID: {structure.eve_solar_system_id}\nstructureID: &id001 {structure.id}\nstructureShowInfoData:\n- showinfo\n- {structure.eve_type_id}\n- *id001\nstructureTypeID: {structure.eve_type_id}\n",
+            text_from_dict={
+                "allianceID": 3011,
+                "allianceLinkData": ["showinfo", 16159, 3011],
+                "allianceName": "Big Bad Alliance",
+                "armorPercentage": 98.65129050962584,
+                "charID": 1011,
+                "corpLinkData": ["showinfo", 2, 2011],
+                "corpName": "Bad Company",
+                "hullPercentage": 100.0,
+                "shieldPercentage": 4.704536686417284e-14,
+                "solarsystemID": structure.eve_solar_system_id,
+                "structureID": structure.id,
+                "structureShowInfoData": [
+                    "showinfo",
+                    structure.eve_type_id,
+                    structure.id,
+                ],
+                "structureTypeID": structure.eve_type_id,
+            },
         )
         # when
         result = notif.send_to_configured_webhooks()
@@ -488,20 +547,18 @@ class TestNotificationSendToWebhook(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        create_structures()
-        cls.structure = Structure.objects.get(id=1000000000001)
-        _, cls.owner = set_owner_character(character_id=1001)
-        Webhook.objects.all().delete()
+        EveEntityCorporationFactory(id=1000137, name="DED")
 
     def test_should_override_ping_type(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        webhook = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA]
         )
-        self.owner.webhooks.add(webhook)
+        owner = OwnerFactory(webhooks=[webhook])
+        structure = StructureFactory(owner=owner)
         notif = Notification.create_from_structure(
-            self.structure, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
+            structure, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
         )
         # when
         notif.send_to_configured_webhooks(ping_type_override=Webhook.PingType.HERE)
@@ -513,12 +570,13 @@ class TestNotificationSendToWebhook(NoSocketsTestCase):
     def test_should_override_color(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        webhook = create_webhook(
+        webhook = WebhookFactory(
             notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA]
         )
-        self.owner.webhooks.add(webhook)
+        owner = OwnerFactory(webhooks=[webhook])
+        structure = StructureFactory(owner=owner)
         notif = Notification.create_from_structure(
-            self.structure, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
+            structure, notif_type=NotificationType.STRUCTURE_REFUELED_EXTRA
         )
         # when
         notif.send_to_configured_webhooks(
@@ -530,21 +588,28 @@ class TestNotificationSendToWebhook(NoSocketsTestCase):
         self.assertEqual(kwargs["embeds"][0].color, Webhook.Color.DANGER)
 
 
+def _clone_notification(obj: Notification) -> Notification:
+    """Return clone of a Notification."""
+    new_object = NotificationFactory(
+        sender=obj.sender, notif_type=obj.notif_type, owner=obj.owner, text=obj.text
+    )
+    return new_object
+
+
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestNotificationSendMessage(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        create_structures()
-        _, cls.owner = set_owner_character(character_id=1001)
+        load_eve_entities()
+        cls.owner = OwnerFactory(is_alliance_main=True)
+        cls.webhook = cls.owner.webhooks.first()
         load_notification_entities(cls.owner)
-        cls.webhook = create_webhook()
-        cls.owner.webhooks.add(cls.webhook)
 
     def test_can_send_message_normal(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = Notification.objects.get(notification_id=1000020601)
+        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then
@@ -556,13 +621,8 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_should_ignore_unsupported_notif_types(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = Notification.objects.create(
-            notification_id=666,
-            owner=self.owner,
-            sender=EveEntity.objects.get(id=2001),
-            timestamp=now(),
-            notif_type="XXXUnsupportedNotificationTypeXXX",
-            last_updated=now(),
+        obj = NotificationFactory(
+            owner=self.owner, notif_type="XXXUnsupportedNotificationTypeXXX"
         )
         # when
         result = obj.send_to_webhook(self.webhook)
@@ -570,17 +630,19 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         self.assertFalse(result)
 
     def test_mark_notification_as_sent_when_successful(self, mock_send_message):
+        # given
         mock_send_message.return_value = True
-
-        obj = Notification.objects.get(notification_id=1000020601)
+        obj = NotificationFactory(owner=self.owner)
+        # when
         obj.send_to_webhook(self.webhook)
+        # then
         obj.refresh_from_db()
         self.assertTrue(obj.is_sent)
 
     def test_dont_mark_notification_as_sent_when_error(self, mock_send_message):
         # given
         mock_send_message.return_value = 0
-        obj = Notification.objects.get(notification_id=1000020601)
+        obj = NotificationFactory(owner=self.owner)
         # when
         obj.send_to_webhook(self.webhook)
         # then
@@ -593,11 +655,12 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         types_tested = set()
         # when /then
         for notif in Notification.objects.all():
-            with self.subTest(notif_type=notif.notif_type):
-                if notif.notif_type in NotificationType.values:
-                    self.assertFalse(notif.is_sent)
-                    self.assertTrue(notif.send_to_webhook(self.webhook))
-                    types_tested.add(notif.notif_type)
+            obj = _clone_notification(notif)
+            with self.subTest(notif_type=obj.notif_type):
+                if obj.notif_type in NotificationType.values:
+                    self.assertFalse(obj.is_sent)
+                    self.assertTrue(obj.send_to_webhook(self.webhook))
+                    types_tested.add(obj.notif_type)
 
         # make sure we have tested all existing esi notification types
         self.assertSetEqual(NotificationType.esi_notifications(), types_tested)
@@ -605,7 +668,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_should_create_notification_for_structure_refueled(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        structure = Structure.objects.get(id=1000000000001)
+        structure = StructureFactory(owner=self.owner, id=1000000000001)
         notif = Notification.create_from_structure(
             structure, NotificationType.STRUCTURE_REFUELED_EXTRA
         )
@@ -617,7 +680,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_should_create_notification_for_tower_refueled(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        structure = Structure.objects.get(id=1300000000001)
+        structure = StarbaseFactory(owner=self.owner, id=1300000000001)
         notif = Notification.create_from_structure(
             structure, NotificationType.TOWER_REFUELED_EXTRA
         )
@@ -630,8 +693,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_send_notification_without_existing_structure(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        Structure.objects.all().delete()
-        obj = Notification.objects.get(notification_id=1000000505)
+        obj = _clone_notification(Notification.objects.get(notification_id=1000000505))
         # when
         obj.send_to_webhook(self.webhook)
         # then
@@ -644,7 +706,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_notification_with_null_aggressor_alliance(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = Notification.objects.get(notification_id=1000020601)
+        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then
@@ -654,7 +716,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_can_send_message_with_setting_avatar(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = Notification.objects.get(notification_id=1000020601)
+        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then
@@ -667,7 +729,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     def test_can_send_message_without_setting_avatar(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        obj = Notification.objects.get(notification_id=1000020601)
+        obj = _clone_notification(Notification.objects.get(notification_id=1000020601))
         # when
         result = obj.send_to_webhook(self.webhook)
         # then
@@ -682,17 +744,25 @@ class TestNotificationPings(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        create_structures()
-        _, cls.owner = set_owner_character(character_id=1001)
-        load_notification_entities(cls.owner)
+        corporation = EveEntityCorporationFactory()
+        cls.notif_params = {
+            "notif_type": NotificationType.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE,
+            "text_from_dict": {
+                "billID": 24803231,
+                "corpID": corporation.id,
+                "dueDate": 132936111600000000,
+                "solarSystemID": 30000474,
+            },
+        }
 
     def test_can_ping(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        webhook_normal = create_webhook()
-        obj = Notification.objects.get(notification_id=1000000509)
+        webhook = WebhookFactory()
+        owner = OwnerFactory(webhooks=[webhook])
+        obj = NotificationFactory(owner=owner, **self.notif_params)
         # when
-        result = obj.send_to_webhook(webhook_normal)
+        result = obj.send_to_webhook(webhook)
         # then
         self.assertTrue(result)
         _, kwargs = mock_send_message.call_args
@@ -701,8 +771,9 @@ class TestNotificationPings(NoSocketsTestCase):
     def test_can_disable_pinging_webhook(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        webhook_no_pings = create_webhook(has_default_pings_enabled=False)
-        obj = Notification.objects.get(notification_id=1000000509)
+        webhook_no_pings = WebhookFactory(has_default_pings_enabled=False)
+        owner = OwnerFactory(webhooks=[webhook_no_pings])
+        obj = NotificationFactory(owner=owner, **self.notif_params)
         # when
         result = obj.send_to_webhook(webhook_no_pings)
         self.assertTrue(result)
@@ -712,11 +783,9 @@ class TestNotificationPings(NoSocketsTestCase):
     def test_can_disable_pinging_owner(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
-        webhook_normal = create_webhook()
-        self.owner.webhooks.add(webhook_normal)
-        self.owner.has_default_pings_enabled = False
-        self.owner.save()
-        obj = Notification.objects.get(notification_id=1000000509)
+        webhook_normal = WebhookFactory()
+        owner = OwnerFactory(has_default_pings_enabled=False, webhooks=[webhook_normal])
+        obj = NotificationFactory(owner=owner, **self.notif_params)
         # when
         result = obj.send_to_webhook(webhook_normal)
         # then

@@ -74,6 +74,11 @@
     ],
     "EveEntity": [
         {
+            "id": 1001,
+            "category": "character",
+            "name": "Bruce Wayne"
+        },
+        {
             "id": 1011,
             "category": "character",
             "name": "Bad Dude"
@@ -82,6 +87,11 @@
             "id": 2001,
             "category": "corporation",
             "name": "Wayne Technologies"
+        },
+        {
+            "id": 2002,
+            "category": "corporation",
+            "name": "Wayne Foods"
         },
         {
             "id": 2011,

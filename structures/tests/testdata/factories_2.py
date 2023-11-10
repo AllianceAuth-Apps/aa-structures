@@ -60,7 +60,7 @@ class EveEntityFactory(
 ):
     class Meta:
         model = EveEntity
-        django_get_or_create = ("id", "name")
+        django_get_or_create = ("id",)
 
     category = EveEntity.CATEGORY_CHARACTER
 

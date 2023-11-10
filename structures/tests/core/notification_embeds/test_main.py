@@ -21,7 +21,6 @@ from structures.tests.testdata.factories_2 import (
     EveAllianceInfoFactory,
     EveCorporationInfoFactory,
     EveEntityAllianceFactory,
-    EveEntityCharacterFactory,
     EveEntityCorporationFactory,
     GeneratedNotificationFactory,
     NotificationFactory,
@@ -31,7 +30,7 @@ from structures.tests.testdata.factories_2 import (
     UserMainDefaultOwnerFactory,
 )
 from structures.tests.testdata.helpers import (
-    generate_eve_entities_from_auth_entities,
+    load_eve_entities,
     load_notification_entities,
     markdown_to_plain,
 )
@@ -92,16 +91,10 @@ class TestNotificationEmbedsGenerate(TestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
+        load_eve_entities()
         alliance = EveAllianceInfoFactory(alliance_id=3001)
         corporation = EveCorporationInfoFactory(corporation_id=2001, alliance=alliance)
         cls.owner = OwnerFactory(corporation=corporation)
-        generate_eve_entities_from_auth_entities()
-        EveEntityCharacterFactory(id=1001, name="Bruce Wayne")
-        EveEntityCharacterFactory(id=1011, name="Bad Dude")
-        EveEntityCorporationFactory(id=2011, name="Bad Company")
-        EveEntityAllianceFactory(id=3011, name="Bad Alliance")
-        EveEntityCorporationFactory(id=2901, name="DED")
-        EveEntityCorporationFactory(id=2902, name="CONCORD")
         load_notification_entities(cls.owner)
 
     def test_should_generate_embed_from_notification(self):

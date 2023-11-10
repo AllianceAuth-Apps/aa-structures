@@ -40,7 +40,7 @@ from structures.models import (
     Webhook,
 )
 
-from .factories import create_notification
+from .factories_2 import NotificationFactory
 
 ESI_CORP_STRUCTURES_PAGE_SIZE = 2
 
@@ -764,7 +764,7 @@ def load_notification_by_type(
 ) -> Notification:
     for notification in entities_testdata["Notification"]:
         if notification["type"] == notif_type.value:
-            return create_notification(
+            return NotificationFactory(
                 owner=owner,
                 notif_type=notif_type.value,
                 text=notification.get("text", ""),
@@ -773,6 +773,14 @@ def load_notification_by_type(
 
 
 def load_notification_entities(owner: Owner, in_bulk=True):
+    """Loads notification fixtures for this owner.
+
+    Note that the notification require some EveEntity objects to exit,
+    which can be created with ``load_eve_entities()``.
+
+    Args:
+    - in_bulk: When disabled, will load notifications one by one (for debugging)
+    """
     timestamp_start = now() - dt.timedelta(hours=2)
     objs = [
         _generate_notif_obj_for_owner(owner, timestamp_start, notification)
@@ -787,10 +795,7 @@ def load_notification_entities(owner: Owner, in_bulk=True):
 
 
 def _generate_notif_obj_for_owner(
-    owner: Owner,
-    timestamp_start: dt.datetime,
-    notification: dict,
-    new_ids: bool = False,
+    owner: Owner, timestamp_start: dt.datetime, notification: dict
 ):
     notification_id = notification["notification_id"]
     text = notification["text"] if "text" in notification else None
@@ -862,3 +867,16 @@ def generate_eve_entities_from_auth_entities():
         )
 
     EveEntity.objects.bulk_create(objs)
+
+
+def load_eve_entities():
+    """Load eve entity fixtures. Will skip already existing objs."""
+    existing_ids = set(EveEntity.objects.values_list("id", flat=True))
+    data = {obj["id"]: obj for obj in entities_testdata["EveEntity"]}
+    incoming_ids = set(data.keys())
+    missing_ids = incoming_ids - existing_ids
+    objs = [EveEntity(**data[entity_id]) for entity_id in missing_ids]
+    if objs:
+        EveEntity.objects.bulk_create(objs)
+    logger.info("Loaded %d EveEntity objects", len(objs))
+    return objs

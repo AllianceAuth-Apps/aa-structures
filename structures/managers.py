@@ -138,7 +138,7 @@ class GeneratedNotificationQuerySet(NotificationBaseQuerySet):
 
 class GeneratedNotificationManagerBase(NotificationBaseManagerBase):
     def get_or_create_from_structure(
-        self, structure: models.Model, notif_type: models.TextChoices
+        self, structure: models.Model, notif_type: NotificationType
     ) -> Tuple[Any, bool]:
         """Get or create an object from given structure."""
 

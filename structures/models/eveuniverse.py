@@ -1,8 +1,8 @@
 """Eve Universe models for Structures."""
 
-from enum import Enum
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from eveuniverse.models import EveSolarSystem
 
 from structures.managers import EveSovereigntyMapManager
@@ -51,14 +51,14 @@ class EveSovereigntyMap(models.Model):
         return f"{self.__class__.__name__}(solar_system_id='{self.solar_system_id}')"
 
 
-class EveSpaceType(str, Enum):
+class EveSpaceType(models.TextChoices):
     """A space type in Eve Online."""
 
-    UNKNOWN = "unknown"
-    HIGHSEC = "highsec"
-    LOWSEC = "lowsec"
-    NULLSEC = "nullsec"
-    W_SPACE = "w-space"
+    UNKNOWN = "unknown", _("Unknown")
+    HIGHSEC = "highsec", _("Highsec")
+    LOWSEC = "lowsec", _("Lowsec")
+    NULLSEC = "nullsec", _("Nullsec")
+    W_SPACE = "w-space", _("W-Space")
 
     @classmethod
     def from_solar_system(cls, eve_solar_system: EveSolarSystem) -> "EveSpaceType":

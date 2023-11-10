@@ -443,7 +443,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         solar_system_html = format_html(
             "{}<br>{}",
             link_html(dotlan.solar_system_url(solar_system_name), solar_system_name),
-            bootstrap_label_html(text=space_type.value, label=space_badge_type),
+            bootstrap_label_html(text=space_type.label, label=space_badge_type),
         )
 
         constellation_name = structure.eve_solar_system.eve_constellation.name

@@ -7,9 +7,7 @@ from pytz import utc
 from django.test import override_settings
 from django.utils.timezone import now
 from esi.models import Token
-from eveuniverse.models import EveEntity
 
-from allianceauth.eveonline.models import EveCharacter
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from app_utils.testing import BravadoResponseStub, NoSocketsTestCase, queryset_pks
 
@@ -29,8 +27,7 @@ from structures.tests.testdata.factories_2 import (
     datetime_to_esi,
 )
 from structures.tests.testdata.helpers import (
-    generate_eve_entities_from_auth_entities,
-    load_entities,
+    load_eve_entities,
     load_notification_entities,
 )
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
@@ -259,15 +256,9 @@ class TestSendNewNotifications(NoSocketsTestCase):
     @classmethod
     def setUpTestData(cls):
         load_eveuniverse()
-        load_entities([EveCharacter, EveEntity])
-        generate_eve_entities_from_auth_entities()
-        character = EveCharacter.objects.get(character_name="Bruce Wayne")
-        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        load_eve_entities()
         cls.owner = OwnerFactory(
-            user=user,
-            is_alliance_main=True,
-            webhooks=False,
-            forwarding_last_update_at=None,
+            is_alliance_main=True, webhooks=False, forwarding_last_update_at=None
         )
         load_notification_entities(cls.owner)
 

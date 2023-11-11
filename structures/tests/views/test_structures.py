@@ -466,6 +466,20 @@ class TestStructureListTagFilters(TestCase):
         params = query_dict["tags"][0].split(",")
         self.assertSetEqual(set(params), {"tag_c", "tag_b"})
 
+    def test_handle_post_with_no_tags(self):
+        # given
+        request = self.factory.post("/")
+        request.user = self.user
+        # when
+        response = structures.structure_list(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        parts = urlparse(response.url)
+        path = parts[2]
+        query_dict = parse_qs(parts[4])
+        self.assertEqual(path, reverse("structures:structure_list"))
+        self.assertNotIn("tags", query_dict)
+
 
 class TestStructurePowerModes(TestCase):
     @classmethod

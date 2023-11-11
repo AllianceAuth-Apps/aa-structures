@@ -13,15 +13,11 @@ from app_utils.logging import LoggerAddTag
 from app_utils.views import link_html
 
 from structures import __title__
-from structures.app_settings import (
-    STRUCTURES_DEFAULT_PAGE_LENGTH,
-    STRUCTURES_PAGING_ENABLED,
-)
 from structures.constants import EveCategoryId, EveGroupId, EveTypeId
 from structures.helpers import floating_icon_with_text_html
 from structures.models import Structure
 
-from .common import add_common_context
+from .common import add_common_context, add_common_data_export
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -38,12 +34,12 @@ def _default_if_none(value, default=None):
 def statistics(request: HttpRequest) -> HttpResponse:
     """Return view to render Statistics page."""
     ajax_url = reverse("structures:structure_summary_data")
-    data_export = {
-        "ajax_url": ajax_url,
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
-        "filter_titles": {"alliance": _("Alliance")},
-    }
+    data_export = add_common_data_export(
+        {
+            "ajax_url": ajax_url,
+            "filter_titles": {"alliance": _("Alliance")},
+        }
+    )
     context = {"data_export": data_export}
     return render(request, "structures/statistics.html", add_common_context(context))
 

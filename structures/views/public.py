@@ -11,15 +11,11 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 
 from structures import __title__
-from structures.app_settings import (
-    STRUCTURES_DEFAULT_PAGE_LENGTH,
-    STRUCTURES_PAGING_ENABLED,
-)
 from structures.constants import EveCategoryId
 from structures.core.serializers import PocoListSerializer
 from structures.models import Structure
 
-from .common import add_common_context
+from .common import add_common_context, add_common_data_export
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -46,21 +42,21 @@ def public(request: HttpRequest) -> HttpResponse:
     ajax_url = reverse(
         "structures:public_poco_list_data", args=[selected_character.character_id]
     )
-    data_export = {
-        "ajax_url": ajax_url,
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
-        "filter_titles": {
-            "alliance": _("Alliance"),
-            "access": _("Access?"),
-            "corporation": _("Corporation"),
-            "constellation": _("Constellation"),
-            "planet_type": _("Planet Type"),
-            "region": _("Region"),
-            "space_type": _("Space Type"),
-            "solar_system": _("Solar System"),
-        },
-    }
+    data_export = add_common_data_export(
+        {
+            "ajax_url": ajax_url,
+            "filter_titles": {
+                "alliance": _("Alliance"),
+                "access": _("Access?"),
+                "corporation": _("Corporation"),
+                "constellation": _("Constellation"),
+                "planet_type": _("Planet Type"),
+                "region": _("Region"),
+                "space_type": _("Space Type"),
+                "solar_system": _("Solar System"),
+            },
+        }
+    )
     context = {
         "characters": characters,
         "selected_character": selected_character,

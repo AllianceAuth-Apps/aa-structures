@@ -32,9 +32,7 @@ from structures import __title__, tasks
 from structures.app_settings import (
     STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
     STRUCTURES_DEFAULT_LANGUAGE,
-    STRUCTURES_DEFAULT_PAGE_LENGTH,
     STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED,
-    STRUCTURES_PAGING_ENABLED,
     STRUCTURES_SHOW_JUMP_GATES,
 )
 from structures.constants import EveAttributeId, EveCategoryId, EveGroupId, EveTypeId
@@ -49,7 +47,7 @@ from structures.models import (
     Webhook,
 )
 
-from .common import add_common_context
+from .common import add_common_context, add_common_data_export
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -130,7 +128,7 @@ def structure_list(request: HttpRequest):
         request.user, StructureSelection.JUMP_GATES, tags
     ).count()
 
-    data_export = _construct_data_export(request, tags)
+    data_export = add_common_data_export(_construct_data_export(request, tags))
 
     context = {
         "active_tags": tags,
@@ -163,8 +161,6 @@ def _construct_data_export(request, tags):
         "starbases_ajax_url": starbases_ajax_url,
         "jump_gates_ajax_url": jump_gates_ajax_url,
         "spinner_image_url": spinner_image_url,
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": int(STRUCTURES_PAGING_ENABLED),
         "filter_titles": {
             "alliance": _("Alliance"),
             "corporation": _("Corporation"),

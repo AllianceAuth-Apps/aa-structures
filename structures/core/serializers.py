@@ -44,14 +44,6 @@ class _AbstractStructureListSerializer(ABC):
         self.queryset = queryset
         self._request = request
 
-    def has_data(self) -> bool:
-        """Return True if this query returns any data, else False."""
-        return self.queryset.exists()
-
-    def count(self) -> int:
-        """Return number of objects in this query."""
-        return self.queryset.count()
-
     def to_list(self) -> list:
         """Serialize all objects into a list."""
         return [self.serialize_object(obj) for obj in self.queryset]

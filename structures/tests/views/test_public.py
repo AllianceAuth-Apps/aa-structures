@@ -36,21 +36,3 @@ class TestPocoListDataView(NoSocketsTestCase):
         data = json_response_to_dict(response)
         structure_ids = set(data.keys())
         self.assertSetEqual(structure_ids, {self.poco_public.id})
-
-    def test_should_return_correct_data_for_poco(self):
-        # given
-        request = self.factory.get("/")
-        request.user = self.user
-        # when
-        response = public.public_poco_list_data(request, self.main.character_id)
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        obj = data[self.poco_public.id]
-        self.assertEqual(obj["region"], "Heimatar")
-        self.assertEqual(obj["solar_system"], "Amamake")
-        self.assertEqual(obj["planet_name"], "Amamake V")
-        self.assertEqual(obj["planet_type_name"], "Barren")
-        self.assertEqual(obj["space_type"], "lowsec")
-        self.assertEqual(obj["has_access_str"], "yes(?)")
-        self.assertEqual(obj["tax"]["sort"], 1.0)

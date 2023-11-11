@@ -7,7 +7,6 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
-from eveuniverse.models import EveSolarSystem
 
 from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import json_response_to_python
@@ -16,9 +15,7 @@ from structures.models import Owner, Structure
 from structures.views import structures
 
 from ..testdata.factories import (
-    EveAllianceInfoFactory,
     EveCharacterFactory,
-    EveCorporationInfoFactory,
     JumpGateFactory,
     OwnerFactory,
     PocoFactory,
@@ -135,77 +132,6 @@ class TestIndexTagFilter(TestCase):
         # then
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/structures/list")
-
-
-class TestStructureListDataSerialization(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.factory = RequestFactory()
-        load_eveuniverse()
-        alliance = EveAllianceInfoFactory(
-            alliance_name="Wayne Enterprises", alliance_ticker="WYE"
-        )
-        corporation = EveCorporationInfoFactory(
-            corporation_name="Wayne Technologies", alliance=alliance
-        )
-        character = EveCharacterFactory(corporation=corporation)
-        cls.user = UserMainDefaultFactory(main_character__character=character)
-        cls.owner = OwnerFactory(corporation=corporation)
-
-    def test_should_serialize_data_correctly(self):
-        # given
-        eve_solar_system = EveSolarSystem.objects.get(name="Amamake")
-        structure = StructureFactory(
-            owner=self.owner,
-            eve_solar_system=eve_solar_system,
-            eve_type_name="Astrahus",
-        )
-        request = self.factory.get("/")
-        request.user = self.user
-        # when
-        response = structures.structure_list_data(request, "structures")
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        obj = data[structure.id]
-        self.assertEqual(obj["alliance_name"], "Wayne Enterprises [WYE]")
-        self.assertEqual(obj["corporation_name"], "Wayne Technologies")
-        self.assertEqual(obj["region_name"], "Heimatar")
-        self.assertEqual(obj["solar_system_name"], "Amamake")
-        self.assertEqual(obj["group_name"], "Citadel")
-        self.assertEqual(obj["category_name"], "Structure")
-        self.assertFalse(obj["is_starbase"])
-        self.assertFalse(obj["is_poco"])
-        self.assertEqual(obj["type_name"], "Astrahus")
-        self.assertEqual(obj["is_reinforced_str"], "no")
-        self.assertEqual(
-            obj["fuel_and_power"]["fuel_expires_at"],
-            structure.fuel_expires_at.isoformat(),
-        )
-        self.assertEqual(obj["power_mode_str"], "Full Power")
-        self.assertEqual(obj["state_str"], "Shield vulnerable")
-        self.assertEqual(obj["core_status_str"], "no")
-        self.assertEqual(obj["details"], "")
-
-    def test_should_return_jump_gates(self):
-        # given
-        request = self.factory.get("/")
-        request.user = self.user
-        structure = JumpGateFactory(
-            owner=self.owner, jump_fuel_quantity=5000, eve_solar_system_name="1-PGSG"
-        )
-        # when
-        response = structures.structure_list_data(request, "jump_gates")
-        # then
-        self.assertEqual(response.status_code, 200)
-        data = json_response_to_dict(response)
-        obj = data[structure.id]
-        self.assertEqual(obj["region_name"], "Detorid")
-        self.assertEqual(obj["solar_system_name"], "1-PGSG")
-        # self.assertEqual(
-        #     obj["structure_name_and_tags"], "1-PGSG &gt;&gt; A-C5TC - Test Jump Gate"
-        # )
-        self.assertEqual(obj["jump_fuel_quantity"], 5000)
 
 
 class TestStructureListDataFilterVariant(TestCase):

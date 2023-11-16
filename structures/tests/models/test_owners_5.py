@@ -589,12 +589,14 @@ class TestOwnerUpdateAssetEsi(NoSocketsTestCase):
         mock_esi.client = self.esi_client_stub
         user_2 = UserMainDefaultOwnerFactory()
         owner_2 = OwnerFactory(user=user_2)
-        structure_2 = StructureFactory(owner=owner_2, id=1000000000004)
+        structure_2 = StructureFactory(
+            owner=owner_2, id=1000000000004, quantum_core=False
+        )
         StructureItemFactory(structure=structure_2, id=1300000003001)
 
         owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        StructureFactory(owner=owner, id=1000000000001)
-        StructureFactory(owner=owner, id=1000000000002)
+        StructureFactory(owner=owner, id=1000000000001, quantum_core=False)
+        StructureFactory(owner=owner, id=1000000000002, quantum_core=False)
 
         # when
         owner.update_asset_esi()

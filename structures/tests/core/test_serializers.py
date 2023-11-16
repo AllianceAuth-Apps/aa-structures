@@ -77,7 +77,7 @@ class TestStructureListSerializer(NoSocketsTestCase):
         )
         self.assertEqual(obj["power_mode_str"], "Full Power")
         self.assertEqual(obj["state_str"], "Shield vulnerable")
-        self.assertEqual(obj["core_status_str"], "no")
+        self.assertEqual(obj["core_status_str"], "yes")
         self.assertEqual(obj["details"], "")
 
     def test_should_show_reinforced_for_structure(self):

@@ -6,6 +6,7 @@ import factory.fuzzy
 import pytz
 import yaml
 
+from django.utils.text import slugify
 from django.utils.timezone import now
 from eveuniverse.models import EveEntity, EveMoon, EvePlanet, EveSolarSystem, EveType
 
@@ -18,7 +19,7 @@ from app_utils.testdata_factories import (
     UserMainFactory,
 )
 
-from structures.constants import EveTypeId
+from structures.constants import EveGroupId, EveTypeId
 from structures.core.notification_types import NotificationType
 from structures.models import (
     EveSovereigntyMap,
@@ -170,7 +171,7 @@ class WebhookFactory(
         django_get_or_create = ("name",)
 
     name = factory.Sequence(lambda n: f"Generated webhook #{n+1}")
-    url = factory.Sequence(lambda n: f"http://www.example.com/webhook_{n+1}")
+    url = factory.LazyAttribute(lambda o: f"http://www.example.com/{slugify(o.name)}")
     notes = factory.Faker("sentence")
 
 
@@ -268,7 +269,7 @@ class StructureFactory(
     id = factory.Sequence(lambda n: 1_500_000_000_000 + n)
     fuel_expires_at = factory.LazyAttribute(lambda obj: now() + dt.timedelta(days=3))
     has_fitting = False
-    has_core = False
+    has_core = True
     last_updated_at = factory.LazyFunction(now)
     name = factory.LazyAttribute(lambda o: f"Test Structure #{o.id}")
     owner = factory.SubFactory(OwnerFactory)
@@ -301,6 +302,27 @@ class StructureFactory(
 
         elif extracted:
             obj.tags.add(*extracted)
+
+    @factory.post_generation
+    def quantum_core(obj, create, extracted, **kwargs):
+        if not create or extracted is False:
+            return
+
+        if obj.eve_type.eve_group_id not in {
+            EveGroupId.CITADEL,
+            EveGroupId.ENGINEERING_COMPLEX,
+            EveGroupId.REFINERY,
+        }:
+            return
+
+        # add quantum core
+        StructureItemFactory(
+            structure=obj,
+            location_flag=StructureItem.LocationFlag.QUANTUM_CORE_ROOM,
+            eve_type=EveType.objects.get(
+                name=f"{obj.eve_type.name} Upwell Quantum Core"
+            ),
+        )
 
 
 class RefineryFactory(StructureFactory):

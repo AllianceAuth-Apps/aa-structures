@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [2.7.0] - 2023-11-05
+## [2.7.0] - 2023-11-16
 
 ### Added
 
-- Show structure counts on tabs
-- Poco details added to admin page for pocos
-- Starbase details added to admin page for starbases
+- Structure counts shown on tabs
+- Poco details visible on admin page for pocos
+- Starbase details visible on admin page for starbases
 
 ### Changed
 

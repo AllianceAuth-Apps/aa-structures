@@ -62,13 +62,16 @@ Please also check out [Discord Notify](https://gitlab.com/ErikKalkoken/aa-discor
 
 Here is an example for the main list of structures:
 
-![StructureList](https://i.imgur.com/m676Y0T.png)
+![StructureList](https://imgpile.com/images/GCxK7E.png)
 
-You can also see the fittings and contents of upwell structures:
-![Poco details](https://i.imgur.com/qSC5uql.png)
+You can also see the fittings and contents any upwell structures:
+![Fitting](https://imgpile.com/images/GCxtQh.png)
 
 The tax rate and access configuration of customs offices is visible too:
-![Poco details](https://i.imgur.com/5XXDCsQ.png)
+![Poco details](https://imgpile.com/images/GCxPyg.png)
+
+And you can see the configuration for starbases:
+![Poco details](https://imgpile.com/images/GCxMPr.png)
 
 This is an example for a notification posted on Discord:
 

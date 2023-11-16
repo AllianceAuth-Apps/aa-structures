@@ -13,14 +13,6 @@ App for managing Eve Online structures with Alliance Auth.
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![chat](https://img.shields.io/discord/790364535294132234)](https://discord.gg/zmh52wnfvM)
 
-## Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Screenshots](#screenshots)
-- [Documentation](https://aa-structures.readthedocs.io/en/latest/)
-- [Change Log](CHANGELOG.md)
-
 ## Overview
 
 This app is for managing Eve Online structures with [Alliance Auth](https://gitlab.com/allianceauth/allianceauth). It allows all member corporations to see a current list of all their structures in Auth. In addition it allows forwarding Eve Online notifications to Discord.
@@ -51,7 +43,7 @@ Structures adds the following main features to Alliance Auth:
 - Tax rates and access settings of Customs Offices
 - Permissions define which structures are visible to a user based on organization membership
 - Self-defined tags help to better organize structures
-- Ability to increase notification response time and sync resilence with multiple sync characters per structure owner
+- Ability to increase notification response time and sync resilience with multiple sync characters per structure owner
 - Automatically sends alerts to users and admin when token become invalid or sync from ESI fails
 - Interface for 3rd party monitoring of the services status
 - Chinese :cn:, English :us:, German :de: and Russian :ru: localization
@@ -79,3 +71,7 @@ And you can see the configuration for starbases:
 This is an example for a notification posted on Discord:
 
 ![Notification example](https://i.imgur.com/oqBqeFy.png)
+
+## Installation
+
+Please see the [operation manual](https://aa-structures.readthedocs.io/en/latest/operations.html#installation) for the installation guide.

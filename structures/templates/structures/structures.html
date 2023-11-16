@@ -1,0 +1,207 @@
+{% extends 'structures/base.html' %}
+{% load i18n %}
+{% load bootstrap %}
+{% load static %}
+{% load humanize %}
+
+{% block details %}
+
+    <!-- Tags Filter Button -->
+    <span class="pull-right">
+        {% if tags_exist %}
+            {% if active_tags %}
+                <button
+                    type="button"
+                    class="btn btn-warning btn-tabs"
+                    data-toggle="modal"
+                    data-target="#modalTagsFilter">
+                        {% translate "Tags Filter (Active)" %}
+                </button>
+            {% else %}
+                <button
+                    type="button"
+                    class="btn btn-default btn-tabs"
+                    data-toggle="modal"
+                    data-target="#modalTagsFilter">
+                        {% translate "Tags Filter" %}
+                </button>
+            {% endif %}
+        {% else %}
+            <button
+                type="button"
+                class="btn btn-default btn-tabs"
+                data-toggle="modal"
+                data-target="#modalTagsFilter"
+                disabled="disabled">
+                    {% translate "Tags Filter" %}
+            </button>
+        {% endif %}
+    </span>
+
+    <!-- Nav tabs -->
+    <ul id="structure-tabs" class="nav nav-tabs" role="tablist">
+
+        <li role="presentation">
+            <a href="#structures" aria-controls="structures" role="tab" data-toggle="tab">
+                {% trans "Upwell Structures" %} <small>({{ structures_count|default:"-" }})</small>
+            </a>
+        </li>
+
+        <li role="presentation">
+            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">
+                {% trans "Customs Offices" %} <small>({{ pocos_count|default:"-" }})</small>
+            </a>
+        </li>
+
+        <li role="presentation">
+            <a href="#starbases" aria-controls="starbases" role="tab" data-toggle="tab">
+                {% trans "Starbases" %} <small>({{ starbases_count|default:"-" }})</small>
+            </a>
+        </li>
+
+        {% if show_jump_gates_tab %}
+            <li role="presentation">
+                <a href="#jump-gates" aria-controls="jump-gates" role="tab" data-toggle="tab">
+                    {% trans "Jump Gates" %} <small>({{ jump_gates_count|default:"-" }})</small>
+                </a>
+            </li>
+        {% endif %}
+
+    </ul>
+
+    <div class="panel panel-default panel-tabs">
+        <div class="panel-body">
+            <div class="tab-content">
+
+                <div role="tabpanel" class="tab-pane" id="structures">
+                    {% include "structures/partials/structures/structure_list.html" %}
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="pocos">
+                    {% include "structures/partials/structures/poco_list.html" %}
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="starbases">
+                    {% include "structures/partials/structures/starbase_list.html" %}
+                </div>
+
+                {% if show_jump_gates_tab %}
+                    <div role="tabpanel" class="tab-pane" id="jump-gates">
+                        {% include "structures/partials/structures/jump_gates_list.html" %}
+                    </div>
+                {% endif %}
+
+                <p class="text-muted">
+                    {% translate "All dates are EVE time" %}
+                    | {% translate "Data can be outdated by up to 1 hour due to API caching" %}
+                    | {% translate "Last updated" %} {{ last_updated|naturaltime|default:"?" }}
+                </p>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Tags Filter Modal -->
+    <div class="modal" id="modalTagsFilter" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <form method="post">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title">{% translate "Tags Filter" %}</h4>
+                    </div>
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        {{ tags_filter_form|bootstrap }}
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-default pull-left" href="{% url 'structures:index' %}" role="button">
+                            {% translate "Reset Filter" %}
+                        </a>
+                        <a class="btn btn-default pull-left" href="{% url 'structures:structure_list' %}" role="button">
+                            {% translate "Clear Filter" %}
+                        </a>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            {% translate "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            {% translate "Apply Filter" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Structure details modal -->
+    <div class="modal" id="modalUpwellDetails" tabindex="-1" role="dialog" aria-labelledby="{% translate 'modalUpwellDetails '%}">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content" id="modalUpwellDetailsContent">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Loading...</h4>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Poco details modal -->
+    <div class="modal" id="modalPocoDetails" tabindex="-1" role="dialog" aria-labelledby="modalPocoDetails">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content" id="modalPocoDetailsContent">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Loading...</h4>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Starbase details modal -->
+    <div class="modal" id="modalStarbaseDetail" tabindex="-1" role="dialog" aria-labelledby="modalStarbaseDetail">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content" id="modalStarbaseDetailContent">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Loading...</h4>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export to Javascript -->
+    {{ data_export|json_script:"export-data" }}
+
+{% endblock %}
+
+{% block extra_javascript %}
+    {% include 'bundles/datatables-js.html' %}
+    <script
+        type="application/javascript"
+        src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
+    </script>
+    <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
+    <script type="application/javascript" src="{% static 'structures/js/structures.js' %}"></script>
+
+{% endblock %}
+
+{% block extra_css %}
+    {% include 'bundles/datatables-css.html' %}
+
+    <link rel="stylesheet" href="{% static 'structures/css/global.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structures/css/main.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structures/css/structures.css' %}" type="text/css" media="screen">
+{% endblock %}
+
+{% block extra_script %}
+
+{% endblock %}

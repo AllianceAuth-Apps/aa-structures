@@ -1,0 +1,91 @@
+{% extends 'structures/base.html' %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% block details %}
+
+    <span class="pull-right">
+        <form class="form-inline">
+            <select
+                class="form-control"
+                name="character_id"
+                style="height: auto;"
+                onchange="this.form.submit()"
+                title="Character for calculating access and tax">
+                    {% for character in characters %}
+                        <option
+                            value="{{ character.character_id }}"
+                            {% if character.character_id == selected_character.character_id %} selected{% endif %}>
+                                {{ character.character_name }}
+                        </option>
+                    {% endfor %}
+            </select>
+        </form>
+    </span>
+
+    <!-- Nav tabs -->
+    <ul id="public-tabs" class="nav nav-tabs" role="tablist">
+
+        <li role="presentation" class="active">
+            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">
+                {% translate "Customs Offices" %} <small>({{ pocos_count|default:"-" }})</small>
+            </a>
+        </li>
+
+    </ul>
+
+    <div class="panel panel-default panel-tabs">
+        <div class="panel-body">
+            <div class="tab-content">
+
+                <div role="tabpanel" class="tab-pane active" id="pocos">
+                    {% include "structures/partials/public/poco_list.html" %}
+                </div>
+
+            </div>
+
+            <p class="text-muted">
+                {% translate "Non corporation or alliance members will be assumed to have neutral standing with the owner" %} •
+                {% translate "Data can be outdated by up to 1 hour due to API caching" %} •
+                {% translate "Last updated" %} {{ last_updated|naturaltime|default:"?" }}
+            </p>
+
+        </div>
+    </div>
+
+    <!-- Export to Javascript -->
+    {{ data_export|json_script:"export-data" }}
+
+{% endblock %}
+
+{% block extra_javascript %}
+    {% include 'bundles/datatables-js.html' %}
+    <script
+        type="application/javascript"
+        src="{% static 'structures/vendor/datatables/plugins/dataTables.rowGroup.min.js' %}">
+    </script>
+    <script
+        type="application/javascript"
+        src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
+    </script>
+    <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
+    <script type="application/javascript" src="{% static 'structures/js/public.js' %}"></script>
+{% endblock %}
+
+{% block extra_css %}
+    {% include 'bundles/datatables-css.html' %}
+
+    <link
+        rel="stylesheet"
+        href="{% static 'memberaudit/vendor/datatables/plugins/rowGroup.dataTables.min.css' %}"
+        type="text/css">
+
+    <link rel="stylesheet" href="{% static 'structures/css/global.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structures/css/main.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structures/css/public.css' %}" type="text/css" media="screen">
+{% endblock %}
+
+{% block extra_script %}
+
+{% endblock %}

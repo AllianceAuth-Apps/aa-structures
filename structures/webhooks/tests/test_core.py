@@ -6,9 +6,12 @@ import dhooks_lite
 
 from django.test import TestCase
 
-from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.json import JSONDateTimeDecoder
 
+from structures.tests.testdata.factories import (
+    UserMainDefaultOwnerFactory,
+    WebhookFactory,
+)
 from structures.webhooks import core
 
 MODULE_PATH = core.__package__ + ".core"
@@ -29,8 +32,11 @@ class Webhook(core.DiscordWebhookMixin):
 
 @patch(MODULE_PATH + ".sleep", lambda _: None)
 class TestDiscordWebhookMixin(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.webhook = WebhookFactory.build(name="Dummy 1", url="dummy-1-url")
+
     def setUp(self) -> None:
-        self.webhook = Webhook("Dummy 1", "dummy-1-url")
         self.webhook.clear_queue()
 
     def test_str(self):
@@ -137,9 +143,12 @@ class TestDiscordWebhookMixin(TestCase):
 
 @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute")
 class TestSendTestMessage(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.webhook = WebhookFactory(name="Dummy 1", url="dummy-1-url")
+
     def setUp(self) -> None:
-        self.webhook = Webhook("Dummy 1", "dummy-1-url")
-        self.user = AuthUtils.create_user("Bruce Wayne")
+        self.user = UserMainDefaultOwnerFactory()
 
     def test_normal_no_user(self, mock_execute):
         mock_response = dhooks_lite.WebhookResponse(

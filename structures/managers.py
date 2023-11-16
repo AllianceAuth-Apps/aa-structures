@@ -4,11 +4,11 @@
 
 import datetime as dt
 import itertools
-from typing import Any, Optional, Set, Tuple
+from typing import Any, Iterable, Optional, Set, Tuple
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
-from django.db.models import Case, Count, Exists, OuterRef, Q, Value, When
+from django.db.models import Case, Count, Exists, OuterRef, Q, Sum, Value, When
 from django.utils.timezone import now
 from esi.models import Token
 from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
@@ -74,20 +74,24 @@ class EveSovereigntyMapManager(models.Manager):
             self.solar_system_sov_alliance_id(eve_solar_system) == alliance_id
         )
 
-    def solar_system_sov_alliance_id(self, eve_solar_system) -> Optional[int]:
+    def solar_system_sov_alliance_id(
+        self, eve_solar_system: EveSolarSystem
+    ) -> Optional[int]:
         """returns ID of sov owning alliance for this system or None"""
         if not eve_solar_system.is_null_sec:
             return None
+
         try:
             sov_map = self.get(solar_system_id=eve_solar_system.id)
-            return sov_map.alliance_id if sov_map.alliance_id else None
         except self.model.DoesNotExist:
             return None
+
+        return sov_map.alliance_id if sov_map.alliance_id else None
 
 
 class NotificationBaseQuerySet(models.QuerySet):
     def annotate_can_be_rendered(self) -> models.QuerySet:
-        """annotates field indicating if a notification can be rendered"""
+        """Annotate field indicating if a notification can be rendered."""
 
         return self.annotate(
             can_be_rendered_2=Case(
@@ -134,7 +138,7 @@ class GeneratedNotificationQuerySet(NotificationBaseQuerySet):
 
 class GeneratedNotificationManagerBase(NotificationBaseManagerBase):
     def get_or_create_from_structure(
-        self, structure: models.Model, notif_type: models.TextChoices
+        self, structure: models.Model, notif_type: NotificationType
     ) -> Tuple[Any, bool]:
         """Get or create an object from given structure."""
 
@@ -179,7 +183,7 @@ class OwnerQuerySet(models.QuerySet):
     def annotate_characters_count(self) -> models.QuerySet:
         """Add character count annotation."""
         return self.annotate(
-            x_characters_count=Count(
+            characters_count_2=Count(
                 "characters",
                 filter=Q(characters__character_ownership__isnull=False),
                 distinct=True,
@@ -233,49 +237,47 @@ class StructureQuerySet(models.QuerySet):
             "eve_type__eve_group__eve_category",
         )
 
-    # TODO: Add specific tests
-    def visible_for_user(
-        self, user: User, tags: Optional[list] = None
-    ) -> models.QuerySet:
+    def visible_for_user(self, user: User) -> models.QuerySet:
         """Return structures which the given user have permission to view."""
         if user.has_perm("structures.view_all_structures"):
-            structures_query = self.select_related_defaults()
-            if tags:
-                structures_query = structures_query.filter(
-                    tags__name__in=tags
-                ).distinct()
+            return self
 
-        else:
-            if user.has_perm("structures.view_corporation_structures") or user.has_perm(
-                "structures.view_alliance_structures"
-            ):
-                corporation_ids = {
-                    character_ownership.character.corporation_id
-                    for character_ownership in user.character_ownerships.all()  # type: ignore
-                }
-                corporations = list(
-                    EveCorporationInfo.objects.select_related("alliance").filter(
-                        corporation_id__in=corporation_ids
-                    )
+        if user.has_perm("structures.view_corporation_structures") or user.has_perm(
+            "structures.view_alliance_structures"
+        ):
+            corporation_ids = set(
+                user.character_ownerships.values_list(
+                    "character__corporation_id", flat=True
                 )
-            else:
-                corporations = []
-
-            if user.has_perm("structures.view_alliance_structures"):
-                alliances = {
-                    corporation.alliance
-                    for corporation in corporations
-                    if corporation.alliance
-                }
-                for alliance in alliances:
-                    corporations += alliance.evecorporationinfo_set.all()
-
-                corporations = list(set(corporations))
-
-            structures_query = self.select_related_defaults().filter(
-                owner__corporation__in=corporations
             )
-        return structures_query
+            corporations = list(
+                EveCorporationInfo.objects.select_related("alliance").filter(
+                    corporation_id__in=corporation_ids
+                )
+            )
+        else:
+            corporations = []
+
+        if user.has_perm("structures.view_alliance_structures"):
+            alliances = {
+                corporation.alliance
+                for corporation in corporations
+                if corporation.alliance
+            }
+            for alliance in alliances:
+                corporations += list(alliance.evecorporationinfo_set.all())
+
+            corporations = list(set(corporations))
+
+        return self.filter(owner__corporation__in=corporations)
+
+    def filter_tags(self, tag_names: Iterable[str]) -> models.QuerySet:
+        """Apply filter for given tags."""
+        if not tag_names:
+            return self
+
+        query = self.filter(tags__name__in=list(tag_names)).distinct()
+        return query
 
     def annotate_has_poco_details(self) -> models.QuerySet:
         """Add annotation wether the structure has poco details."""
@@ -288,12 +290,26 @@ class StructureQuerySet(models.QuerySet):
         )
 
     def annotate_has_starbase_detail(self) -> models.QuerySet:
-        """Add annotation wether the structure has starbase details."""
+        """Add annotation whether the structure has starbase details."""
         from .models import StarbaseDetail
 
         return self.annotate(
             has_starbase_detail=Exists(
                 StarbaseDetail.objects.filter(structure_id=OuterRef("id"))
+            )
+        )
+
+    def annotate_jump_fuel_quantity(self) -> models.QuerySet:
+        """Add annotation with quantity of jump fuel."""
+        from .models import StructureItem
+
+        return self.annotate(
+            jump_fuel_quantity_2=Sum(
+                "items__quantity",
+                filter=Q(
+                    items__eve_type=EveTypeId.LIQUID_OZONE,
+                    items__location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
+                ),
             )
         )
 
@@ -446,40 +462,37 @@ class StructureTagManager(models.Manager):
         self, solar_system: EveSolarSystem
     ) -> Tuple[Any, bool]:
         """Get or create tag for a space type."""
-        from .models import EveSpaceType
-
-        space_type = EveSpaceType.from_solar_system(solar_system)
-        params = self.model.SPACE_TYPE_MAP.get(space_type)
-        if params:
-            try:
-                obj = self.get(name=params["name"])
-                return obj, False
-            except self.model.DoesNotExist:
-                return self.update_or_create_for_space_type(solar_system)
-        return None, None
+        params = self._obj_params_from_solar_system(solar_system)
+        try:
+            obj = self.get(name=params["name"])
+            return obj, False
+        except self.model.DoesNotExist:
+            return self.update_or_create_for_space_type(solar_system)
 
     def update_or_create_for_space_type(
         self, solar_system: EveSolarSystem
     ) -> Tuple[Any, bool]:
         """Update or create tag for a space type."""
+        params = self._obj_params_from_solar_system(solar_system)
+        return self.update_or_create(
+            name=params["name"],
+            defaults={
+                "style": params["style"],
+                "description": ("this tag represents a space type. system generated."),
+                "order": 50,
+                "is_user_managed": False,
+                "is_default": False,
+            },
+        )
+
+    def _obj_params_from_solar_system(self, solar_system):
         from .models import EveSpaceType
 
         space_type = EveSpaceType.from_solar_system(solar_system)
         params = self.model.SPACE_TYPE_MAP.get(space_type)
-        if params:
-            return self.update_or_create(
-                name=params["name"],
-                defaults={
-                    "style": params["style"],
-                    "description": (
-                        "this tag represents a space type. system generated."
-                    ),
-                    "order": 50,
-                    "is_user_managed": False,
-                    "is_default": False,
-                },
-            )
-        return None, None
+        if not params:
+            raise ValueError("Unknown space type")
+        return params
 
     def get_or_create_for_sov(self) -> Tuple[Any, bool]:
         """Get or create sovereignty tag."""

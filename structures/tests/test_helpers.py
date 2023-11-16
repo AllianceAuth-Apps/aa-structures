@@ -1,16 +1,20 @@
 import datetime as dt
 
 from django.test import TestCase
+from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 from eveuniverse.models import EveType
 from eveuniverse.tests.testdata.factories_2 import EveTypeFactory
 
 from structures.helpers import (
     datetime_almost_equal,
+    floating_icon_with_text_html,
     get_or_create_esi_obj,
     hours_until_deadline,
     is_absolute_url,
 )
+
+ICON_URL = "https://images.evetech.net/types/670/icon?size=64"
 
 
 class TestDatetimeAlmostEqual(TestCase):
@@ -82,3 +86,40 @@ class TestGetOrCreateEsiObj(TestCase):
         obj_2 = get_or_create_esi_obj(EveType, id=obj.id)
         # then
         self.assertEqual(obj, obj_2)
+
+
+class TestIconWithParagraphHtml(TestCase):
+    def test_should_create_html_with_one_line(self):
+        # when
+        result = floating_icon_with_text_html(ICON_URL, ["Alpha"])
+        # then
+        expected = (
+            '<p><img src="https://images.evetech.net/types/670/icon?size=64" '
+            'class="floating-icon">Alpha</p>'
+        )
+        self.assertEqual(result, expected)
+
+    def test_should_create_html_with_two_line(self):
+        # when
+        result = floating_icon_with_text_html("#", ["Alpha", "Bravo"])
+        expected = '<p><img src="#" class="floating-icon">Alpha<br>Bravo</p>'
+        self.assertEqual(result, expected)
+
+    def test_should_create_html_and_detect_safe_strings(self):
+        # when
+        result = floating_icon_with_text_html(
+            "#", [mark_safe('<a href="#">Alpha</a>'), "Bravo"]
+        )
+        expected = (
+            '<p><img src="#" class="floating-icon"><a href="#">Alpha</a><br>Bravo</p>'
+        )
+        self.assertEqual(result, expected)
+
+    def test_should_create_html_and_escape_unsafe_strings(self):
+        # when
+        result = floating_icon_with_text_html("#", ['<a href="#">Alpha</a>', "Bravo"])
+        expected = (
+            '<p><img src="#" class="floating-icon">'
+            "&lt;a href=&quot;#&quot;&gt;Alpha&lt;/a&gt;<br>Bravo</p>"
+        )
+        self.assertEqual(result, expected)

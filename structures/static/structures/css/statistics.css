@@ -1,0 +1,78 @@
+@media all {
+
+    #tab_summary thead th {
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    #tab_summary tbody td:nth-child(2) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tbody td:nth-child(3) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tbody td:nth-child(4) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tbody td:nth-child(5) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tbody td:nth-child(6) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tbody td:nth-child(7) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tbody td:nth-child(8) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(2) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(3) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(4) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(5) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(6) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(7) {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tab_summary tfoot th:nth-child(8) {
+        text-align: center;
+        vertical-align: middle;
+    }
+}

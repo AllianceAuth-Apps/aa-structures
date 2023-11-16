@@ -1,126 +1,244 @@
-"""Views for Structures."""
+"""Views for structure list page."""
 
 import functools
 from collections import defaultdict
-from enum import IntEnum
-from typing import Dict
+from enum import Enum, IntEnum
+from typing import Dict, Sequence, Set, Union
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.staticfiles.storage import staticfiles_storage
-from django.db.models import Count, Q
-from django.http import HttpResponse, HttpResponseServerError, JsonResponse
+from django.contrib.auth.models import User
+from django.db.models import Prefetch
+from django.http import HttpRequest, HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import translation
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from esi.decorators import token_required
+from esi.models import Token
 from eveuniverse.core import eveimageserver
 from eveuniverse.models import EveType, EveTypeDogmaAttribute
 
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.allianceauth import notify_admins
+from app_utils.allianceauth import is_night_mode, notify_admins
 from app_utils.logging import LoggerAddTag
-from app_utils.views import image_html
 
-from . import __title__, tasks
-from .app_settings import (
+from structures import __title__, tasks
+from structures.app_settings import (
     STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED,
     STRUCTURES_DEFAULT_LANGUAGE,
-    STRUCTURES_DEFAULT_PAGE_LENGTH,
     STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED,
-    STRUCTURES_PAGING_ENABLED,
     STRUCTURES_SHOW_JUMP_GATES,
 )
-from .constants import EveAttributeId, EveCategoryId, EveGroupId, EveTypeId
-from .core.serializers import (
-    JumpGatesListSerializer,
-    PocoListSerializer,
-    StructureListSerializer,
+from structures.constants import EveAttributeId, EveCategoryId, EveGroupId, EveTypeId
+from structures.core.serializers import StructureListSerializer
+from structures.forms import TagsFilterForm
+from structures.models import (
+    Owner,
+    Structure,
+    StructureItem,
+    StructureService,
+    StructureTag,
+    Webhook,
 )
-from .forms import TagsFilterForm
-from .models import Owner, Structure, StructureItem, StructureTag, Webhook
+
+from .common import add_common_context, add_common_data_export
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 QUERY_PARAM_TAGS = "tags"
 
 
-def default_if_none(value, default=None):
-    """Return default if a value is None."""
-    if value is None:
-        return default
-    return value
+class StructureSelection(str, Enum):
+    """A pre-defined selection to filter structures data."""
+
+    STRUCTURES = "structures"
+    POCOS = "pocos"
+    STARBASES = "starbases"
+    JUMP_GATES = "jump_gates"
+    ALL = "all"
+
+
+def _urlencode_tags(tags: Sequence[StructureTag]) -> str:
+    params = {QUERY_PARAM_TAGS: ",".join([tag.name for tag in tags])}
+    params_encoded = urlencode(params)
+    return params_encoded
 
 
 @login_required
 @permission_required("structures.basic_access")
-def index(request):
+def index(request: HttpRequest):
     """Redirect from index view to main."""
-    url = reverse("structures:main")
-    if STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED:
-        params = {
-            QUERY_PARAM_TAGS: ",".join(
-                [x.name for x in StructureTag.objects.filter(is_default=True)]
-            )
-        }
-        params_encoded = urlencode(params)
-        url += f"?{params_encoded}"
+
+    if (
+        request.user.has_perm("structures.view_corporation_structures")
+        or request.user.has_perm("structures.view_alliance_structures")
+        or request.user.has_perm("structures.view_all_structures")
+    ):
+        url = reverse("structures:structure_list")
+        if STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED:
+            tags = StructureTag.objects.filter(is_default=True)
+            params_encoded = _urlencode_tags(tags)
+            url += f"?{params_encoded}"
+    else:
+        url = reverse("structures:public")
+
     return redirect(url)
 
 
 @login_required
 @permission_required("structures.basic_access")
-def main(request):
-    """Main view"""
-    active_tags = []
+def structure_list(request: HttpRequest):
+    """Render structure list view."""
+    tags = []
     if request.method == "POST":
         form = TagsFilterForm(data=request.POST)
         if form.is_valid():
             for name, activated in form.cleaned_data.items():
                 if activated:
-                    active_tags.append(get_object_or_404(StructureTag, name=name))
+                    tags.append(get_object_or_404(StructureTag, name=name))
 
-            url = reverse("structures:main")
-            if active_tags:
-                params = {QUERY_PARAM_TAGS: ",".join([x.name for x in active_tags])}
-                params_encoded = urlencode(params)
+            url = reverse("structures:structure_list")
+            if tags:
+                params_encoded = _urlencode_tags(tags)
                 url += f"?{params_encoded}"
             return redirect(url)
     else:
         tags_raw = request.GET.get(QUERY_PARAM_TAGS)
         if tags_raw:
             tags_parsed = tags_raw.split(",")
-            active_tags = [
-                x for x in StructureTag.objects.all() if x.name in tags_parsed
-            ]
-        form = TagsFilterForm(initial={x.name: True for x in active_tags})
+            tags = list(StructureTag.objects.filter(name__in=tags_parsed))
+        form = TagsFilterForm(initial={tag.name: True for tag in tags})
+
+    structures_count = _structures_query(
+        request.user, StructureSelection.STRUCTURES, tags
+    ).count()
+    pocos_count = _structures_query(
+        request.user, StructureSelection.POCOS, tags
+    ).count()
+    starbases_count = _structures_query(
+        request.user, StructureSelection.STARBASES, tags
+    ).count()
+    jump_gates_count = _structures_query(
+        request.user, StructureSelection.JUMP_GATES, tags
+    ).count()
+
+    data_export = add_common_data_export(_construct_data_export(request, tags))
 
     context = {
-        "active_tags": active_tags,
+        "active_tags": tags,
         "tags_filter_form": form,
         "tags_exist": StructureTag.objects.exists(),
-        "data_tables_page_length": STRUCTURES_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": STRUCTURES_PAGING_ENABLED,
         "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
-        "last_updated": Owner.objects.structures_last_updated(),
+        "structures_count": structures_count,
+        "pocos_count": pocos_count,
+        "starbases_count": starbases_count,
+        "jump_gates_count": jump_gates_count,
+        "data_export": data_export,
     }
-    return render(request, "structures/main.html", context)
+    return render(request, "structures/structures.html", add_common_context(context))
+
+
+def _construct_data_export(request, tags):
+    structures_ajax_url = _construct_ajax_url(StructureSelection.STRUCTURES, tags)
+    pocos_ajax_url = _construct_ajax_url(StructureSelection.POCOS, tags)
+    starbases_ajax_url = _construct_ajax_url(StructureSelection.STARBASES, tags)
+    jump_gates_ajax_url = _construct_ajax_url(StructureSelection.JUMP_GATES, tags)
+
+    if is_night_mode(request):
+        spinner_image_url = static("structures/img/bars-rotate-fade-white-36.svg")
+    else:
+        spinner_image_url = static("structures/img/bars-rotate-fade-black-36.svg")
+
+    data_export = {
+        "structures_ajax_url": structures_ajax_url,
+        "pocos_ajax_url": pocos_ajax_url,
+        "starbases_ajax_url": starbases_ajax_url,
+        "jump_gates_ajax_url": jump_gates_ajax_url,
+        "spinner_image_url": spinner_image_url,
+        "filter_titles": {
+            "alliance": _("Alliance"),
+            "corporation": _("Corporation"),
+            "constellation": _("Constellation"),
+            "core": _("Core?"),
+            "group": _("Group"),
+            "power_mode": _("Power Mode"),
+            "region": _("Region"),
+            "reinforced": _("Reinforced?"),
+            "state": _("State"),
+            "solar_system": _("Solar System"),
+        },
+    }
+
+    return data_export
+
+
+def _construct_ajax_url(selection: StructureSelection, tags):
+    ajax_url = reverse("structures:structure_list_data", args=[selection.value])
+    if tags:
+        params_encoded = _urlencode_tags(tags)
+        ajax_url += f"?{params_encoded}"
+    return ajax_url
 
 
 @login_required
 @permission_required("structures.basic_access")
-def structure_list_data(request) -> JsonResponse:
+def structure_list_data(request: HttpRequest, selection: str) -> JsonResponse:
     """Return structure list in JSON for AJAX call in structure_list view."""
-    tags_raw = request.GET.get(QUERY_PARAM_TAGS)
-    tags = tags_raw.split(",") if tags_raw else None
-    structures = Structure.objects.visible_for_user(request.user, tags)
-    serializer = StructureListSerializer(queryset=structures, request=request)
+    tag_names = _current_tags(request)
+    structures_qs = _structures_query(request.user, selection, tag_names)
+
+    serializer = StructureListSerializer(queryset=structures_qs, request=request)
     return JsonResponse({"data": serializer.to_list()})
+
+
+def _structures_query(
+    user: User, selection: Union[StructureSelection, str], tag_names: Set[str]
+):
+    """Return query for a variant and user and active tags."""
+    structures_qs = (
+        Structure.objects.visible_for_user(user)
+        .select_related_defaults()
+        .filter_tags(tag_names)
+    )
+
+    selection = StructureSelection(selection)
+    if selection == StructureSelection.STRUCTURES:
+        structures_qs = structures_qs.filter(
+            eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
+        )
+
+    elif selection == StructureSelection.POCOS:
+        structures_qs = structures_qs.filter(
+            eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
+        ).annotate_has_poco_details()
+
+    elif selection == StructureSelection.STARBASES:
+        structures_qs = structures_qs.filter(
+            eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
+        ).annotate_has_starbase_detail()
+
+    elif selection == StructureSelection.JUMP_GATES:
+        structures_qs = structures_qs.filter(
+            eve_type=EveTypeId.JUMP_GATE
+        ).annotate_jump_fuel_quantity()
+
+    elif selection == StructureSelection.ALL:
+        pass
+
+    return structures_qs
+
+
+def _current_tags(request) -> Set[str]:
+    """Return currently enabled tags."""
+    tags_raw = request.GET.get(QUERY_PARAM_TAGS)
+    tags = tags_raw.split(",") if tags_raw else []
+    return set(tags)
 
 
 class FakeEveType:
@@ -168,19 +286,17 @@ class Slot(IntEnum):
         try:
             slot_num = type_attributes[self.value]
             my_id = id_map[Slot(self.value)]
-            return staticfiles_storage.url(
-                f"structures/img/panel/{slot_num}{my_id}.png"
-            )
+            return static(f"structures/img/panel/{slot_num}{my_id}.png")
         except KeyError:
             return ""
 
 
 @login_required
 @permission_required("structures.view_structure_fit")
-def structure_details(request, structure_id):
-    """Main view of the structure fit"""
+def structure_details(request: HttpRequest, structure_id: int):
+    """Render structure details view."""
 
-    structure = get_object_or_404(
+    structure: Structure = get_object_or_404(
         Structure.objects.select_related(
             "owner",
             "owner__corporation",
@@ -190,10 +306,16 @@ def structure_details(request, structure_id):
             "eve_solar_system",
             "eve_solar_system__eve_constellation",
             "eve_solar_system__eve_constellation__eve_region",
+        ).prefetch_related(
+            Prefetch(
+                "services",
+                queryset=StructureService.objects.order_by("name"),
+                to_attr="services_ordered",
+            )
         ),
         id=structure_id,
     )
-    assets = structure.items.select_related("eve_type")
+    assets = structure.items.select_related("eve_type", "eve_type__eve_group")
     high_slots = _extract_slot_assets(assets, "HiSlot")
     med_slots = _extract_slot_assets(assets, "MedSlot")
     low_slots = _extract_slot_assets(assets, "LoSlot")
@@ -227,6 +349,10 @@ def structure_details(request, structure_id):
         if assets_grouped["ammo_hold"]
         else 0
     )
+    ammo_total += _calc_fighters_total(fighter_tubes, assets_grouped)
+
+    services = structure.services_ordered
+
     context = {
         "fitting": assets,
         "slots": _generate_slot_image_urls(structure),
@@ -244,9 +370,10 @@ def structure_details(request, structure_id):
             high_slots + med_slots + low_slots + rig_slots + service_slots
         ),
         "fuel_blocks_total": fuel_blocks_total,
-        "fighters_total": _calc_fighters_total(fighter_tubes, assets_grouped),
         "ammo_total": ammo_total,
         "last_updated": structure.owner.assets_last_update_at,
+        "services": services,
+        "services_count": len(services),
     }
     return render(request, "structures/modals/structure_details.html", context)
 
@@ -339,7 +466,7 @@ def _patch_fighter_tube_quantities(fighter_tubes):
 
 @login_required
 @permission_required("structures.basic_access")
-def poco_details(request, structure_id):
+def poco_details(request: HttpRequest, structure_id):
     """Shows details modal for a POCO."""
 
     structure = get_object_or_404(
@@ -364,7 +491,7 @@ def poco_details(request, structure_id):
 
 @login_required
 @permission_required("structures.basic_access")
-def starbase_detail(request, structure_id):
+def starbase_detail(request: HttpRequest, structure_id: int):
     """Shows detail modal for a starbase."""
 
     structure = get_object_or_404(
@@ -426,7 +553,7 @@ def starbase_detail(request, structure_id):
 @login_required
 @permission_required("structures.add_structure_owner")
 @token_required(scopes=Owner.get_esi_scopes())  # type: ignore
-def add_structure_owner(request, token):
+def add_structure_owner(request: HttpRequest, token: Token):
     """View for adding or replacing a structure owner."""
     token_char = get_object_or_404(EveCharacter, character_id=token.character_id)
     try:
@@ -526,7 +653,7 @@ def add_structure_owner(request, token):
     return redirect("structures:index")
 
 
-def service_status(request):
+def service_status(request: HttpRequest):
     """Public view to 3rd party monitoring.
 
     This is view allows running a 3rd party monitoring on the status
@@ -540,92 +667,3 @@ def service_status(request):
     if status_ok:
         return HttpResponse(_("service is up"))
     return HttpResponseServerError(_("service is down"))
-
-
-def poco_list_data(request) -> JsonResponse:
-    """List of public POCOs for DataTables."""
-    pocos = Structure.objects.filter(
-        eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL,
-        owner__are_pocos_public=True,
-    )
-    serializer = PocoListSerializer(queryset=pocos, request=request)
-    return JsonResponse({"data": serializer.to_list()})
-
-
-@login_required
-@permission_required("structures.basic_access")
-def structure_summary_data(request) -> JsonResponse:
-    """View returning data for structure summary page."""
-    summary_qs = (
-        Structure.objects.values(
-            "owner__corporation__corporation_id",
-            "owner__corporation__corporation_name",
-            "owner__corporation__alliance__alliance_name",
-        )
-        .annotate(
-            ec_count=Count(
-                "id", filter=Q(eve_type__eve_group=EveGroupId.ENGINEERING_COMPLEX)
-            )
-        )
-        .annotate(
-            refinery_count=Count(
-                "id", filter=Q(eve_type__eve_group=EveGroupId.REFINERY)
-            )
-        )
-        .annotate(
-            citadel_count=Count("id", filter=Q(eve_type__eve_group=EveGroupId.CITADEL))
-        )
-        .annotate(
-            upwell_count=Count(
-                "id",
-                filter=Q(eve_type__eve_group__eve_category=EveCategoryId.STRUCTURE),
-            )
-        )
-        .annotate(poco_count=Count("id", filter=Q(eve_type=EveTypeId.CUSTOMS_OFFICE)))
-        .annotate(
-            starbase_count=Count(
-                "id", filter=Q(eve_type__eve_group__eve_category=EveCategoryId.STARBASE)
-            )
-        )
-    )
-    data = []
-    for row in summary_qs:
-        other_count = (
-            row["upwell_count"]
-            - row["ec_count"]
-            - row["refinery_count"]
-            - row["citadel_count"]
-        )
-        total = row["upwell_count"] + row["poco_count"] + row["starbase_count"]
-        corporation_icon_url = eveimageserver.corporation_logo_url(
-            row["owner__corporation__corporation_id"], size=64
-        )
-        corporation_icon = image_html(corporation_icon_url, size=32)
-        alliance_name = default_if_none(
-            row["owner__corporation__alliance__alliance_name"], ""
-        )
-        data.append(
-            {
-                "id": int(row["owner__corporation__corporation_id"]),
-                "corporation_icon": corporation_icon,
-                "corporation_name": row["owner__corporation__corporation_name"],
-                "alliance_name": alliance_name,
-                "citadel_count": row["citadel_count"],
-                "ec_count": row["ec_count"],
-                "refinery_count": row["refinery_count"],
-                "other_count": other_count,
-                "poco_count": row["poco_count"],
-                "starbase_count": row["starbase_count"],
-                "total": total,
-            }
-        )
-    return JsonResponse({"data": data})
-
-
-def jump_gates_list_data(request) -> JsonResponse:
-    """List of jump gates for DataTables."""
-    jump_gates = Structure.objects.visible_for_user(request.user).filter(
-        eve_type_id=EveTypeId.JUMP_GATE
-    )
-    serializer = JumpGatesListSerializer(queryset=jump_gates)
-    return JsonResponse({"data": serializer.to_list()})

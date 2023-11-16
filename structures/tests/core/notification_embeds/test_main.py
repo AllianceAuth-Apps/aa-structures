@@ -4,38 +4,35 @@ import dhooks_lite
 
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
-from eveuniverse.models import EveEntity
 
-from app_utils.testing import NoSocketsTestCase, create_user_from_evecharacter
+from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_embeds import NotificationBaseEmbed
 from structures.core.notification_embeds.billing_embeds import BillType
-from structures.core.notification_embeds.moonmining_embeds import (
-    NotificationMoonminningExtractionFinished,
-)
 from structures.core.notification_embeds.tower_embeds import (
     NotificationTowerReinforcedExtra,
 )
-from structures.core.notification_types import NotificationType
-from structures.models.notifications import Notification, Structure, Webhook
-from structures.tests.testdata.factories import (
-    create_notification,
-    create_owner_from_user,
-    create_starbase,
+from structures.core.notification_embeds.war_embeds import (
+    NotificationWarCorporationBecameEligible,
 )
-from structures.tests.testdata.factories_2 import (
+from structures.core.notification_types import NotificationType
+from structures.models.notifications import Notification, Webhook
+from structures.tests.testdata.factories import (
+    EveAllianceInfoFactory,
+    EveCorporationInfoFactory,
     EveEntityAllianceFactory,
+    EveEntityCorporationFactory,
     GeneratedNotificationFactory,
     NotificationFactory,
     OwnerFactory,
-    WebhookFactory,
+    StarbaseFactory,
+    StructureFactory,
+    UserMainDefaultOwnerFactory,
 )
 from structures.tests.testdata.helpers import (
-    create_structures,
-    load_entities,
+    load_eve_entities,
     load_notification_entities,
     markdown_to_plain,
-    set_owner_character,
 )
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
@@ -54,41 +51,28 @@ class TestBilType(TestCase):
 
 class TestNotificationEmbeds(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        load_eveuniverse()
-        create_structures()
-        _, cls.owner = set_owner_character(character_id=1001)
-        load_notification_entities(cls.owner)
+    def setUpTestData(cls):
+        cls.owner = OwnerFactory()
 
     def test_should_create_obj_from_notification(self):
         # given
-        notification = Notification.objects.get(notification_id=1000000403)
+        notification = NotificationFactory(
+            owner=self.owner,
+            notification_id=1000000999,
+            notif_type=NotificationType.WAR_CORPORATION_BECAME_ELIGIBLE,
+        )
         # when
         notification_embed = NotificationBaseEmbed.create(notification)
         # then
         self.assertIsInstance(
-            notification_embed, NotificationMoonminningExtractionFinished
+            notification_embed, NotificationWarCorporationBecameEligible
         )
-        self.assertEqual(
-            str(notification_embed), "1000000403:MoonminingExtractionFinished"
-        )
-        self.assertEqual(
-            repr(notification_embed),
-            "NotificationMoonminningExtractionFinished(notification=Notification("
-            "notification_id=1000000403, owner='Wayne Technologies', "
-            "notif_type='MoonminingExtractionFinished'))",
-        )
+        self.assertEqual(str(notification_embed), "1000000999:CorpBecameWarEligible")
 
     def test_should_raise_exception_for_unsupported_notif_types(self):
         # given
-        notification = Notification.objects.create(
-            notification_id=666,
-            owner=self.owner,
-            sender=EveEntity.objects.get(id=2001),
-            timestamp=now(),
-            notif_type="XXXUnsupportedNotificationTypeXXX",
-            last_updated=now(),
+        notification = NotificationFactory(
+            owner=self.owner, notif_type="XXXUnsupportedNotificationTypeXXX"
         )
         # when / then
         with self.assertRaises(NotImplementedError):
@@ -105,14 +89,13 @@ class TestNotificationEmbeds(TestCase):
 
 class TestNotificationEmbedsGenerate(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
-        create_structures()
-        _, cls.owner = set_owner_character(character_id=1001)
+        load_eve_entities()
+        alliance = EveAllianceInfoFactory(alliance_id=3001)
+        corporation = EveCorporationInfoFactory(corporation_id=2001, alliance=alliance)
+        cls.owner = OwnerFactory(corporation=corporation)
         load_notification_entities(cls.owner)
-        cls.webhook = WebhookFactory()
-        cls.owner.webhooks.add(cls.webhook)
 
     def test_should_generate_embed_from_notification(self):
         # given
@@ -156,7 +139,9 @@ class TestNotificationEmbedsGenerate(TestCase):
         # then
         self.assertEqual(notification_embed.ping_type, Webhook.PingType.EVERYONE)
 
-    def test_should_generate_embed_for_all_supported_esi_notification_types(self):
+    def test_should_generate_embed_for_all_supported_esi_notification_types_minimal(
+        self,
+    ):
         for notif_type in NotificationType.esi_notifications():
             with self.subTest(notif_type=notif_type):
                 # given
@@ -165,6 +150,28 @@ class TestNotificationEmbedsGenerate(TestCase):
                     .filter(notif_type=notif_type)
                     .first()
                 )
+                self.assertIsInstance(notification, Notification)
+                notification_embed = NotificationBaseEmbed.create(notification)
+                # when
+                discord_embed = notification_embed.generate_embed()
+                # then
+                self.assertIsInstance(discord_embed, dhooks_lite.Embed)
+
+    def test_should_generate_embed_for_all_supported_esi_notification_types_normal(
+        self,
+    ):
+        # Structures references in notifications are pre-generated
+        StructureFactory(owner=self.owner, id=1000000000001, eve_type_name="Astrahus")
+        StructureFactory(owner=self.owner, id=1000000000002, eve_type_name="Athanor")
+        for notif_type in NotificationType.esi_notifications():
+            with self.subTest(notif_type=notif_type):
+                # given
+                notification = (
+                    Notification.objects.select_related("owner", "sender")
+                    .filter(notif_type=notif_type)
+                    .first()
+                )
+                self.assertIsInstance(notification, Notification)
                 notification_embed = NotificationBaseEmbed.create(notification)
                 # when
                 discord_embed = notification_embed.generate_embed()
@@ -223,7 +230,7 @@ class TestNotificationEmbedsGenerate(TestCase):
 
     def test_should_set_special_footer_for_generated_notifications(self):
         # given
-        structure = Structure.objects.get(id=1000000000001)
+        structure = StructureFactory(owner=self.owner)
         notification = Notification.create_from_structure(
             structure, notif_type=NotificationType.STRUCTURE_FUEL_ALERT
         )
@@ -237,21 +244,18 @@ class TestNotificationEmbedsGenerate(TestCase):
 
 class TestNotificationEmbedsClasses(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        load_entities()
+    def setUpTestData(cls):
         load_eveuniverse()
-        user, _ = create_user_from_evecharacter(
-            1001, permissions=["structures.add_structure_owner"]
-        )
-        cls.owner = create_owner_from_user(user=user)
+        user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=user)
         cls.moon_id = 40161465
         cls.solar_system_id = 30002537
         cls.type_id = 16213
+        EveEntityCorporationFactory(id=1000137, name="DED")
 
     def test_should_generate_embed_for_normal_tower_resource_alert(self):
         # given
-        create_starbase(
+        StarbaseFactory(
             owner=self.owner,
             eve_moon_id=self.moon_id,
             eve_solar_system_id=self.solar_system_id,
@@ -264,10 +268,10 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
             "typeID": self.type_id,
             "wants": [{"quantity": 120, "typeID": 4051}],
         }
-        notification = create_notification(
+        notification = NotificationFactory(
             owner=self.owner,
             notif_type=NotificationType.TOWER_RESOURCE_ALERT_MSG,
-            data=data,
+            text_from_dict=data,
         )
         notification_embed = NotificationBaseEmbed.create(notification)
         # when
@@ -278,7 +282,7 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
 
     def test_should_generate_embed_for_generated_tower_resource_alert(self):
         # given
-        structure = create_starbase(
+        structure = StarbaseFactory(
             owner=self.owner,
             eve_moon_id=self.moon_id,
             eve_solar_system_id=self.solar_system_id,
@@ -298,8 +302,7 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
 
 class TestGeneratedNotification(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
 
     def test_should_create_tower_reinforced_embed(self):
@@ -324,8 +327,7 @@ class TestGeneratedNotification(NoSocketsTestCase):
 
 class TestEveNotificationEmbeds(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
         cls.owner = OwnerFactory()
 

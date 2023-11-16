@@ -1,0 +1,37 @@
+{% load i18n %}
+{% load bootstrap %}
+
+<!-- Customs Offices -->
+
+<h3>{% translate 'Customs Offices' %}</h3>
+
+<div class="table-responsive">
+    <table id="tab_pocos" style="width: 100%" class="table table-striped table-compact">
+        <thead>
+            <tr>
+                <th>
+                    {% translate "Planet" %}<br>
+                    {% translate "Type" %}
+                </th>
+                <th>
+                    {% translate "Solar System" %}<br>
+                    {% translate "Security" %}
+                </th>
+                <th>
+                    {% translate "Constellation" %}<br>
+                    {% translate "Region" %}
+                </th>
+                <th>
+                    {% translate "Owner" %}<br>
+                    {% translate "Alliance" %}
+                </th>
+                <th class="text-tooltip" title="For your character {{ selected_character|default:'?' }}">
+                    {% translate "Access?" %}
+                </th>
+                <th class="text-tooltip" title="For your character {{ selected_character|default:'?' }}">
+                    {% translate "Tax" %}
+                </th>
+            </tr>
+        </thead>
+    </table>
+</div>

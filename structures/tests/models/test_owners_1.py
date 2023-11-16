@@ -7,15 +7,18 @@ from esi.errors import TokenError
 from esi.models import Token
 from eveuniverse.models import EveSolarSystem
 
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
-from app_utils.testing import NoSocketsTestCase, create_user_from_evecharacter
+from app_utils.testing import NoSocketsTestCase
 
 from structures.models import Owner, OwnerCharacter
-from structures.tests.testdata.factories import create_owner_from_user
-from structures.tests.testdata.helpers import (
-    create_structures,
-    load_entities,
-    set_owner_character,
+from structures.tests.testdata.factories import (
+    EveAllianceInfoFactory,
+    EveCharacterFactory,
+    EveCorporationInfoFactory,
+    EveSovereigntyMapFactory,
+    OwnerCharacterFactory,
+    OwnerFactory,
+    UserMainBasicFactory,
+    UserMainDefaultOwnerFactory,
 )
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
@@ -24,15 +27,16 @@ MODULE_PATH = "structures.models.owners"
 
 class TestOwner(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
-
-    def setUp(self) -> None:
-        self.owner.is_alliance_main = True
-        self.owner.save()
+    def setUpTestData(cls):
+        cls.alliance = EveAllianceInfoFactory(
+            alliance_name="Wayne Enterprises", alliance_ticker="WYE"
+        )
+        corporation = EveCorporationInfoFactory(
+            corporation_name="Wayne Technologies", alliance=cls.alliance
+        )
+        character = EveCharacterFactory(corporation=corporation)
+        cls.user = UserMainDefaultOwnerFactory(main_character__character=character)
+        cls.owner = OwnerFactory(user=cls.user)
 
     def test_str(self):
         # when
@@ -170,10 +174,12 @@ class TestOwner(NoSocketsTestCase):
             },
         )
 
-    def test_should_ensure_only_one_owner_is_alliance_main_1(self):
+    def test_should_ensure_only_one_owner_in_same_alliance_is_main(self):
         # given
-        self.assertTrue(self.owner.is_alliance_main)
-        owner = Owner.objects.get(corporation__corporation_id=2002)
+        self.owner.is_alliance_main = True
+        self.owner.save()
+        corporation = EveCorporationInfoFactory(alliance=self.alliance)
+        owner = OwnerFactory(corporation=corporation)
         # when
         owner.is_alliance_main = True
         owner.save()
@@ -183,10 +189,11 @@ class TestOwner(NoSocketsTestCase):
         self.owner.refresh_from_db()
         self.assertFalse(self.owner.is_alliance_main)
 
-    def test_should_ensure_only_one_owner_is_alliance_main_2(self):
+    def test_should_allow_mains_from_other_alliances(self):
         # given
-        self.assertTrue(self.owner.is_alliance_main)
-        owner = Owner.objects.get(corporation__corporation_id=2007)
+        self.owner.is_alliance_main = True
+        self.owner.save()
+        owner = OwnerFactory()
         # when
         owner.is_alliance_main = True
         owner.save()
@@ -196,35 +203,32 @@ class TestOwner(NoSocketsTestCase):
         self.owner.refresh_from_db()
         self.assertTrue(self.owner.is_alliance_main)
 
-    def test_should_ensure_only_one_owner_is_alliance_main_3(self):
+    def test_should_allow_other_corporations_to_be_main(self):
         # given
-        self.assertTrue(self.owner.is_alliance_main)
-        owner_2103 = Owner.objects.get(corporation__corporation_id=2103)
-        owner_2103.is_alliance_main = True
-        owner_2103.save()
-        owner_2102 = Owner.objects.get(corporation__corporation_id=2102)
+        self.owner.is_alliance_main = True
+        self.owner.save()
+        owner_2 = OwnerFactory(is_alliance_main=True)
+        owner_3 = OwnerFactory()
         # when
-        owner_2102.is_alliance_main = True
-        owner_2102.save()
+        owner_3.is_alliance_main = True
+        owner_3.save()
         # then
-        owner_2102.refresh_from_db()
-        self.assertTrue(owner_2102.is_alliance_main)
+        owner_3.refresh_from_db()
+        self.assertTrue(owner_3.is_alliance_main)
         self.owner.refresh_from_db()
         self.assertTrue(self.owner.is_alliance_main)
-        owner_2103.refresh_from_db()
-        self.assertTrue(owner_2103.is_alliance_main)
+        owner_2.refresh_from_db()
+        self.assertTrue(owner_2.is_alliance_main)
 
 
 class TestOwnerHasSov(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
-        load_entities()
-        user, _ = create_user_from_evecharacter(
-            1001, permissions=["structures.add_structure_owner"]
+        cls.owner = OwnerFactory()
+        EveSovereigntyMapFactory(
+            corporation=cls.owner.corporation, eve_solar_system_name="1-PGSG"
         )
-        cls.owner = create_owner_from_user(user=user)
 
     def test_should_return_true_when_owner_has_sov(self):
         # given
@@ -248,29 +252,17 @@ class TestOwnerHasSov(NoSocketsTestCase):
 @patch(MODULE_PATH + ".notify")
 @patch(MODULE_PATH + ".notify_admins")
 class TestOwnerFetchToken(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        load_entities([EveCorporationInfo, EveCharacter])
-        load_eveuniverse()
-        cls.character = EveCharacter.objects.get(character_id=1001)
-        cls.corporation = EveCorporationInfo.objects.get(corporation_id=2001)
-
     def test_should_return_correct_token(self, mock_notify_admins, mock_notify):
         # given
-        user, character_ownership = create_user_from_evecharacter(
-            1001,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        owner = Owner.objects.create(corporation=self.corporation)
-        owner.add_character(character_ownership)
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
         # when
         token = owner.fetch_token()
         # then
         self.assertIsInstance(token, Token)
         self.assertEqual(token.user, user)
-        self.assertEqual(token.character_id, 1001)
+        self.assertEqual(token.character_id, character.character_id)
         self.assertSetEqual(
             set(Owner.get_esi_scopes()),
             set(token.scopes.values_list("name", flat=True)),
@@ -283,7 +275,7 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self, mock_notify_admins, mock_notify
     ):
         # given
-        owner = Owner.objects.create(corporation=self.corporation)
+        owner = OwnerFactory(characters=False)
         # when/then
         with self.assertRaises(TokenError):
             owner.fetch_token()
@@ -294,11 +286,9 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self, mock_notify_admins, mock_notify
     ):
         # given
-        _, character_ownership = create_user_from_evecharacter(
-            1001, scopes=Owner.get_esi_scopes()
-        )
-        owner = Owner.objects.create(corporation=self.corporation)
-        owner.add_character(character_ownership)
+        character = EveCharacterFactory()
+        user = UserMainBasicFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
         # when/then
         with self.assertRaises(TokenError):
             owner.fetch_token()
@@ -310,15 +300,9 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self, mock_notify_admins, mock_notify
     ):
         # given
-        with patch(MODULE_PATH + ".Token.objects.filter") as my_mock:
-            my_mock.return_value = None
-            user, character_ownership = create_user_from_evecharacter(
-                1001,
-                permissions=["structures.add_structure_owner"],
-                scopes=Owner.get_esi_scopes(),
-            )
-        owner = Owner.objects.create(corporation=self.corporation)
-        owner.add_character(character_ownership)
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
         user.token_set.first().scopes.clear()
         # when/then
         with self.assertRaises(TokenError):
@@ -331,13 +315,13 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self, mock_notify_admins, mock_notify
     ):
         # given
-        _, character_ownership = create_user_from_evecharacter(
-            1011,
-            scopes=Owner.get_esi_scopes(),
-            permissions=["structures.add_structure_owner"],
-        )
-        owner = Owner.objects.create(corporation=self.corporation)
-        owner.characters.create(character_ownership=character_ownership)
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
+        new_corporation = EveCorporationInfoFactory()
+        character.corporation_id = new_corporation.corporation_id
+        character.corporation_name = new_corporation.corporation_name
+        character.save()
         # when/then
         with self.assertRaises(TokenError):
             owner.fetch_token()
@@ -349,29 +333,25 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self, mock_notify_admins, mock_notify
     ):
         # given
-        owner = Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2102)
+        character_1 = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character_1)
+        owner = OwnerFactory(
+            user=user,
+            characters=[character_1],
+            characters__notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 1, 2, tzinfo=utc
+            ),
         )
-        user, character_ownership_1011 = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
+        character_2 = EveCharacterFactory()
+        OwnerCharacterFactory(
+            owner=owner,
+            eve_character=character_2,
+            notifications_last_used_at=dt.datetime(2021, 1, 1, 1, 1, tzinfo=utc),
         )
-        my_character = owner.add_character(character_ownership_1011)
-        my_character.notifications_last_used_at = dt.datetime(
-            2021, 1, 1, 1, 2, tzinfo=utc
-        )
-        my_character.save()
-        _, character_ownership_1102 = create_user_from_evecharacter(
-            1102, scopes=Owner.get_esi_scopes()
-        )
-        my_character = owner.add_character(character_ownership_1102)
-        my_character.notifications_last_used_at = dt.datetime(
-            2021, 1, 1, 1, 1, tzinfo=utc
-        )
-        my_character.save()
+
         # when
         token = owner.fetch_token()
+
         # then
         self.assertIsInstance(token, Token)
         self.assertEqual(token.user, user)
@@ -383,30 +363,21 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self, mock_notify_admins, mock_notify
     ):
         # given
-        owner = Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2102)
+        owner = OwnerFactory(characters=False)
+        character_1 = OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(2021, 1, 1, 1, 0, tzinfo=utc),
         )
-        _, character_ownership_1011 = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
+        character_2 = OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(2021, 1, 1, 2, 0, tzinfo=utc),
         )
-        my_character = owner.add_character(character_ownership_1011)
-        my_character.notifications_last_used_at = dt.datetime(
-            2021, 1, 1, 0, 5, tzinfo=utc
+        character_3 = OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(2021, 1, 1, 3, 0, tzinfo=utc),
         )
-        my_character.save()
-        _, character_ownership_1102 = create_user_from_evecharacter(
-            1102,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        my_character = owner.add_character(character_ownership_1102)
-        my_character.notifications_last_used_at = dt.datetime(
-            2021, 1, 1, 0, 0, tzinfo=utc
-        )
-        my_character.save()
-        tokens_received = list()
+        tokens_received = []
+
         # when
         tokens_received.append(
             owner.fetch_token(
@@ -432,137 +403,103 @@ class TestOwnerFetchToken(NoSocketsTestCase):
                 ignore_schedule=True,
             ).character_id
         )
+
         # then
-        self.assertListEqual(tokens_received, [1102, 1011, 1102, 1011])
+        self.assertListEqual(
+            tokens_received,
+            [
+                character_1.character_id(),
+                character_2.character_id(),
+                character_3.character_id(),
+                character_1.character_id(),
+            ],
+        )
 
     def test_should_rotate_through_characters_for_structures(
         self, mock_notify_admins, mock_notify
     ):
         # given
-        owner = Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2102)
+        owner = OwnerFactory(characters=False)
+        character_1 = OwnerCharacterFactory(
+            owner=owner,
+            structures_last_used_at=dt.datetime(2021, 1, 1, 3, 0, tzinfo=utc),
         )
-        _, character_ownership_1011 = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
+        character_2 = OwnerCharacterFactory(
+            owner=owner,
+            structures_last_used_at=dt.datetime(2021, 1, 1, 1, 0, tzinfo=utc),
         )
-        my_character = owner.add_character(character_ownership_1011)
-        my_character.structures_last_used_at = dt.datetime(2021, 1, 1, 0, 5, tzinfo=utc)
-        my_character.save()
-        _, character_ownership_1102 = create_user_from_evecharacter(
-            1102,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
+        character_3 = OwnerCharacterFactory(
+            owner=owner,
+            structures_last_used_at=dt.datetime(2021, 1, 1, 2, 0, tzinfo=utc),
         )
-        my_character = owner.add_character(character_ownership_1102)
-        my_character.structures_last_used_at = dt.datetime(2021, 1, 1, 0, 0, tzinfo=utc)
-        my_character.save()
-        tokens_received = list()
-        # when
-        tokens_received.append(
-            owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
-                ignore_schedule=True,
-            ).character_id
-        )
-        tokens_received.append(
-            owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
-                ignore_schedule=True,
-            ).character_id
-        )
-        tokens_received.append(
-            owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
-                ignore_schedule=True,
-            ).character_id
-        )
-        tokens_received.append(
-            owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
-                ignore_schedule=True,
-            ).character_id
-        )
-        # then
-        self.assertListEqual(tokens_received, [1102, 1011, 1102, 1011])
+        tokens_received = []
 
-    def test_should_rotate_through_characters_based_on_schedule(
-        self, mock_notify_admins, mock_notify
-    ):
-        # given
-        owner = Owner.objects.create(
-            corporation=EveCorporationInfo.objects.get(corporation_id=2102)
-        )
-        _, character_ownership_1011 = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        my_character = owner.add_character(character_ownership_1011)
-        my_character.notifications_last_used_at = dt.datetime(
-            2021, 1, 1, 0, 1, tzinfo=utc
-        )
-        my_character.save()
-        _, character_ownership_1102 = create_user_from_evecharacter(
-            1102,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        my_character = owner.add_character(character_ownership_1102)
-        my_character.notifications_last_used_at = dt.datetime(
-            2021, 1, 1, 0, 0, tzinfo=utc
-        )
-        my_character.save()
-        tokens_received = list()
         # when
         tokens_received.append(
             owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.NOTIFICATIONS
+                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
+                ignore_schedule=True,
             ).character_id
         )
         tokens_received.append(
             owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.NOTIFICATIONS
+                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
+                ignore_schedule=True,
             ).character_id
         )
         tokens_received.append(
             owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.NOTIFICATIONS
+                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
+                ignore_schedule=True,
             ).character_id
         )
         tokens_received.append(
             owner.fetch_token(
-                rotate_characters=Owner.RotateCharactersType.NOTIFICATIONS
+                rotate_characters=Owner.RotateCharactersType.STRUCTURES,
+                ignore_schedule=True,
             ).character_id
         )
+
         # then
-        self.assertListEqual(tokens_received, [1102, 1011, 1102, 1102])
+        self.assertListEqual(
+            tokens_received,
+            [
+                character_2.character_id(),
+                character_3.character_id(),
+                character_1.character_id(),
+                character_2.character_id(),
+            ],
+        )
 
 
 class TestOwnerCharacters(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        load_eveuniverse()
-        create_structures()
-        cls.user, cls.owner = set_owner_character(character_id=1001)
+    def setUpTestData(cls):
+        cls.owner = OwnerFactory()
+
+    def test_should_return_str(self):
+        # given
+        character = OwnerCharacterFactory(owner=self.owner)
+        # when/then
+        self.assertTrue(str(character))
 
     def test_should_add_new_character(self):
         # given
-        owner = Owner.objects.get(corporation__corporation_id=2002)
-        _, character_ownership = create_user_from_evecharacter(
-            1003,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
+        character = EveCharacterFactory(corporation=self.owner.corporation)
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        character_ownership = user.profile.main_character.character_ownership
         # when
-        result = owner.add_character(character_ownership)
+        result = self.owner.add_character(character_ownership)
         # then
         self.assertIsInstance(result, OwnerCharacter)
-        self.assertEqual(result.owner, owner)
+        self.assertEqual(result.owner, self.owner)
         self.assertEqual(result.character_ownership, character_ownership)
         self.assertIsNone(result.notifications_last_used_at)
+        character_ownership_pks = self.owner.characters.values_list(
+            "character_ownership", flat=True
+        )
+        self.assertIn(character_ownership.pk, character_ownership_pks)
+        self.assertEqual(character_ownership_pks.count(), 2)
 
     def test_should_not_overwrite_existing_characters(self):
         # given
@@ -580,61 +517,23 @@ class TestOwnerCharacters(NoSocketsTestCase):
 
     def test_should_prevent_adding_character_from_other_corporation(self):
         # given
-        _, character_ownership = create_user_from_evecharacter(
-            1003,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
+        user = UserMainDefaultOwnerFactory()
+        character_ownership = user.profile.main_character.character_ownership
         # when
         with self.assertRaises(ValueError):
             self.owner.add_character(character_ownership)
 
-    def test_should_add_character_to_existing_set(self):
-        # given
-        owner = Owner.objects.get(corporation__corporation_id=2102)
-        _, character_ownership_1011 = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        owner.add_character(character_ownership_1011)
-        _, character_ownership_1102 = create_user_from_evecharacter(
-            1102,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        # when
-        owner.add_character(character_ownership_1102)
-        # then
-        owner_character_pks = set(
-            owner.characters.values_list("character_ownership__pk", flat=True)
-        )
-        expected_pks = {character_ownership_1011.pk, character_ownership_1102.pk}
-        self.assertSetEqual(owner_character_pks, expected_pks)
-
     def test_should_count_characters(self):
         # given
-        owner = Owner.objects.get(corporation__corporation_id=2102)
-        _, character_ownership_1011 = create_user_from_evecharacter(
-            1011,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        owner.add_character(character_ownership_1011)
-        _, character_ownership_1102 = create_user_from_evecharacter(
-            1102,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        owner.add_character(character_ownership_1102)
+        OwnerCharacterFactory(owner=self.owner)
         # when
-        result = owner.characters_count()
+        result = self.owner.characters_count()
         # then
         self.assertEqual(result, 2)
 
     def test_should_count_characters_when_empty(self):
         # given
-        owner = Owner.objects.get(corporation__corporation_id=2102)
+        owner = OwnerFactory(characters=False)
         # when
         result = owner.characters_count()
         # then
@@ -645,26 +544,19 @@ class TestOwnerCharacters(NoSocketsTestCase):
 @patch(MODULE_PATH + ".notify_admins", spec=True)
 class TestOwnerDeleteCharacter(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        load_entities([EveCorporationInfo, EveCharacter])
-        load_eveuniverse()
-        cls.character = EveCharacter.objects.get(character_id=1001)
-        cls.corporation = EveCorporationInfo.objects.get(corporation_id=2001)
+    def setUpTestData(cls):
+        cls.owner = OwnerFactory(characters=False)
 
     def test_should_delete_character_and_notify(self, mock_notify_admins, mock_notify):
         # given
-        user, character_ownership = create_user_from_evecharacter(
-            1001,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        owner = Owner.objects.create(corporation=self.corporation)
-        character = owner.add_character(character_ownership)
+        character = OwnerCharacterFactory(owner=self.owner)
+        user = character.character_ownership.user
+
         # when
-        owner.delete_character(character=character, error="dummy error")
+        self.owner.delete_character(character=character, error="dummy error")
+
         # then
-        self.assertEqual(owner.characters.count(), 0)
+        self.assertEqual(self.owner.characters.count(), 0)
         self.assertTrue(mock_notify_admins.called)
         _, kwargs = mock_notify_admins.call_args
         self.assertIn("dummy error", kwargs["message"])
@@ -679,15 +571,10 @@ class TestOwnerDeleteCharacter(NoSocketsTestCase):
         self, mock_notify_admins, mock_notify
     ):
         # given
-        _, character_ownership = create_user_from_evecharacter(
-            1001,
-            permissions=["structures.add_structure_owner"],
-            scopes=Owner.get_esi_scopes(),
-        )
-        owner = Owner.objects.create(corporation=self.corporation)
-        character = owner.add_character(character_ownership)
+        character = OwnerCharacterFactory(owner=self.owner)
+
         # when
-        owner.delete_character(
+        self.owner.delete_character(
             character=character, error="dummy error", max_allowed_errors=1
         )
         # then

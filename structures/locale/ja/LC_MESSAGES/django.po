@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-30 21:06+0100\n"
+"POT-Creation-Date: 2023-11-15 23:09+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,391 +18,391 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: admin.py:62 admin.py:877 models/notifications.py:145 models/owners.py:219
-#: models/owners.py:1304 models/structures_1.py:320
+#: admin.py:64 admin.py:920 models/notifications.py:145 models/owners.py:219
+#: models/owners.py:1307 models/structures_1.py:320
 msgid "owner"
 msgstr ""
 
-#: admin.py:95
+#: admin.py:97
 msgid "Discord"
 msgstr ""
 
-#: admin.py:96 templates/structures/modals/poco_details.html:19
+#: admin.py:98 templates/structures/modals/poco_details.html:19
 #: templates/structures/modals/starbase_detail.html:19
-#: templates/structures/modals/structure_details.html:19
+#: templates/structures/modals/structure_details.html:21
 msgid "General"
 msgstr ""
 
-#: admin.py:99 models/notifications.py:521 models/structures_1.py:210
-#: models/structures_1.py:795
+#: admin.py:101 models/notifications.py:521 models/structures_1.py:210
+#: models/structures_1.py:808
 msgid "id"
 msgstr ""
 
-#: admin.py:103 models/notifications.py:720
+#: admin.py:105 models/notifications.py:720
 msgid "color"
 msgstr ""
 
-#: admin.py:112
+#: admin.py:114
 msgid "Sent fuel notifications for selected configuration"
 msgstr ""
 
-#: admin.py:121
+#: admin.py:123
 #, python-format
 msgid "Started sending fuel notifications for %d configurations"
 msgstr ""
 
-#: admin.py:135
+#: admin.py:137
 msgid "Timing"
 msgstr ""
 
-#: admin.py:138
+#: admin.py:140
 msgid ""
 "Timing configuration for sending fuel notifications. Note that the first "
 "notification will be sent at the exact start hour, and the last notification "
 "will be sent one repeat before the end hour."
 msgstr ""
 
-#: admin.py:159 models/notifications.py:851
+#: admin.py:161 models/notifications.py:851
 msgid "threshold"
 msgstr ""
 
-#: admin.py:165
+#: admin.py:167
 msgid "can be send"
 msgstr ""
 
-#: admin.py:170 admin.py:734 core/serializers.py:497
+#: admin.py:172 admin.py:763 core/serializers.py:517
 msgid "yes"
 msgstr ""
 
-#: admin.py:171 admin.py:735 core/serializers.py:502
+#: admin.py:173 admin.py:764 core/serializers.py:509
 msgid "no"
 msgstr ""
 
-#: admin.py:229
+#: admin.py:231
 msgid "notification ID"
 msgstr ""
 
-#: admin.py:233 admin.py:512 admin.py:907 models/notifications.py:112
+#: admin.py:235 admin.py:515 admin.py:950 models/notifications.py:112
 #: models/owners.py:212 models/structures_1.py:397
 msgid "webhooks"
 msgstr ""
 
-#: admin.py:236 models/structures_1.py:168
+#: admin.py:238 models/structures_1.py:168
 msgid "N/A"
 msgstr ""
 
-#: admin.py:251
+#: admin.py:253
 msgid "Not configured"
 msgstr ""
 
-#: admin.py:255 models/notifications.py:150 models/structures_1.py:410
+#: admin.py:257 models/notifications.py:150 models/structures_1.py:410
 msgid "structures"
 msgstr ""
 
-#: admin.py:262 models/notifications.py:126
+#: admin.py:264 models/notifications.py:126
 msgid "is sent"
 msgstr ""
 
-#: admin.py:267 models/notifications.py:132
+#: admin.py:269 models/notifications.py:132
 msgid "is timer added"
 msgstr ""
 
-#: admin.py:272
+#: admin.py:274
 msgid "Mark selected notifications as sent"
 msgstr ""
 
-#: admin.py:276
+#: admin.py:278
 #, python-format
 msgid "%d notifications marked as sent"
 msgstr ""
 
-#: admin.py:278
+#: admin.py:280
 msgid "Mark selected notifications as unsent"
 msgstr ""
 
-#: admin.py:282
+#: admin.py:284
 #, python-format
 msgid "%d notifications marked as unsent"
 msgstr ""
 
-#: admin.py:284
+#: admin.py:286
 msgid "Send selected notifications to configured webhooks"
 msgstr ""
 
-#: admin.py:299
+#: admin.py:302
 #, python-format
 msgid "Sent %(sent_count)d/%(selected_count)d generated messages."
 msgstr ""
 
-#: admin.py:303
+#: admin.py:306
 msgid "Process selected notifications for timerboard"
-msgstr ""
-
-#: admin.py:314
-#, python-format
-msgid "Added timers from %d notifications to timerboard."
 msgstr ""
 
 #: admin.py:317
 #, python-format
+msgid "Added timers from %d notifications to timerboard."
+msgstr ""
+
+#: admin.py:320
+#, python-format
 msgid "Ignored %d notification(s), which has no relation to timers."
 msgstr ""
 
-#: admin.py:397
+#: admin.py:400
 msgid "Sync Status"
 msgstr ""
 
-#: admin.py:485
+#: admin.py:488
 msgid "characters"
 msgstr ""
 
-#: admin.py:489
+#: admin.py:492
 msgid "default pings"
 msgstr ""
 
-#: admin.py:493 admin.py:1023 models/notifications.py:105 models/owners.py:197
+#: admin.py:496 admin.py:1066 models/notifications.py:105 models/owners.py:197
 msgid "ping groups"
 msgstr ""
 
-#: admin.py:499 models/owners.py:117
+#: admin.py:502 models/owners.py:117
 msgid "corporation"
 msgstr ""
 
-#: admin.py:505
+#: admin.py:508
 msgid "alliance"
 msgstr ""
 
-#: admin.py:521
+#: admin.py:524
 msgid ""
 "Notifications can not be sent, because there is no webhook configured for "
 "this owner."
 msgstr ""
 
-#: admin.py:526
+#: admin.py:529
 msgid "active"
 msgstr ""
 
-#: admin.py:530
+#: admin.py:533
 msgid "alliance main"
 msgstr ""
 
-#: admin.py:535
+#: admin.py:538
 msgid "services up"
 msgstr ""
 
-#: admin.py:539
+#: admin.py:542
 msgid "Activate selected owners"
 msgstr ""
 
-#: admin.py:542
+#: admin.py:545
 #, python-format
 msgid "Activated %d owners"
 msgstr ""
 
-#: admin.py:544
+#: admin.py:547
 msgid "Deactivate selected owner"
 msgstr ""
 
-#: admin.py:547
+#: admin.py:550
 #, python-format
 msgid "Deactivated %d owners"
 msgstr ""
 
-#: admin.py:549
+#: admin.py:552
 msgid "Update all from EVE server for selected owners"
 msgstr ""
 
-#: admin.py:556
+#: admin.py:559
 #, python-format
 msgid "Started updating structures and notifications for %s."
 msgstr ""
 
-#: admin.py:557 admin.py:570 admin.py:583 admin.py:1059
+#: admin.py:560 admin.py:573 admin.py:586 admin.py:1102
 msgid "You will receive a notification once it is completed."
 msgstr ""
 
-#: admin.py:562
+#: admin.py:565
 msgid "Update structures from EVE server for selected owners"
 msgstr ""
 
-#: admin.py:569
+#: admin.py:572
 #, python-format
 msgid "Started updating structures for %s."
 msgstr ""
 
-#: admin.py:575
+#: admin.py:578
 msgid "Fetch notifications from EVE server for selected owners"
 msgstr ""
 
-#: admin.py:582
+#: admin.py:585
 #, python-format
 msgid "Started fetching notifications for %s."
 msgstr ""
 
-#: admin.py:587
+#: admin.py:590
 msgid "all syncs OK"
 msgstr ""
 
-#: admin.py:591
+#: admin.py:594
 msgid "avg. turnaround time"
 msgstr ""
 
-#: admin.py:615
+#: admin.py:618
 msgid "structures update fresh"
 msgstr ""
 
-#: admin.py:619
+#: admin.py:622
 msgid "notifications update fresh"
 msgstr ""
 
-#: admin.py:623
+#: admin.py:626
 msgid "forwarding update fresh"
 msgstr ""
 
-#: admin.py:627
+#: admin.py:630
 msgid "assets update fresh"
 msgstr ""
 
-#: admin.py:631
+#: admin.py:634
 msgid "structures Count"
 msgstr ""
 
-#: admin.py:685
+#: admin.py:714
 msgid "owner corporation"
 msgstr ""
 
-#: admin.py:707
+#: admin.py:736
 msgid "owner alliance"
 msgstr ""
 
-#: admin.py:729
+#: admin.py:758
 msgid "has webhooks"
 msgstr ""
 
-#: admin.py:815
+#: admin.py:844
 msgid "Status"
 msgstr ""
 
-#: admin.py:833
+#: admin.py:862 templates/structures/modals/tab_general_detail.html:54
 msgid "Reinforcement"
 msgstr ""
 
-#: admin.py:843
+#: admin.py:872
 msgid "Position"
 msgstr ""
 
-#: admin.py:870 models/structures_1.py:64 models/structures_1.py:292
+#: admin.py:913 models/structures_1.py:64 models/structures_1.py:292
 #: models/structures_2.py:50 webhooks/models.py:40
 msgid "name"
 msgstr ""
 
-#: admin.py:887
+#: admin.py:930
 msgid "location"
 msgstr ""
 
-#: admin.py:895 models/notifications.py:139 models/structures_1.py:250
-#: models/structures_1.py:809
+#: admin.py:938 models/notifications.py:139 models/structures_1.py:250
+#: models/structures_1.py:822
 msgid "type"
 msgstr ""
 
-#: admin.py:899
+#: admin.py:942
 msgid "power mode"
 msgstr ""
 
-#: admin.py:903 models/structures_1.py:382
+#: admin.py:946 models/structures_1.py:382
 msgid "tags"
 msgstr ""
 
-#: admin.py:912
+#: admin.py:955
 msgid "Add default tags to selected structures"
 msgstr ""
 
-#: admin.py:923
+#: admin.py:966
 #, python-format
 msgid "Added %(tags_count)d default tags to %(structure_count)d structures"
 msgstr ""
 
-#: admin.py:927
+#: admin.py:970
 msgid "Remove user tags for selected structures"
 msgstr ""
 
-#: admin.py:935
+#: admin.py:978
 #, python-format
 msgid "Removed all user tags from %d structures"
 msgstr ""
 
-#: admin.py:938
+#: admin.py:981
 msgid "Update generated tags for selected structures"
 msgstr ""
 
-#: admin.py:945
+#: admin.py:988
 #, python-format
 msgid "Updated all generated tags for %d structures"
 msgstr ""
 
-#: admin.py:986
+#: admin.py:1029
 msgid "Advanced Options"
 msgstr ""
 
-#: admin.py:1028
+#: admin.py:1071
 msgid "enabled for owners or structures"
 msgstr ""
 
-#: admin.py:1037
+#: admin.py:1080
 msgid "Please add this webhook to an owner or structure to enable it."
 msgstr ""
 
-#: admin.py:1041 models/notifications.py:87 models/structures_1.py:94
+#: admin.py:1084 models/notifications.py:87 models/structures_1.py:94
 msgid "is default"
 msgstr ""
 
-#: admin.py:1046
+#: admin.py:1089
 msgid "messages in queue"
 msgstr ""
 
-#: admin.py:1050
+#: admin.py:1093
 msgid "Send test notification to selected webhook"
 msgstr ""
 
-#: admin.py:1058
+#: admin.py:1101
 #, python-format
 msgid "Initiated sending test notification to webhook %s."
 msgstr ""
 
-#: admin.py:1063
+#: admin.py:1106
 msgid "Activate selected webhook"
 msgstr ""
 
-#: admin.py:1068
+#: admin.py:1111
 #, python-format
 msgid "You have activated webhook %s"
 msgstr ""
 
-#: admin.py:1070
+#: admin.py:1113
 msgid "Deactivate selected webhook"
 msgstr ""
 
-#: admin.py:1075
+#: admin.py:1118
 #, python-format
 msgid "You have de-activated webhook %s"
 msgstr ""
 
-#: admin.py:1077
+#: admin.py:1120
 msgid "Purge queued messages from selected webhooks"
 msgstr ""
 
-#: admin.py:1087
+#: admin.py:1130
 #, python-format
 msgid ""
 "Purged queued messages for %(actions_count)s webhooks, deleting a total of "
 "%(killmails_deleted)s messages."
 msgstr ""
 
-#: admin.py:1093
+#: admin.py:1136
 msgid "Send queued messages from selected webhooks"
 msgstr ""
 
-#: admin.py:1101
+#: admin.py:1144
 #, python-format
 msgid "Started sending queued messages for %d webhooks."
 msgstr ""
@@ -590,7 +590,7 @@ msgstr ""
 #: core/notification_embeds/moonmining_embeds.py:143
 #: core/notification_embeds/structures_embeds.py:38
 #: core/notification_embeds/structures_embeds.py:182
-#: core/notification_embeds/structures_embeds.py:298
+#: core/notification_embeds/structures_embeds.py:296
 #: core/notification_embeds/tower_embeds.py:147
 msgid "(unknown)"
 msgstr ""
@@ -884,24 +884,24 @@ msgstr ""
 msgid "Structure anchoring"
 msgstr ""
 
-#: core/notification_embeds/structures_embeds.py:311
+#: core/notification_embeds/structures_embeds.py:309
 msgid "Structure reinforcement time changed"
 msgstr ""
 
-#: core/notification_embeds/structures_embeds.py:314
+#: core/notification_embeds/structures_embeds.py:312
 #, python-format
 msgid ""
 "Reinforcement hour has been changed to %s for the following structures:\n"
 msgstr ""
 
-#: core/notification_embeds/structures_embeds.py:319
+#: core/notification_embeds/structures_embeds.py:321
 #, python-format
 msgid ""
 "- %(structure_type)s %(structure_name)s in %(solar_system)s belonging to "
 "%(owner_link)s"
 msgstr ""
 
-#: core/notification_embeds/structures_embeds.py:329
+#: core/notification_embeds/structures_embeds.py:331
 #, python-format
 msgid ""
 "\n"
@@ -1287,6 +1287,48 @@ msgstr ""
 msgid "I_HUB destroyed by bill failure"
 msgstr ""
 
+#: core/serializers.py:495
+msgid "Unknown if character has access"
+msgstr ""
+
+#: core/serializers.py:500
+msgid ""
+"Access and tax for characters, which are not a member of the owner "
+"corporation or it's alliance may not be accurate."
+msgstr ""
+
+#: core/serializers.py:507
+msgid "No access"
+msgstr ""
+
+#: core/serializers.py:515
+msgid "Has access"
+msgstr ""
+
+#: core/serializers.py:525
+msgid "yes(?)"
+msgstr ""
+
+#: models/eveuniverse.py:57 models/structures_1.py:206
+msgid "Unknown"
+msgstr ""
+
+#: models/eveuniverse.py:58
+msgid "Highsec"
+msgstr ""
+
+#: models/eveuniverse.py:59
+msgid "Lowsec"
+msgstr ""
+
+#: models/eveuniverse.py:60
+msgid "Nullsec"
+msgstr ""
+
+#: models/eveuniverse.py:61
+msgid "W-Space"
+msgstr ""
+
 #: models/notifications.py:50
 msgid "English"
 msgstr ""
@@ -1507,7 +1549,7 @@ msgid "jump fuel alert configs"
 msgstr ""
 
 #: models/notifications.py:911 models/notifications.py:961
-#: models/structures_1.py:409 models/structures_1.py:801
+#: models/structures_1.py:409 models/structures_1.py:814
 #: models/structures_2.py:46
 msgid "structure"
 msgstr ""
@@ -1630,55 +1672,55 @@ msgstr ""
 msgid "owners"
 msgstr ""
 
-#: models/owners.py:1159
+#: models/owners.py:1162
 #, python-format
 msgid ""
 "Syncing of %(topic)s for %(owner)s %(result)s.\n"
 " %(message_details)s"
 msgstr ""
 
-#: models/owners.py:1163
+#: models/owners.py:1166
 msgid "completed successfully"
 msgstr ""
 
-#: models/owners.py:1168
+#: models/owners.py:1171
 #, python-format
 msgid "%(title)s: %(topic)s updated for %(owner)s: %(result)s"
 msgstr ""
 
-#: models/owners.py:1173
+#: models/owners.py:1176
 msgid "OK"
 msgstr ""
 
-#: models/owners.py:1310
+#: models/owners.py:1313
 msgid "character_ownership"
 msgstr ""
 
-#: models/owners.py:1318
+#: models/owners.py:1321
 msgid "structures last used at"
 msgstr ""
 
-#: models/owners.py:1319
+#: models/owners.py:1322
 msgid "When this character was last used for syncing structures"
 msgstr ""
 
-#: models/owners.py:1326
+#: models/owners.py:1329
 msgid "notifications last used at"
 msgstr ""
 
-#: models/owners.py:1327
+#: models/owners.py:1330
 msgid "When this character was last used for syncing notifications"
 msgstr ""
 
-#: models/owners.py:1332
+#: models/owners.py:1335
 msgid "error count"
 msgstr ""
 
-#: models/owners.py:1338
+#: models/owners.py:1341
 msgid "owner character"
 msgstr ""
 
-#: models/owners.py:1339
+#: models/owners.py:1342
 msgid "owner characters"
 msgstr ""
 
@@ -1699,7 +1741,7 @@ msgid "nullsec"
 msgstr ""
 
 #: models/structures_1.py:42
-msgid "w_space"
+msgid "w-space"
 msgstr ""
 
 #: models/structures_1.py:47
@@ -1867,10 +1909,6 @@ msgstr ""
 msgid "Abandoned?"
 msgstr ""
 
-#: models/structures_1.py:206
-msgid "Unknown"
-msgstr ""
-
 #: models/structures_1.py:211
 msgid "The Item ID of the structure"
 msgstr ""
@@ -1935,7 +1973,7 @@ msgstr ""
 msgid "Date this structure had any of it's services online"
 msgstr ""
 
-#: models/structures_1.py:287 models/structures_1.py:814
+#: models/structures_1.py:287 models/structures_1.py:827
 msgid "last updated at"
 msgstr ""
 
@@ -2043,31 +2081,31 @@ msgid ""
 "webhook is enabled the owner's setting will be used. "
 msgstr ""
 
-#: models/structures_1.py:795
+#: models/structures_1.py:808
 msgid "The Eve item ID"
 msgstr ""
 
-#: models/structures_1.py:802
+#: models/structures_1.py:815
 msgid "Structure this item is located in"
 msgstr ""
 
-#: models/structures_1.py:812
+#: models/structures_1.py:825
 msgid "is singleton"
 msgstr ""
 
-#: models/structures_1.py:816
+#: models/structures_1.py:829
 msgid "location flag"
 msgstr ""
 
-#: models/structures_1.py:817
+#: models/structures_1.py:830
 msgid "quantity"
 msgstr ""
 
-#: models/structures_1.py:820
+#: models/structures_1.py:833
 msgid "structure item"
 msgstr ""
 
-#: models/structures_1.py:821
+#: models/structures_1.py:834
 msgid "structure items"
 msgstr ""
 
@@ -2115,122 +2153,24 @@ msgstr ""
 msgid "excellent"
 msgstr ""
 
-#: models/structures_2.py:185
+#: models/structures_2.py:216
 msgid "alliance member"
 msgstr ""
 
-#: models/structures_2.py:186
+#: models/structures_2.py:217
 msgid "config starbase equipment role"
 msgstr ""
 
-#: models/structures_2.py:187
+#: models/structures_2.py:218
 msgid "corporation member"
 msgstr ""
 
-#: models/structures_2.py:188
+#: models/structures_2.py:219
 msgid "starbase fuel technician role"
 msgstr ""
 
-#: templates/structures/base.html:4
+#: templates/structures/base.html:4 templates/structures/partials/menu.html:17
 msgid "Structures"
-msgstr ""
-
-#: templates/structures/main.html:11
-msgid ""
-"Add new structure owner or add new sync character to an existing structure "
-"owner"
-msgstr ""
-
-#: templates/structures/main.html:12
-msgid "Add Owner / Sync Character"
-msgstr ""
-
-#: templates/structures/main.html:20
-msgid "All Structures"
-msgstr ""
-
-#: templates/structures/main.html:22
-msgid "Jump Gates"
-msgstr ""
-
-#: templates/structures/main.html:24
-msgid "Summary"
-msgstr ""
-
-#: templates/structures/main.html:33
-#: templates/structures/partials/structure_summary.html:16
-msgid "Customs Offices"
-msgstr ""
-
-#: templates/structures/main.html:49
-msgid "All dates are EVE time"
-msgstr ""
-
-#: templates/structures/main.html:50
-msgid "Data can be outdated by up to 1 hour due to API caching."
-msgstr ""
-
-#: templates/structures/main.html:51
-msgid "Last updated"
-msgstr ""
-
-#: templates/structures/main.html:153 templates/structures/main.html:462
-#: templates/structures/modals/tab_general_detail.html:10
-#: templates/structures/partials/structure_summary.html:11
-msgid "Alliance"
-msgstr ""
-
-#: templates/structures/main.html:158 templates/structures/main.html:467
-#: templates/structures/modals/tab_general_detail.html:8
-#: templates/structures/partials/structure_summary.html:10
-msgid "Corporation"
-msgstr ""
-
-#: templates/structures/main.html:163 templates/structures/main.html:472
-#: templates/structures/modals/tab_general_detail.html:15
-#: templates/structures/partials/poco_list.html:10
-msgid "Region"
-msgstr ""
-
-#: templates/structures/main.html:168 templates/structures/main.html:325
-#: templates/structures/main.html:477
-#: templates/structures/partials/poco_list.html:11
-msgid "Solar System"
-msgstr ""
-
-#: templates/structures/main.html:173
-msgid "Category"
-msgstr ""
-
-#: templates/structures/main.html:178
-msgid "Group"
-msgstr ""
-
-#: templates/structures/main.html:183 templates/structures/main.html:482
-msgid "Reinforced?"
-msgstr ""
-
-#: templates/structures/main.html:188
-#: templates/structures/modals/tab_general_detail.html:18
-#: templates/structures/partials/structure_list.html:74
-msgid "State"
-msgstr ""
-
-#: templates/structures/main.html:193 templates/structures/main.html:487
-msgid "Power Mode"
-msgstr ""
-
-#: templates/structures/main.html:198
-msgid "Core?"
-msgstr ""
-
-#: templates/structures/main.html:318
-msgid "Space Type"
-msgstr ""
-
-#: templates/structures/main.html:332
-#: templates/structures/partials/poco_list.html:16
-msgid "Access?"
 msgstr ""
 
 #: templates/structures/modals/fitting_assets.html:9
@@ -2284,12 +2224,12 @@ msgid "Excellent standing"
 msgstr ""
 
 #: templates/structures/modals/starbase_detail.html:24
-#: templates/structures/modals/structure_details.html:24
+#: templates/structures/modals/structure_details.html:32
 msgid "Fuel"
 msgstr ""
 
 #: templates/structures/modals/starbase_detail.html:29
-#: templates/structures/modals/structure_details.html:39
+#: templates/structures/modals/structure_details.html:42
 msgid "Modules"
 msgstr ""
 
@@ -2353,192 +2293,353 @@ msgstr ""
 msgid "Fuel bay take role"
 msgstr ""
 
-#: templates/structures/modals/structure_details.html:29
-msgid "Ammo"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:34
-msgid "Fighters"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:52
-msgid "Fuel Bay"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:53
-msgid "Fuel Usage"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:59
-msgid "Ammo Hold"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:65
-msgid "Fighter Bay"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:66
-msgid "Fighter Tubes"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:73
-msgid "High Slots"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:74
-msgid "Medium Slots"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:75
-msgid "Low Slots"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:76
-msgid "Rig Slots"
-msgstr ""
-
-#: templates/structures/modals/structure_details.html:77
-msgid "Service Slots"
-msgstr ""
-
-#: templates/structures/modals/tab_general_detail.html:6
-#: templates/structures/partials/jump_gates_list.html:14
-msgid "Name"
-msgstr ""
-
-#: templates/structures/modals/tab_general_detail.html:7
-#: templates/structures/partials/structure_list.html:68
-msgid "Type"
-msgstr ""
-
-#: templates/structures/modals/tab_general_detail.html:12
-#: templates/structures/partials/jump_gates_list.html:13
-#: templates/structures/partials/structure_list.html:66
-msgid "Location"
-msgstr ""
-
-#: templates/structures/modals/tab_general_detail.html:13
-msgid "Constellation"
-msgstr ""
-
-#: templates/structures/partials/jump_gates_list.html:12
-#: templates/structures/partials/structure_list.html:65
-msgid "Owner"
-msgstr ""
-
-#: templates/structures/partials/jump_gates_list.html:15
-#: templates/structures/partials/structure_list.html:71
-msgid "Last Online"
-msgstr ""
-
-#: templates/structures/partials/jump_gates_list.html:16
-#: templates/structures/partials/structure_list.html:72
-msgid "Fuel Expires"
-msgstr ""
-
-#: templates/structures/partials/jump_gates_list.html:17
-msgid "Liquid Ozone (units)"
-msgstr ""
-
-#: templates/structures/partials/jump_gates_list.html:22
-#: templates/structures/partials/structure_list.html:91
-msgid "Reinforced structures (except POCOs) are highlighted in red"
-msgstr ""
-
-#: templates/structures/partials/jump_gates_list.html:28
-#: templates/structures/partials/structure_list.html:97
-msgid "modalUpwellDetails "
-msgstr ""
-
-#: templates/structures/partials/poco_list.html:12
-msgid "Planet"
-msgstr ""
-
-#: templates/structures/partials/poco_list.html:14
-msgid "Planet Type"
-msgstr ""
-
-#: templates/structures/partials/poco_list.html:19
-msgid "Tax"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:13
-msgid "Tags Filter (Active)"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:17
-#: templates/structures/partials/structure_list.html:22
-#: templates/structures/partials/structure_list.html:36
-msgid "Tags Filter"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:44
-msgid "Reset Filter"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:47
-msgid "Clear Filter"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:50
-msgid "Cancel"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:53
-msgid "Apply Filter"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:69
-msgid "Name & Tags"
-msgstr ""
-
-#: templates/structures/partials/structure_list.html:70
+#: templates/structures/modals/structure_details.html:26
 msgid "Services"
 msgstr ""
 
-#: templates/structures/partials/structure_list.html:73
-msgid "R-Hour"
+#: templates/structures/modals/structure_details.html:37
+msgid "Ammo"
 msgstr ""
 
-#: templates/structures/partials/structure_list.html:75
-msgid "Core"
+#: templates/structures/modals/structure_details.html:59
+msgid "Fuel Bay"
 msgstr ""
 
-#: templates/structures/partials/structure_list.html:83
-msgid "Active Tags Filter"
+#: templates/structures/modals/structure_details.html:60
+msgid "Fuel Usage"
 msgstr ""
 
-#: templates/structures/partials/structure_list.html:90
-msgid "Offlined services are shown as"
+#: templates/structures/modals/structure_details.html:66
+msgid "Ammo Hold"
 msgstr ""
 
-#: templates/structures/partials/structure_list.html:90
-msgid "service"
+#: templates/structures/modals/structure_details.html:67
+msgid "Fighter Bay"
 msgstr ""
 
-#: templates/structures/partials/structure_summary.html:12
+#: templates/structures/modals/structure_details.html:68
+msgid "Fighter Tubes"
+msgstr ""
+
+#: templates/structures/modals/structure_details.html:75
+msgid "High Slots"
+msgstr ""
+
+#: templates/structures/modals/structure_details.html:76
+msgid "Medium Slots"
+msgstr ""
+
+#: templates/structures/modals/structure_details.html:77
+msgid "Low Slots"
+msgstr ""
+
+#: templates/structures/modals/structure_details.html:78
+msgid "Rig Slots"
+msgstr ""
+
+#: templates/structures/modals/structure_details.html:79
+msgid "Service Slots"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:7
+msgid "Basics"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:9
+#: templates/structures/partials/structures/jump_gates_list.html:29
+#: templates/structures/partials/structures/poco_list.html:31
+#: templates/structures/partials/structures/starbase_list.html:31
+#: templates/structures/partials/structures/structure_list.html:31
+msgid "Name"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:11
+#: templates/structures/partials/public/poco_list.html:14
+#: templates/structures/partials/structures/jump_gates_list.html:25
+#: templates/structures/partials/structures/poco_list.html:27
+#: templates/structures/partials/structures/starbase_list.html:27
+#: templates/structures/partials/structures/structure_list.html:27
+msgid "Type"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:13
+#: templates/structures/partials/structures/jump_gates_list.html:26
+#: templates/structures/partials/structures/poco_list.html:28
+#: templates/structures/partials/structures/starbase_list.html:28
+#: templates/structures/partials/structures/structure_list.html:28
+#: views/structures.py:169
+msgid "Group"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:16
+#: templates/structures/partials/public/poco_list.html:25
+#: templates/structures/partials/statistics/structure_summary.html:13
+#: templates/structures/partials/structures/jump_gates_list.html:17
+#: templates/structures/partials/structures/poco_list.html:19
+#: templates/structures/partials/structures/starbase_list.html:19
+#: templates/structures/partials/structures/structure_list.html:19
+msgid "Owner"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:18 views/public.py:51
+#: views/structures.py:166
+msgid "Corporation"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:21
+#: templates/structures/partials/public/poco_list.html:26
+#: templates/structures/partials/statistics/structure_summary.html:14
+#: templates/structures/partials/structures/jump_gates_list.html:18
+#: templates/structures/partials/structures/poco_list.html:20
+#: templates/structures/partials/structures/starbase_list.html:20
+#: templates/structures/partials/structures/structure_list.html:20
+#: views/public.py:49 views/statistics.py:40 views/structures.py:165
+msgid "Alliance"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:25
+#: templates/structures/partials/structures/jump_gates_list.html:21
+#: templates/structures/partials/structures/poco_list.html:23
+#: templates/structures/partials/structures/starbase_list.html:23
+#: templates/structures/partials/structures/structure_list.html:23
+msgid "Location"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:27
+#: templates/structures/partials/public/poco_list.html:17 views/public.py:56
+#: views/structures.py:174
+msgid "Solar System"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:29
+#: templates/structures/partials/public/poco_list.html:21 views/public.py:52
+#: views/structures.py:167
+msgid "Constellation"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:32
+#: templates/structures/partials/public/poco_list.html:22
+#: templates/structures/partials/structures/jump_gates_list.html:22
+#: templates/structures/partials/structures/poco_list.html:24
+#: templates/structures/partials/structures/starbase_list.html:24
+#: templates/structures/partials/structures/structure_list.html:24
+#: views/public.py:54 views/structures.py:171
+msgid "Region"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:36
+#: templates/structures/modals/tab_general_detail.html:40
+#: templates/structures/partials/structures/jump_gates_list.html:42
+#: templates/structures/partials/structures/starbase_list.html:39
+#: templates/structures/partials/structures/structure_list.html:39
+#: views/structures.py:173
+msgid "State"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:49
+msgid "Timer Start"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:50
+msgid "Timer End"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:57
+msgid "Reinforcement Hour"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:61
+msgid "Next Reinforcement Hour"
+msgstr ""
+
+#: templates/structures/modals/tab_general_detail.html:65
+msgid "Next Reinforcement Apply"
+msgstr ""
+
+#: templates/structures/partials/menu.html:10
+msgid "Toggle navigation"
+msgstr ""
+
+#: templates/structures/partials/menu.html:27
+msgid "Structure List"
+msgstr ""
+
+#: templates/structures/partials/menu.html:33
+msgid "Statistics"
+msgstr ""
+
+#: templates/structures/partials/menu.html:41
+msgid "Public"
+msgstr ""
+
+#: templates/structures/partials/menu.html:49
+msgid ""
+"Add new structure owner or add new sync character to an existing structure "
+"owner"
+msgstr ""
+
+#: templates/structures/partials/menu.html:50
+msgid "Add Owner / Sync Character"
+msgstr ""
+
+#: templates/structures/partials/public/poco_list.html:6
+#: templates/structures/partials/structures/poco_list.html:8
+#: templates/structures/public.html:32 templates/structures/structures.html:52
+msgid "Customs Offices"
+msgstr ""
+
+#: templates/structures/partials/public/poco_list.html:13
+msgid "Planet"
+msgstr ""
+
+#: templates/structures/partials/public/poco_list.html:18
+msgid "Security"
+msgstr ""
+
+#: templates/structures/partials/public/poco_list.html:29 views/public.py:50
+msgid "Access?"
+msgstr ""
+
+#: templates/structures/partials/public/poco_list.html:32
+msgid "Tax"
+msgstr ""
+
+#: templates/structures/partials/statistics/structure_summary.html:6
+#: templates/structures/statistics.html:12
+msgid "Summary"
+msgstr ""
+
+#: templates/structures/partials/statistics/structure_summary.html:16
 msgid "Citadels"
 msgstr ""
 
-#: templates/structures/partials/structure_summary.html:13
-msgid "Engineering Complexes"
+#: templates/structures/partials/statistics/structure_summary.html:17
+msgid "Engineering<br>Complexes"
 msgstr ""
 
-#: templates/structures/partials/structure_summary.html:14
+#: templates/structures/partials/statistics/structure_summary.html:18
 msgid "Refineries"
 msgstr ""
 
-#: templates/structures/partials/structure_summary.html:15
+#: templates/structures/partials/statistics/structure_summary.html:19
 msgid "Other Upwell"
 msgstr ""
 
-#: templates/structures/partials/structure_summary.html:17
+#: templates/structures/partials/statistics/structure_summary.html:20
+msgid "Customs<br>Offices"
+msgstr ""
+
+#: templates/structures/partials/statistics/structure_summary.html:21
+#: templates/structures/structures.html:58
 msgid "Starbases"
 msgstr ""
 
-#: templates/structures/partials/structure_summary.html:18
-#: templates/structures/partials/structure_summary.html:24
+#: templates/structures/partials/statistics/structure_summary.html:22
+#: templates/structures/partials/statistics/structure_summary.html:27
 msgid "Total"
+msgstr ""
+
+#: templates/structures/partials/structures/jump_gates_list.html:8
+#: templates/structures/structures.html:65
+msgid "Jump Gates"
+msgstr ""
+
+#: templates/structures/partials/structures/jump_gates_list.html:30
+#: templates/structures/partials/structures/poco_list.html:32
+#: templates/structures/partials/structures/starbase_list.html:32
+#: templates/structures/partials/structures/structure_list.html:32
+msgid "Tags"
+msgstr ""
+
+#: templates/structures/partials/structures/jump_gates_list.html:34
+#: templates/structures/partials/structures/starbase_list.html:35
+#: templates/structures/partials/structures/structure_list.html:35
+msgid "Fuel Expires"
+msgstr ""
+
+#: templates/structures/partials/structures/jump_gates_list.html:35
+#: templates/structures/partials/structures/starbase_list.html:36
+#: templates/structures/partials/structures/structure_list.html:36
+msgid "Last Online"
+msgstr ""
+
+#: templates/structures/partials/structures/jump_gates_list.html:38
+msgid "Liquid Ozone"
+msgstr ""
+
+#: templates/structures/partials/structures/jump_gates_list.html:39
+msgid "(units)"
+msgstr ""
+
+#: templates/structures/partials/structures/jump_gates_list.html:48
+msgid "Reinforced structures (except POCOs) are highlighted in red"
+msgstr ""
+
+#: templates/structures/partials/structures/starbase_list.html:8
+msgid "All Structures"
+msgstr ""
+
+#: templates/structures/partials/structures/starbase_list.html:40
+#: templates/structures/partials/structures/structure_list.html:40
+msgid "Core"
+msgstr ""
+
+#: templates/structures/partials/structures/starbase_list.html:48
+#: templates/structures/partials/structures/structure_list.html:48
+msgid "Reinforced structures are highlighted in red"
+msgstr ""
+
+#: templates/structures/partials/structures/structure_list.html:8
+#: templates/structures/structures.html:46
+msgid "Upwell Structures"
+msgstr ""
+
+#: templates/structures/public.html:49
+msgid ""
+"Non corporation or alliance members will be assumed to have neutral standing "
+"with the owner"
+msgstr ""
+
+#: templates/structures/public.html:50 templates/structures/structures.html:96
+msgid "Data can be outdated by up to 1 hour due to API caching"
+msgstr ""
+
+#: templates/structures/public.html:51 templates/structures/structures.html:97
+msgid "Last updated"
+msgstr ""
+
+#: templates/structures/structures.html:18
+msgid "Tags Filter (Active)"
+msgstr ""
+
+#: templates/structures/structures.html:26
+#: templates/structures/structures.html:36
+#: templates/structures/structures.html:114
+msgid "Tags Filter"
+msgstr ""
+
+#: templates/structures/structures.html:95
+msgid "All dates are EVE time"
+msgstr ""
+
+#: templates/structures/structures.html:122
+msgid "Reset Filter"
+msgstr ""
+
+#: templates/structures/structures.html:125
+msgid "Clear Filter"
+msgstr ""
+
+#: templates/structures/structures.html:128
+msgid "Cancel"
+msgstr ""
+
+#: templates/structures/structures.html:131
+msgid "Apply Filter"
+msgstr ""
+
+#: templates/structures/structures.html:140
+msgid "modalUpwellDetails "
 msgstr ""
 
 #: templates/structures/templatetags/list_tax_item.html:9
@@ -2549,18 +2650,38 @@ msgstr ""
 msgid "Has Access"
 msgstr ""
 
-#: views.py:211
+#: views/public.py:53
+msgid "Planet Type"
+msgstr ""
+
+#: views/public.py:55
+msgid "Space Type"
+msgstr ""
+
+#: views/structures.py:168
+msgid "Core?"
+msgstr ""
+
+#: views/structures.py:170
+msgid "Power Mode"
+msgstr ""
+
+#: views/structures.py:172
+msgid "Reinforced?"
+msgstr ""
+
+#: views/structures.py:332
 msgid "Fuel blocks per day (est.)"
 msgstr ""
 
-#: views.py:443
+#: views/structures.py:569
 #, python-format
 msgid ""
 "You can only use your main or alt characters to add corporations. However, "
 "character %s is neither. "
 msgstr ""
 
-#: views.py:476
+#: views/structures.py:602
 #, python-format
 msgid ""
 "%(corporation)s has been added with %(character)s as sync character. We have "
@@ -2568,40 +2689,40 @@ msgid ""
 "will receive a report once the process is finished."
 msgstr ""
 
-#: views.py:489
+#: views/structures.py:615
 #, python-format
 msgid "%(corporation)s was added as new structure owner by %(user)s."
 msgstr ""
 
-#: views.py:493
+#: views/structures.py:619
 #, python-format
 msgid "%s: Structure owner added: %s"
 msgstr ""
 
-#: views.py:500
+#: views/structures.py:626
 #, python-format
 msgid ""
 "%(character)s has been added to %(corporation)s as sync character. You now "
 "have %(characters_count)d sync character(s) configured."
 msgstr ""
 
-#: views.py:515
+#: views/structures.py:641
 #, python-format
 msgid ""
 "%(character)s was added as sync character to %(corporation)s by %(user)s.\n"
 "We now have %(characters_count)d sync character(s) configured."
 msgstr ""
 
-#: views.py:525
+#: views/structures.py:651
 #, python-format
 msgid "%s: Character added to: %s"
 msgstr ""
 
-#: views.py:542
+#: views/structures.py:668
 msgid "service is up"
 msgstr ""
 
-#: views.py:543
+#: views/structures.py:669
 msgid "service is down"
 msgstr ""
 

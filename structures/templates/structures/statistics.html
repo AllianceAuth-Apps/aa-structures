@@ -1,0 +1,55 @@
+{% extends 'structures/base.html' %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% block details %}
+
+    <!-- Nav tabs -->
+    <ul id="statistics-tabs" class="nav nav-tabs" role="tablist">
+
+        <li role="presentation" class="active">
+            <a href="#summary" aria-controls="summary" role="tab" data-toggle="tab">{% trans "Summary" %}</a>
+        </li>
+
+    </ul>
+
+    <div class="panel panel-default panel-tabs">
+        <div class="panel-body">
+            <div class="tab-content">
+
+                <div role="tabpanel" class="tab-pane active" id="summary">
+                    {% include "structures/partials/statistics/structure_summary.html" %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Export to Javascript -->
+    {{ data_export|json_script:"export-data" }}
+
+{% endblock %}
+
+{% block extra_javascript %}
+    {% include 'bundles/datatables-js.html' %}
+    <script
+        type="application/javascript"
+        src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
+    </script>
+    <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
+    <script type="application/javascript" src="{% static 'structures/js/statistics.js' %}"></script>
+
+{% endblock %}
+
+{% block extra_css %}
+    {% include 'bundles/datatables-css.html' %}
+
+    <link rel="stylesheet" href="{% static 'structures/css/global.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structures/css/main.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structures/css/statistics.css' %}" type="text/css" media="screen">
+{% endblock %}
+
+{% block extra_script %}
+
+{% endblock %}

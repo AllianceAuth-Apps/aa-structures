@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.7.0] - 2023-11-16
+
+### Added
+
+- Structure counts shown on tabs
+- Poco details visible on admin page for pocos
+- Starbase details visible on admin page for starbases
+
+### Changed
+
+- Switch to menu style navigation
+- Break "All Structures" tab into multiple tabs per category
+- Redesign structure list & jump structure list
+- Redesign summary page
+- Redesign poco page
+- Moved services information to structure details window
+- Move reinforcement hour to structure details window
+- Add next reinforcement change info to structure details window
+- Combined ammo and fighter tabs in structure details window
+- Various performance improvements
+- Show owners on public poco page
+- Tags now also works for jump gates list
+- The last visited structures tab will remains selected when returning to page again
+- Poco list will show access and tax for neutrals for character not member of the owner corporation or alliance
+- Modernized test suite
+
+### Fixed
+
+- Icons too small on all structures page
+- Icons too small on summary page
+- Icons too small on poco page
+- Shows structure as reinforced in several wrong states
+- Tags only work for users with view_everything permission
+
 ## [2.6.2] - 2023-10-31
 
 ### Changed

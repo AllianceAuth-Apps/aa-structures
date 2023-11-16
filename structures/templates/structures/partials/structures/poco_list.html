@@ -1,0 +1,41 @@
+{% load i18n %}
+{% load bootstrap %}
+{% load static %}
+
+<!-- structure list -->
+
+<h3>
+    {% translate 'Customs Offices' %}
+    {% include "structures/partials/structures/active_tags.html" %}
+</h3>
+
+<div class="table-responsive">
+
+    <!-- Structure table -->
+    <table id="tab_pocos" style="width: 100%" class="table table-striped table-compact structures-table">
+        <thead>
+            <tr>
+                <th>
+                    {% translate "Owner" %}<br>
+                    {% translate "Alliance" %}
+                </th>
+                <th>
+                    {% translate "Location" %}<br>
+                    {% translate "Region" %}
+                </th>
+                <th>
+                    {% translate "Type" %}<br>
+                    {% translate "Group" %}
+                </th>
+                <th>
+                    {% translate "Name" %}<br>
+                    {% translate "Tags" %}
+                </th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+    </table>
+
+</div>

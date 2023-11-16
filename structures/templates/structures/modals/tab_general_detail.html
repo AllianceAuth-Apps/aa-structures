@@ -3,18 +3,65 @@
 {% load structures %}
 
 <ul class="list-group">
+
+    {% list_title _("Basics") %}
+
     {% list_item _("Name") structure.name|default:"-" %}
+
     {% list_item _("Type") structure.eve_type.name url=structure.eve_type.profile_url %}
+
+    {% list_item _("Group") structure.eve_type.eve_group.name %}
+
+
+    {% list_title _("Owner") %}
+
     {% list_item _("Corporation") structure.owner url=structure.owner.corporation|dotlan_corporation_url %}
+
     {% with alliance=structure.owner.corporation.alliance %}
         {% list_item _("Alliance") alliance|default:"-" url=alliance|dotlan_alliance_url %}
     {% endwith %}
-    {% list_item _("Location") structure.location_name url=structure.eve_solar_system.profile_url %}
+
+
+    {% list_title _("Location") %}
+
+    {% list_item _("Solar System") structure.location_name url=structure.eve_solar_system.profile_url %}
+
     {% list_item _("Constellation") structure.eve_solar_system.eve_constellation %}
+
     {% with eve_region=structure.eve_solar_system.eve_constellation.eve_region %}
         {% list_item _("Region") eve_region.name url=eve_region|dotlan_region_url %}
     {% endwith %}
+
     {% if not structure.is_poco %}
-        {% list_item _("State") structure.get_state_display %}
+        {% list_title _("State") %}
+
+        <li class="list-group-item">
+            <p class="list-group-item-text">
+                {% translate "State" %}
+                {% if structure.is_reinforced %}
+                    <span class="text-danger pull-right"><strong>{{ structure.get_state_display }}</strong></span>
+                {% else %}
+                    <span class="pull-right">{{ structure.get_state_display }}</span>
+                {% endif %}
+            </p>
+        </li>
+
+        {% list_item _("Timer Start") structure.state_timer_start|date:"Y-m-d H:i"|default:"-" %}
+        {% list_item _("Timer End") structure.state_timer_end|date:"Y-m-d H:i"|default:"-" %}
+    {% endif %}
+
+
+    {% list_title _("Reinforcement") %}
+
+    {% if structure.is_upwell_structure or structure.is_poco %}
+        {% list_item _("Reinforcement Hour") structure.reinforce_hour %}
+    {% endif %}
+
+    {% if structure.is_upwell_structure %}
+        {% list_item _("Next Reinforcement Hour") structure.next_reinforce_hour|default:"-" %}
+    {% endif %}
+
+    {% if structure.is_upwell_structure %}
+        {% list_item _("Next Reinforcement Apply") structure.next_reinforce_apply|timeuntil|default:"-" %}
     {% endif %}
 </ul>

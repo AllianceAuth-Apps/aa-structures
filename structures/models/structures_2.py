@@ -1,7 +1,7 @@
 """Models related to Structure."""
 
 import datetime as dt
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -99,6 +99,18 @@ class PocoDetails(models.Model):
             except KeyError:
                 return cls.NONE
 
+    class PocoCharacterAccessInfo(NamedTuple):
+        """Access information to a poco for a character."""
+
+        character_id: int
+        has_access: bool
+        is_confident: bool
+        tax_rate: float
+
+    structure = models.OneToOneField(
+        Structure, on_delete=models.CASCADE, related_name="poco_details"
+    )
+
     alliance_tax_rate = models.FloatField(null=True, default=None)
     allow_access_with_standings = models.BooleanField()
     allow_alliance_access = models.BooleanField()
@@ -111,9 +123,6 @@ class PocoDetails(models.Model):
     reinforce_exit_start = models.PositiveIntegerField()
     standing_level = models.IntegerField(
         choices=StandingLevel.choices, default=StandingLevel.NONE
-    )
-    structure = models.OneToOneField(
-        Structure, on_delete=models.CASCADE, related_name="poco_details"
     )
     terrible_standing_tax_rate = models.FloatField(null=True, default=None)
 
@@ -130,33 +139,55 @@ class PocoDetails(models.Model):
         """Return reinforce exit start as string."""
         return f"{self.reinforce_exit_start}:00"
 
-    def tax_for_character(self, character: EveCharacter) -> Optional[float]:
-        """Return the effective tax for this character or None if unknown."""
+    def determine_access_and_tax_for_character(
+        self, character: EveCharacter
+    ) -> "PocoCharacterAccessInfo":
+        """Return access and tax information for a character."""
         owner_corporation = self.structure.owner.corporation
+
         if character.corporation_id == owner_corporation.corporation_id:
-            return self.corporation_tax_rate
+            # Corporation member
+            return self.PocoCharacterAccessInfo(
+                character_id=character.character_id,
+                has_access=True,
+                is_confident=True,
+                tax_rate=self.corporation_tax_rate,
+            )
 
         if (
-            owner_corporation.alliance
+            character.alliance_id
+            and owner_corporation.alliance
             and owner_corporation.alliance.alliance_id == character.alliance_id
+            and self.allow_alliance_access
+            and self.alliance_tax_rate is not None
         ):
-            return self.alliance_tax_rate
+            # Alliance member
+            return self.PocoCharacterAccessInfo(
+                character_id=character.character_id,
+                has_access=True,
+                is_confident=True,
+                tax_rate=self.alliance_tax_rate,
+            )
 
-        return None
+        # neutral character
+        has_access = (
+            self.allow_access_with_standings
+            and self.standing_level <= self.StandingLevel.NEUTRAL
+            and self.neutral_standing_tax_rate is not None
+        )
+        is_confident = False
 
-    def has_character_access(self, character: EveCharacter) -> Optional[bool]:
-        """Return Tru if this has access else False."""
-        owner_corporation = self.structure.owner.corporation
-        if character.corporation_id == owner_corporation.corporation_id:
-            return True
+        if has_access:
+            tax_rate = self.neutral_standing_tax_rate
+        else:
+            tax_rate = None
 
-        if (
-            owner_corporation.alliance
-            and owner_corporation.alliance.alliance_id == character.alliance_id
-        ):
-            return self.allow_alliance_access
-
-        return None
+        return self.PocoCharacterAccessInfo(
+            character_id=character.character_id,
+            has_access=has_access,
+            is_confident=is_confident,
+            tax_rate=tax_rate,
+        )
 
     def standing_level_access_map(self) -> dict:
         """Return map of access per standing level with standing level names as key."""
@@ -198,6 +229,10 @@ class StarbaseDetail(models.Model):
             }
             return my_map[name]
 
+    structure = models.OneToOneField(
+        Structure, on_delete=models.CASCADE, related_name="starbase_detail"
+    )
+
     allow_alliance_members = models.BooleanField()
     allow_corporation_members = models.BooleanField()
     anchor_role = models.CharField(max_length=2, choices=Role.choices)
@@ -212,9 +247,6 @@ class StarbaseDetail(models.Model):
     )
     offline_role = models.CharField(max_length=2, choices=Role.choices)
     online_role = models.CharField(max_length=2, choices=Role.choices)
-    structure = models.OneToOneField(
-        Structure, on_delete=models.CASCADE, related_name="starbase_detail"
-    )
     unanchor_role = models.CharField(max_length=2, choices=Role.choices)
     use_alliance_standings = models.BooleanField()
 
@@ -228,9 +260,11 @@ class StarbaseDetail(models.Model):
         """
         if self.structure.state is Structure.State.POS_OFFLINE:
             return None
+
         fuel = self.fuels.filter(eve_type__eve_group_id=EveGroupId.FUEL_BLOCK).first()
         if not fuel:
             return None
+
         seconds = starbases.fuel_duration(
             starbase_type=self.structure.eve_type,
             fuel_quantity=fuel.quantity,

@@ -1,0 +1,38 @@
+{% load i18n %}
+{% load bootstrap %}
+
+<!-- Summary -->
+
+<h3>{% translate 'Summary' %}</h3>
+
+<div class="table-responsive">
+    <table id="tab_summary" style="width: 100%" class="table table-striped table-compact">
+        <thead>
+            <tr>
+                <th>
+                    {% translate "Owner" %}<br>
+                    {% translate "Alliance" %}
+                </th>
+                <th>{% translate "Citadels" %}</th>
+                <th>{% translate "Engineering<br>Complexes" %}</th>
+                <th>{% translate "Refineries" %}</th>
+                <th>{% translate "Other Upwell" %}</th>
+                <th>{% translate "Customs<br>Offices" %}</th>
+                <th>{% translate "Starbases" %}</th>
+                <th>{% translate "Total" %}</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <th>{% translate "Total" %}</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </tfoot>
+    </table>
+</div>

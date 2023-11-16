@@ -327,3 +327,5 @@ DISCORD_SYNC_NAMES = False
 
 # Disable warning
 STATICFILES_DIRS = []
+
+ANALYTICS_DISABLED = True

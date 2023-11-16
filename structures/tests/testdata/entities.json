@@ -1,78 +1,10 @@
 {
-    "EveAllianceInfo": [
-        {
-            "alliance_id": 500012,
-            "alliance_name": "Blood Raider Covenant",
-            "alliance_ticker": "NPC1",
-            "executor_corp_id": 1000134
-        }
-    ],
-    "EveCorporationInfo": [
-        {
-            "corporation_id": 1000134,
-            "corporation_name": "Blood Raiders",
-            "corporation_ticker": "NPC1",
-            "member_count": 1234
-        }
-    ],
-    "EveCharacter": [
-        {
-            "character_id": 1001,
-            "character_name": "Bruce Wayne",
-            "corporation_id": 2001,
-            "corporation_name": "Wayne Technologies",
-            "corporation_ticker": "WYE",
-            "alliance_id": 3001,
-            "alliance_name": "Wayne Enterprises"
-        },
-        {
-            "character_id": 1003,
-            "character_name": "Clark Kent",
-            "corporation_id": 2002,
-            "corporation_name": "Wayne Foods",
-            "corporation_ticker": "WYE",
-            "alliance_id": 3001,
-            "alliance_name": "Wayne Enterprises"
-        },
-        {
-            "character_id": 1005,
-            "character_name": "Peter Parker",
-            "corporation_id": 2005,
-            "corporation_name": "Daily Bugle",
-            "corporation_ticker": "DB"
-        },
-        {
-            "character_id": 1007,
-            "character_name": "Kara Danvers",
-            "corporation_id": 2007,
-            "corporation_name": "CatCo Daily",
-            "corporation_ticker": "CD",
-            "alliance_id": 3007,
-            "alliance_name": "CatCo Worldwide Media"
-        },
-        {
-            "character_id": 1011,
-            "character_name": "Lex Luther",
-            "corporation_id": 2102,
-            "corporation_name": "Lexcorp",
-            "corporation_ticker": "LEX"
-        },
-        {
-            "character_id": 1102,
-            "character_name": "Harley Quinn",
-            "corporation_id": 2102,
-            "corporation_name": "Harley Quinn inc.",
-            "corporation_ticker": "HQ"
-        },
-        {
-            "character_id": 1103,
-            "character_name": "Eddie Brock",
-            "corporation_id": 2103,
-            "corporation_name": "Metropolis News",
-            "corporation_ticker": "MN"
-        }
-    ],
     "EveEntity": [
+        {
+            "id": 1001,
+            "category": "character",
+            "name": "Bruce Wayne"
+        },
         {
             "id": 1011,
             "category": "character",
@@ -82,6 +14,11 @@
             "id": 2001,
             "category": "corporation",
             "name": "Wayne Technologies"
+        },
+        {
+            "id": 2002,
+            "category": "corporation",
+            "name": "Wayne Foods"
         },
         {
             "id": 2011,
@@ -137,161 +74,6 @@
             "id": 1000137,
             "category": "corporation",
             "name": "NPC Corp DED"
-        }
-    ],
-    "EveSovereigntyMap": [
-        {
-            "alliance_id": 3011,
-            "corporation_id": 2011,
-            "solar_system_id": 30000726
-        },
-        {
-            "alliance_id": 3001,
-            "corporation_id": 2001,
-            "solar_system_id": 30000474
-        },
-        {
-            "alliance_id": 3001,
-            "corporation_id": 2001,
-            "solar_system_id": 30000728
-        }
-    ],
-    "Structure": [
-        {
-            "id": 1000000000001,
-            "name": "Test Structure Alpha",
-            "eve_type_id": 35832,
-            "eve_solar_system_id": 30002537,
-            "reinforce_hour": 5,
-            "state": 11,
-            "owner_corporation_id": 2001,
-            "fuel_expires_at": "dummy",
-            "services": [
-                {
-                    "name": "Clone Bay",
-                    "state": "offline"
-                },
-                {
-                    "name": "Market Hub",
-                    "state": "offline"
-                }
-            ]
-        },
-        {
-            "id": 1000000000002,
-            "name": "Test Structure Bravo",
-            "eve_type_id": 35835,
-            "eve_solar_system_id": 30002537,
-            "reinforce_hour": 3,
-            "state": 3,
-            "state_timer_start": "dummy",
-            "owner_corporation_id": 2001,
-            "services": [
-                {
-                    "name": "Clone Bay",
-                    "state": "online"
-                }
-            ]
-        },
-        {
-            "id": 1000000000003,
-            "name": "Test Structure Charlie",
-            "eve_type_id": 35832,
-            "eve_solar_system_id": 30000476,
-            "reinforce_hour": 11,
-            "state": 11,
-            "owner_corporation_id": 2102,
-            "unanchors_at": "dummy"
-        },
-        {
-            "id": 1000000000004,
-            "name": "1-PGSG >> A-C5TC - Test Jump Gate",
-            "eve_type_id": 35841,
-            "eve_solar_system_id": 30000474,
-            "reinforce_hour": 11,
-            "state": 11,
-            "owner_corporation_id": 2102,
-            "unanchors_at": "dummy"
-        },
-        {
-            "id": 1200000000003,
-            "name": "Customs Office (Amamake V)",
-            "eve_type_id": 2233,
-            "eve_solar_system_id": 30002537,
-            "reinforce_hour": 3,
-            "state": 13,
-            "owner_corporation_id": 2001,
-            "eve_planet_id": 40161472
-        },
-        {
-            "id": 1200000000004,
-            "name": "Customs Office (1-PGSG VI)",
-            "eve_type_id": 2233,
-            "eve_solar_system_id": 30000474,
-            "reinforce_hour": 16,
-            "state": 13,
-            "owner_corporation_id": 2001,
-            "eve_planet_id": 40029537
-        },
-        {
-            "id": 1200000000005,
-            "name": "Customs Office (1-PGSG VII)",
-            "eve_type_id": 2233,
-            "eve_solar_system_id": 30000474,
-            "reinforce_hour": 22,
-            "state": 13,
-            "owner_corporation_id": 2001,
-            "eve_planet_id": 40029538
-        },
-        {
-            "id": 1200000000006,
-            "name": "",
-            "eve_type_id": 2233,
-            "eve_solar_system_id": 30000474,
-            "reinforce_hour": 22,
-            "state": 13,
-            "owner_corporation_id": 2001,
-            "eve_planet_id": null
-        },
-        {
-            "id": 1300000000001,
-            "name": "Home Sweat Home",
-            "state": 22,
-            "eve_solar_system_id": 30002537,
-            "eve_type_id": 16213,
-            "owner_corporation_id": 2001,
-            "eve_moon_id": 40161465
-        },
-        {
-            "id": 1300000000002,
-            "name": "Bat cave",
-            "state": 21,
-            "eve_solar_system_id": 30002537,
-            "eve_type_id": 16214,
-            "owner_corporation_id": 2001,
-            "eve_moon_id": 40161466
-        },
-        {
-            "id": 1300000000003,
-            "name": "Panic Room",
-            "state": 24,
-            "eve_solar_system_id": 30000474,
-            "eve_type_id": 20062,
-            "owner_corporation_id": 2001,
-            "eve_moon_id": 40029527,
-            "state_timer_end": "2019-08-16T15:08:00Z"
-        }
-    ],
-    "StructureTag": [
-        {
-            "name": "tag_a",
-            "is_default": true
-        },
-        {
-            "name": "tag_b"
-        },
-        {
-            "name": "tag_c"
         }
     ],
     "Notification": [
@@ -567,7 +349,7 @@
             "sender_id": 2901,
             "sender_type": "corporation",
             "timestamp": "2019-03-20 22:26:00",
-            "text": "allianceID: 99007974\ncorpID: 98151631\nmoonID: 40161465\nsolarSystemID: 30002537\ntypeID: 16213\nwants:\n- quantity: 119\n  typeID: 4051\n",
+            "text": "allianceID: 3001\ncorpID: 2001\nmoonID: 40161465\nsolarSystemID: 30002537\ntypeID: 16213\nwants:\n- quantity: 119\n  typeID: 4051\n",
             "is_read": true
         },
         {
@@ -730,7 +512,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-25 19:16:00",
-            "text": "charID: 94177384\ndefenderID: 98369956\nentityID: 3011\n",
+            "text": "charID: 1011\ndefenderID: 2001\nentityID: 3011\n",
             "is_read": false,
             "is_sent": false
         },
@@ -740,7 +522,7 @@
             "sender_id": 2001,
             "sender_type": "corporation",
             "timestamp": "2019-11-07 20:18:00",
-            "text": "againstID: 3011\ndeclaredByID: 98619178\nexpireTimeStamp: 132202234630922771\n",
+            "text": "againstID: 3011\ndeclaredByID: 1011\nexpireTimeStamp: 132202234630922771\n",
             "is_read": false,
             "is_sent": false
         },
@@ -750,7 +532,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "iskValue: 10000000.0\nownerID1: 3001\nownerID2: 3011\nwarNegotiationID: 453736\n",
+            "text": "iskValue: 10000000.0\nownerID1: 3001\nownerID2: 3011\nwarNegotiationID: 1234567\n",
             "is_read": false,
             "is_sent": false
         },
@@ -813,17 +595,6 @@
             "text": "solarSystemID: 30000474\nstructureTypeID: 32458\n",
             "is_read": false,
             "is_sent": false
-        }
-    ],
-    "Webhook": [
-        {
-            "name": "Test Webhook 1",
-            "url": "https://www.example.com/webhook1",
-            "is_default": true
-        },
-        {
-            "name": "Test Webhook 2",
-            "url": "https://www.example.com/webhook2"
         }
     ]
 }

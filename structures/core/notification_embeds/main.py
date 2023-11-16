@@ -292,6 +292,8 @@ class NotificationBaseEmbed:
             NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
         }
         try:
-            return notif_type_2_class[notification.notif_type](notification)
+            notif_class = notif_type_2_class[notification.notif_type]
         except KeyError:
             raise NotImplementedError(repr(notification.notif_type)) from None
+
+        return notif_class(notification)

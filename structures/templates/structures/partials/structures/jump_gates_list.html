@@ -1,0 +1,50 @@
+{% load i18n %}
+{% load bootstrap %}
+{% load static %}
+
+<!-- Jump Gates -->
+
+<h3>
+    {% translate 'Jump Gates' %}
+    {% include "structures/partials/structures/active_tags.html" %}
+</h3>
+
+<div class="table-responsive">
+    <table id="tab_jump_gates" style="width: 100%" class="table table-striped table-compact structures-table">
+        <thead>
+            <tr>
+                <th>
+                    {% translate "Owner" %}<br>
+                    {% translate "Alliance" %}
+                </th>
+                <th>
+                    {% translate "Location" %}<br>
+                    {% translate "Region" %}
+                </th>
+                <th>
+                    {% translate "Type" %}<br>
+                    {% translate "Group" %}
+                </th>
+                <th>
+                    {% translate "Name" %}<br>
+                    {% translate "Tags" %}
+                </th>
+
+                <th>
+                    {% translate "Fuel Expires" %}<br>
+                    {% translate "Last Online" %}
+                </th>
+                <th>
+                    {% translate "Liquid Ozone" %}<br>
+                    {% translate "(units)" %}
+                    </th>
+                <th>
+                    {% translate "State" %}
+                </th>
+            </tr>
+        </thead>
+    </table>
+    <p class="text-muted">
+        {% translate "Reinforced structures (except POCOs) are highlighted in red" %}
+    </p>
+</div>

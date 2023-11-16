@@ -1,55 +1,21 @@
 @media all {
-    #tab_structures thead th {
-        text-align: center;
-        vertical-align: middle;
-        white-space: nowrap;
+
+    /* General */
+    h3 {
+        margin-top: 0px;
     }
 
-    #tab_structures tbody td {
-        text-align: center;
-        vertical-align: middle;
-        word-wrap: break-word;
+    .floating-icon {
+        float: left;
+        width: 48px;
+        height: 48px;
+        margin-right: 0.75em;
     }
 
-    .template-light-mode .list-group-item-custom {
-        background-color: rgb(236, 240, 241) !important;
-        color: rgb(0, 0, 0) !important;
+    .center-image {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
     }
 
-    .template-dark-mode .list-group-item-custom {
-        background-color: rgb(70, 69, 69) !important;
-        color: rgb(255, 255, 255) !important;
-    }
-
-    #tab_summary tbody td:nth-child(4) {
-        text-align: right;
-    }
-
-    #tab_summary tbody td:nth-child(5) {
-        text-align: right;
-    }
-
-    #tab_summary tbody td:nth-child(6) {
-        text-align: right;
-    }
-
-    #tab_summary tbody td:nth-child(7) {
-        text-align: right;
-    }
-
-    #tab_summary tbody td:nth-child(8) {
-        text-align: right;
-    }
-
-    #tab_summary tbody td:nth-child(9) {
-        text-align: right;
-    }
-
-    #tab_summary tbody td:nth-child(10) {
-        text-align: right;
-    }
-
-    #tab_jump_gates tbody td:nth-child(7) {
-        text-align: right;
-    }
 }

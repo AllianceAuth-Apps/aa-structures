@@ -1,0 +1,85 @@
+@media all {
+
+    /* details */
+    .template-light-mode .list-group-item-custom {
+        background-color: rgb(236, 240, 241) !important;
+        color: rgb(0, 0, 0) !important;
+    }
+
+    .template-dark-mode .list-group-item-custom {
+        background-color: rgb(70, 69, 69) !important;
+        color: rgb(255, 255, 255) !important;
+    }
+
+    /* all structure tables Ü*/
+    .structures-table>thead>tr>th {
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    .structures-table>tbody>tr>td {
+        text-align: left;
+        vertical-align: top;
+    }
+
+    /* structures */
+
+    #tab_structures tbody td:nth-child(1) {
+        min-width: 13em;
+    }
+
+    #tab_structures tbody td:nth-child(2) {
+        min-width: 10em;
+    }
+
+    #tab_structures tbody td:nth-child(3) {
+        min-width: 14em;
+    }
+
+    /* pocos */
+
+    #tab_pocos tbody td:nth-child(1) {
+        min-width: 13em;
+    }
+
+    #tab_pocos tbody td:nth-child(2) {
+        min-width: 10em;
+    }
+
+    #tab_pocos tbody td:nth-child(3) {
+        min-width: 14em;
+    }
+
+    /* starbases */
+
+    #tab_starbases tbody td:nth-child(1) {
+        min-width: 13em;
+    }
+
+    #tab_starbases tbody td:nth-child(2) {
+        min-width: 10em;
+    }
+
+    #tab_starbases tbody td:nth-child(3) {
+        min-width: 14em;
+    }
+
+
+    /* Jump Gates */
+    #tab_jump_gates tbody td:nth-child(1) {
+        min-width: 13em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(2) {
+        min-width: 10em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(3) {
+        min-width: 14em;
+    }
+
+    #tab_jump_gates tbody td:nth-child(6) {
+        text-align: right;
+    }
+}

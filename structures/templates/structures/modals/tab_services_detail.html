@@ -1,0 +1,17 @@
+{% load i18n %}
+{% load structures %}
+
+<ul class="list-group">
+    {% for service in services %}
+        <li class="list-group-item">
+            <p class="list-group-item-text">
+                {{ service.name }}
+                {% if service.state == service.State.ONLINE %}
+                    <span class="text-success pull-right">{{ service.get_state_display }}</span>
+                {% else %}
+                    <span class="text-danger pull-right"><strong>{{ service.get_state_display }}</strong></span>
+                {% endif %}
+            </p>
+        </li>
+    {% endfor %}
+</ul>

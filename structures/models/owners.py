@@ -1124,25 +1124,28 @@ class Owner(models.Model):
             "is_sent": False,
             "timestamp__gte": cutoff_dt_for_stale,
         }
-        new_eve_notifications = (
+        new_eve_notifications: models.QuerySet[Notification] = (
             self.notification_set.filter(**my_filter)
             .select_related("owner", "sender", "owner__corporation")
             .order_by("timestamp")
         )
         for notif in new_eve_notifications:
             notif.send_to_configured_webhooks()
-        new_generated_notifications = (
+
+        new_generated_notifications: models.QuerySet[GeneratedNotification] = (
             self.generatednotification_set.filter(**my_filter)
             .select_related("owner", "owner__corporation")
             .order_by("timestamp")
         )
         for notif in new_generated_notifications:
             notif.send_to_configured_webhooks()
+
         if (
             not new_eve_notifications.exists()
             and not new_generated_notifications.exists()
         ):
             logger.info("%s: No new notifications found for forwarding", self)
+
         self.forwarding_last_update_at = now()
         self.save(update_fields=["forwarding_last_update_at"])
         if user:
@@ -1348,6 +1351,10 @@ class OwnerCharacter(models.Model):
             f"{self.owner.corporation.corporation_name}-"
             f"{self.character_ownership.character.character_name}"
         )
+
+    def character_id(self) -> int:
+        """Return character ID of this character."""
+        return self.character_ownership.character.character_id
 
     def valid_token(self) -> Optional[Token]:
         """Provide a valid token or None if none can be found."""

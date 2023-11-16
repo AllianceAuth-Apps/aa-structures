@@ -4,7 +4,7 @@ from django.test import TestCase
 from eveuniverse.models import EveEntity
 
 from structures.core.notification_embeds import helpers
-from structures.tests.testdata.factories_2 import EveEntityCharacterFactory
+from structures.tests.testdata.factories import EveEntityCharacterFactory
 
 
 class TestTimeuntil(TestCase):

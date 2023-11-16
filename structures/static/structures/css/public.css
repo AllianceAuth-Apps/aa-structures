@@ -1,0 +1,13 @@
+@media all {
+
+    #tab_pocos thead th {
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    #tab_pocos tbody td {
+        text-align: left;
+        vertical-align: top;
+    }
+}

@@ -128,7 +128,7 @@ def process_notifications_for_owner(owner_pk: int, user_pk: Optional[int] = None
         fetch_notification_for_owner.si(owner_pk=owner_pk, user_pk=user_pk).set(
             priority=TASK_PRIORITY_HIGH
         ),
-        update_existing_notifications.si(owner_pk=owner_pk).set(
+        update_notifications_structure_relations.si(owner_pk=owner_pk).set(
             priority=TASK_PRIORITY_HIGH
         ),
         send_new_notifications_for_owner.si(owner_pk=owner_pk).set(
@@ -148,7 +148,7 @@ def fetch_notification_for_owner(owner_pk: int, user_pk: Optional[int] = None):
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def update_existing_notifications(owner_pk: int) -> int:
+def update_notifications_structure_relations(owner_pk: int) -> int:
     """Update structure relation for existing notifications if needed.
 
     Returns number of updated notifications.

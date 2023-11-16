@@ -17,7 +17,7 @@ from structures import tasks
 from structures.core.notification_types import NotificationType
 from structures.models import Structure
 
-from .testdata.factories_2 import (
+from ..testdata.factories import (
     EveEntityAllianceFactory,
     EveEntityCorporationFactory,
     NotificationFactory,
@@ -28,7 +28,7 @@ from .testdata.factories_2 import (
     WebhookFactory,
     datetime_to_esi,
 )
-from .testdata.load_eveuniverse import load_eveuniverse
+from ..testdata.load_eveuniverse import load_eveuniverse
 
 if "structuretimers" in app_labels():
     from structuretimers.models import Timer as StructureTimer
@@ -58,8 +58,7 @@ TASKS_PATH = "structures.tasks"
 @patch(OWNERS_PATH + ".esi")
 class TestTasks(TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
 
     def test_should_fetch_new_upwell_structure_from_esi(

@@ -1,5 +1,6 @@
 import datetime as dt
 from unittest import mock
+from unittest.mock import patch
 
 from django.utils.timezone import now
 
@@ -7,7 +8,7 @@ from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_types import NotificationType
 from structures.models import GeneratedNotification, Structure
-from structures.tests.testdata.factories_2 import (
+from structures.tests.testdata.factories import (
     GeneratedNotificationFactory,
     NotificationFactory,
     OwnerFactory,
@@ -21,8 +22,7 @@ MODULE_PATH = "structures.models.notifications"
 
 class TestGeneratedNotification(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
 
     def test_should_have_str(self):
@@ -44,22 +44,26 @@ class TestGeneratedNotification(NoSocketsTestCase):
         webhook.notification_types = [NotificationType.TOWER_REINFORCED_EXTRA]
         webhook.save()
         # when
-        result = notif.send_to_configured_webhooks()
+        with patch(MODULE_PATH + ".Webhook.send_message") as mock:
+            mock.return_value = 1
+            result = notif.send_to_configured_webhooks()
         # then
         self.assertTrue(result)
 
 
 class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         load_eveuniverse()
+        cls.owner = OwnerFactory()
 
     def test_should_create_new_notif(self):
         # given
         reinforced_until = now() + dt.timedelta(hours=24)
         starbase = StarbaseFactory(
-            state=Structure.State.POS_REINFORCED, state_timer_end=reinforced_until
+            owner=self.owner,
+            state=Structure.State.POS_REINFORCED,
+            state_timer_end=reinforced_until,
         )
         # when
         obj, created = GeneratedNotification.objects.get_or_create_from_structure(
@@ -75,7 +79,9 @@ class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
         # given
         reinforced_until = now() + dt.timedelta(hours=24)
         starbase = StarbaseFactory(
-            state=Structure.State.POS_REINFORCED, state_timer_end=reinforced_until
+            owner=self.owner,
+            state=Structure.State.POS_REINFORCED,
+            state_timer_end=reinforced_until,
         )
         obj_old = GeneratedNotificationFactory(
             owner=starbase.owner,
@@ -88,7 +94,9 @@ class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
         (
             obj_new,
             created,
-        ) = GeneratedNotification.objects._get_or_create_tower_reinforced(starbase)
+        ) = GeneratedNotification.objects.get_or_create_from_structure(
+            starbase, notif_type=NotificationType.TOWER_REINFORCED_EXTRA
+        )
         # then
         self.assertFalse(created)
         self.assertEqual(obj_old, obj_new)
@@ -96,31 +104,52 @@ class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
     def test_should_raise_error_when_no_starbase(self):
         # given
         reinforced_until = now() + dt.timedelta(hours=24)
-        starbase = StructureFactory(state_timer_end=reinforced_until)
+        starbase = StructureFactory(state_timer_end=reinforced_until, owner=self.owner)
         # when
         with self.assertRaises(ValueError):
-            GeneratedNotification.objects._get_or_create_tower_reinforced(starbase)
+            GeneratedNotification.objects.get_or_create_from_structure(
+                starbase, notif_type=NotificationType.TOWER_REINFORCED_EXTRA
+            )
 
     def test_should_raise_error_when_not_reinforced(self):
         # given
-        starbase = StarbaseFactory()
+        starbase = StarbaseFactory(owner=self.owner)
         # when
         with self.assertRaises(ValueError):
-            GeneratedNotification.objects._get_or_create_tower_reinforced(starbase)
+            GeneratedNotification.objects.get_or_create_from_structure(
+                starbase, notif_type=NotificationType.TOWER_REINFORCED_EXTRA
+            )
 
     def test_should_raise_error_when_reinforcement_timer_missing(self):
         # given
-        starbase = StarbaseFactory(state=Structure.State.POS_REINFORCED)
+        starbase = StarbaseFactory(
+            owner=self.owner, state=Structure.State.POS_REINFORCED
+        )
         # when
         with self.assertRaises(ValueError):
-            GeneratedNotification.objects._get_or_create_tower_reinforced(starbase)
+            GeneratedNotification.objects.get_or_create_from_structure(
+                starbase, notif_type=NotificationType.TOWER_REINFORCED_EXTRA
+            )
+
+    def test_should_raise_error_when_unsupported_notification_type(self):
+        # given
+        reinforced_until = now() + dt.timedelta(hours=24)
+        structure = StarbaseFactory(
+            owner=self.owner,
+            state=Structure.State.POS_REINFORCED,
+            state_timer_end=reinforced_until,
+        )
+        # when
+        with self.assertRaises(ValueError):
+            GeneratedNotification.objects.get_or_create_from_structure(
+                structure, notif_type=NotificationType.TOWER_ALERT_MSG
+            )
 
 
 @mock.patch("structures.core.notification_timers.add_or_remove_timer")
 class TestProcessTimers(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
         cls.owner = OwnerFactory()
 
     @mock.patch(MODULE_PATH + ".STRUCTURES_ADD_TIMERS", True)

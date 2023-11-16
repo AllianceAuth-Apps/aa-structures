@@ -1,21 +1,24 @@
+from unittest.mock import Mock, patch
+
 from app_utils.django import app_labels
+from app_utils.testing import NoSocketsTestCase
+
+from structures.core import notification_timers
+from structures.models import Notification
+from structures.tests.testdata.factories import (
+    GeneratedNotificationFactory,
+    OwnerFactory,
+    RefineryFactory,
+    StructureFactory,
+)
+from structures.tests.testdata.helpers import (
+    load_eve_entities,
+    load_notification_entities,
+)
+from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 if "timerboard" in app_labels():
-    from unittest.mock import Mock, patch
-
     from allianceauth.timerboard.models import Timer as AuthTimer
-    from app_utils.testing import NoSocketsTestCase
-
-    from structures.core import notification_timers
-    from structures.models import Notification
-    from structures.tests.testdata.factories import create_webhook
-    from structures.tests.testdata.factories_2 import GeneratedNotificationFactory
-    from structures.tests.testdata.helpers import (
-        create_structures,
-        load_notification_entities,
-        set_owner_character,
-    )
-    from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
     MODULE_PATH = "structures.core.notification_timers"
 
@@ -26,13 +29,13 @@ if "timerboard" in app_labels():
     @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     class TestNotificationAddToTimerboard(NoSocketsTestCase):
         @classmethod
-        def setUpClass(cls):
-            super().setUpClass()
+        def setUpTestData(cls):
             load_eveuniverse()
-            create_structures()
-            _, cls.owner = set_owner_character(character_id=1001)
+            load_eve_entities()
+            cls.owner = OwnerFactory(is_alliance_main=True)
             load_notification_entities(cls.owner)
-            cls.owner.webhooks.add(create_webhook())
+            StructureFactory(owner=cls.owner, id=1000000000001)
+            RefineryFactory(owner=cls.owner, id=1000000000002)
 
         @patch(MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", False)
         @patch("allianceauth.timerboard.models.Timer", spec=True)
@@ -70,43 +73,40 @@ if "timerboard" in app_labels():
                     1000010601,
                 ]
             )
-            for x in notification_without_timer_query:
-                self.assertFalse(x.add_or_remove_timer())
+            for obj in notification_without_timer_query:
+                self.assertFalse(obj.add_or_remove_timer())
 
             self.assertEqual(AuthTimer.objects.count(), 0)
 
-            x = Notification.objects.get(notification_id=1000000501)
-            self.assertFalse(x.add_or_remove_timer())
+            obj = Notification.objects.get(notification_id=1000000501)
+            self.assertFalse(obj.add_or_remove_timer())
 
-            x = Notification.objects.get(notification_id=1000000504)
-            self.assertTrue(x.add_or_remove_timer())
+            obj = Notification.objects.get(notification_id=1000000504)
+            self.assertTrue(obj.add_or_remove_timer())
 
-            x = Notification.objects.get(notification_id=1000000505)
-            self.assertTrue(x.add_or_remove_timer())
+            obj = Notification.objects.get(notification_id=1000000505)
+            self.assertTrue(obj.add_or_remove_timer())
 
-            x = Notification.objects.get(notification_id=1000000602)
-            self.assertTrue(x.add_or_remove_timer())
+            obj = Notification.objects.get(notification_id=1000000602)
+            self.assertTrue(obj.add_or_remove_timer())
 
             ids_set_1 = {x.id for x in AuthTimer.objects.all()}
-            x = Notification.objects.get(notification_id=1000000404)
-            self.assertTrue(x.add_or_remove_timer())
+            obj = Notification.objects.get(notification_id=1000000404)
+            self.assertTrue(obj.add_or_remove_timer())
 
             self.assertEqual(AuthTimer.objects.count(), 4)
 
             # this should remove the right timer only
-            x = Notification.objects.get(notification_id=1000000402)
-            x.add_or_remove_timer()
+            obj = Notification.objects.get(notification_id=1000000402)
+            obj.add_or_remove_timer()
             self.assertEqual(AuthTimer.objects.count(), 3)
             ids_set_2 = {x.id for x in AuthTimer.objects.all()}
             self.assertSetEqual(ids_set_1, ids_set_2)
 
-        @patch(
-            MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED",
-            True,
-        )
+        @patch(MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", True)
         def test_run_all(self):
-            for x in Notification.objects.all():
-                x.add_or_remove_timer()
+            for obj in Notification.objects.all():
+                obj.add_or_remove_timer()
 
         @patch(MODULE_PATH + ".STRUCTURES_TIMERS_ARE_CORP_RESTRICTED", False)
         def test_corp_restriction_1(self):
@@ -121,10 +121,10 @@ if "timerboard" in app_labels():
 
         @patch(MODULE_PATH + ".STRUCTURES_TIMERS_ARE_CORP_RESTRICTED", True)
         def test_corp_restriction_2(self):
-            x = Notification.objects.get(notification_id=1000000504)
-            self.assertTrue(x.add_or_remove_timer())
-            t = AuthTimer.objects.first()
-            self.assertTrue(t.corp_timer)
+            obj = Notification.objects.get(notification_id=1000000504)
+            self.assertTrue(obj.add_or_remove_timer())
+            timer = AuthTimer.objects.first()
+            self.assertTrue(timer.corp_timer)
 
         def test_timer_starbase_reinforcement(self):
             # given

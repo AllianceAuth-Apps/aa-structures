@@ -17,8 +17,6 @@ App for managing Eve Online structures with Alliance Auth.
 
 This app is for managing Eve Online structures with [Alliance Auth](https://gitlab.com/allianceauth/allianceauth). It allows all member corporations to see a current list of all their structures in Auth. In addition it allows forwarding Eve Online notifications to Discord.
 
-For details on how to install and use *Structures* please see the [documentation](https://aa-structures.readthedocs.io/en/latest/).
-
 ## Features
 
 Structures adds the following main features to Alliance Auth:

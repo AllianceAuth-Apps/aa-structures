@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.7.1] - 2023-11-22
+
+### Added
+
+- Language update for Russian (Thank you Maui)
+
 ## [2.7.0] - 2023-11-16
 
 ### Added

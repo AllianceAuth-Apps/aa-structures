@@ -8,8 +8,9 @@ from typing import Optional, Tuple, Union
 import dhooks_lite
 import yaml
 from multiselectfield import MultiSelectField
-from requests.exceptions import HTTPError
 from multiselectfield.utils import get_max_length
+from requests.exceptions import HTTPError
+
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import models

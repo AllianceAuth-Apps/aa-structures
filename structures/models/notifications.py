@@ -9,7 +9,7 @@ import dhooks_lite
 import yaml
 from multiselectfield import MultiSelectField
 from requests.exceptions import HTTPError
-
+from multiselectfield.utils import get_max_length
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -67,6 +67,7 @@ class Webhook(WebhookBase):
 
     notification_types = MultiSelectField(
         choices=NotificationType.choices,
+        max_length=get_max_length(NotificationType.choices, None),
         default=NotificationType.webhook_defaults(),
         verbose_name=_("notification types"),
         help_text=_(

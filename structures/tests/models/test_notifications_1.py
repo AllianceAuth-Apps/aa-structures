@@ -592,7 +592,8 @@ class TestNotificationSendToWebhook(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestNotificationSendMessage(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
+        super().setUpClass()
         load_eveuniverse()
         load_eve_entities()
         cls.owner = OwnerFactory(is_alliance_main=True)

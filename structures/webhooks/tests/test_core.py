@@ -33,7 +33,8 @@ class Webhook(core.DiscordWebhookMixin):
 @patch(MODULE_PATH + ".sleep", lambda _: None)
 class TestDiscordWebhookMixin(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
+        super().setUpClass()
         cls.webhook = WebhookFactory.build(name="Dummy 1", url="dummy-1-url")
 
     def setUp(self) -> None:
@@ -144,7 +145,8 @@ class TestDiscordWebhookMixin(TestCase):
 @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute")
 class TestSendTestMessage(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
+        super().setUpClass()
         cls.webhook = WebhookFactory(name="Dummy 1", url="dummy-1-url")
 
     def setUp(self) -> None:

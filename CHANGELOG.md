@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Added support for AA4
 
+### Fixed
+
+- IndexError: list assignment index out of range (#91)
+
 ## [2.7.1] - 2023-11-22
 
 ### Added

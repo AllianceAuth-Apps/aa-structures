@@ -7,6 +7,7 @@ from .core import DiscordWebhookMixin
 from .managers import WebhookBaseManager
 
 
+# TODO: Investigate if this can be changed to a dependency injection to use fakes
 class WebhookBase(DiscordWebhookMixin, models.Model):
     """Base model for a Webhook"""
 

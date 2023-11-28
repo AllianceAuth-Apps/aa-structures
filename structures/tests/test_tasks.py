@@ -26,7 +26,8 @@ MODULE_PATH_MODELS_OWNERS = "structures.models.owners"
 @patch(MODULE_PATH + ".Webhook.send_queued_messages", spec=True)
 class TestSendMessagesForWebhook(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
+        super().setUpClass()
         cls.webhook = WebhookFactory()
 
     def test_normal(self, mock_send_queued_messages):

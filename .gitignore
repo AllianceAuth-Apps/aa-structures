@@ -19,3 +19,4 @@ structures_raw*.json
 starbases_raw*.json
 .mypy_cache
 _build/
+alliance_auth.sqlite3

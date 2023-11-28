@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.8.0] - 2023-11-28
+
+### Added
+
+- Added support for AA4
+
+### Fixed
+
+- IndexError: list assignment index out of range (#91)
+
 ## [2.7.1] - 2023-11-22
 
 ### Added

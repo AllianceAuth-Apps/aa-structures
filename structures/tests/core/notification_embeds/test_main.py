@@ -51,7 +51,8 @@ class TestBilType(TestCase):
 
 class TestNotificationEmbeds(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.owner = OwnerFactory()
 
     def test_should_create_obj_from_notification(self):
@@ -89,7 +90,8 @@ class TestNotificationEmbeds(TestCase):
 
 class TestNotificationEmbedsGenerate(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         load_eve_entities()
         alliance = EveAllianceInfoFactory(alliance_id=3001)
@@ -244,7 +246,8 @@ class TestNotificationEmbedsGenerate(TestCase):
 
 class TestNotificationEmbedsClasses(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=user)
@@ -302,7 +305,8 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
 
 class TestGeneratedNotification(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
 
     def test_should_create_tower_reinforced_embed(self):
@@ -327,7 +331,8 @@ class TestGeneratedNotification(NoSocketsTestCase):
 
 class TestEveNotificationEmbeds(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
 

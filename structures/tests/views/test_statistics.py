@@ -19,7 +19,8 @@ from .utils import json_response_to_dict
 
 class TestStatistics(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         alliance = EveAllianceInfoFactory(

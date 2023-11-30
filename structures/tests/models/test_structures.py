@@ -46,7 +46,8 @@ EVE_ID_NITROGEN_FUEL_BLOCK = 4051
 
 class TestPocoDetails(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.structure = PocoFactory(owner=cls.owner, poco_details=False)
@@ -204,7 +205,8 @@ class TestPocoDetails(NoSocketsTestCase):
 
 class TestStructure(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
 
@@ -490,7 +492,8 @@ class TestStructure(NoSocketsTestCase):
 
 class TestStructureFuel(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
 
@@ -683,7 +686,8 @@ class TestStructureFuel(NoSocketsTestCase):
 @patch(STRUCTURES_PATH + ".Structure.FUEL_DATES_EQUAL_THRESHOLD_STARBASE", 7200)
 class TestStructureFuelLevels(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory(
             webhooks__notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA]
@@ -845,7 +849,8 @@ class TestStructureFuelLevels(NoSocketsTestCase):
 
 class TestStructurePowerMode(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
 
@@ -929,7 +934,8 @@ class TestStructurePowerMode(NoSocketsTestCase):
 
 class TestStructureTags(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls) -> None:
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
         EveSovereigntyMapFactory(
@@ -1041,7 +1047,8 @@ class TestStructureTag(NoSocketsTestCase):
 
 class TestStructureSave(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
         EveSovereigntyMapFactory(
@@ -1110,7 +1117,8 @@ class TestStructureNoSetup(NoSocketsTestCase):
 
 class TestStructureService(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
 
     def test_str(self):

@@ -58,7 +58,8 @@ TASKS_PATH = "structures.tasks"
 @patch(OWNERS_PATH + ".esi")
 class TestTasks(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
 
     def test_should_fetch_new_upwell_structure_from_esi(

@@ -24,7 +24,8 @@ MODULE_PATH = "structures.models.owners"
 @patch(MODULE_PATH + ".esi")
 class TestUpdateStarbasesEsi(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, structures_last_update_at=None)

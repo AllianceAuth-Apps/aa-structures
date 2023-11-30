@@ -25,7 +25,8 @@ COMMON_PATH = "structures.views.common"
 
 class TestStructureListView(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
@@ -56,7 +57,8 @@ class TestStructureListView(TestCase):
 
 class TestStatisticsView(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
@@ -80,7 +82,8 @@ class TestStatisticsView(TestCase):
 
 class TestPocoView(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         character = EveCharacterFactory(character_name="Bruce Wayne")
         cls.user = UserMainBasicFactory(main_character__character=character)

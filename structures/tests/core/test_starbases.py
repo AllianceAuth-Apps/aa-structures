@@ -8,7 +8,8 @@ from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 class TestStarbases(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.type_astrahus = EveType.objects.get(id=35832)
         cls.type_poco = EveType.objects.get(id=2233)
@@ -58,7 +59,8 @@ class TestStarbases(NoSocketsTestCase):
 
 class TestStarbasesFuelDuration(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
 
     def test_can_calculate_for_large_tower(self):

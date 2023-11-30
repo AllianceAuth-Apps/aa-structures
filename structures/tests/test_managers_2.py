@@ -25,7 +25,8 @@ MANAGERS_PATH = "structures.managers"
 )
 class TestNotificationBaseAddOrRemoveTimers(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
 
     def test_should_create_new_timers_from_notifications(

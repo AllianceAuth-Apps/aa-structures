@@ -43,7 +43,8 @@ if "structuretimers" in app_labels():
     @patch(MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", True)
     class TestTimersForStructureTimers(NoSocketsTestCase):
         @classmethod
-        def setUpTestData(cls):
+        def setUpClass(cls):
+            super().setUpClass()
             load_eveuniverse()
 
         def test_should_create_timer_for_reinforced_structure(self):

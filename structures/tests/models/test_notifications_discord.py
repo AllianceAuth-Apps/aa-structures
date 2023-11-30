@@ -29,7 +29,8 @@ if "discord" in app_labels():
     @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
     class TestGroupPings(NoSocketsTestCase):
         @classmethod
-        def setUpTestData(cls):
+        def setUpClass(cls):
+            super().setUpClass()
             load_eveuniverse()
             load_eve_entities()
             cls.group_1 = Group.objects.create(name="Dummy Group 1")

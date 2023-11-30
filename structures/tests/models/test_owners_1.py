@@ -27,7 +27,8 @@ MODULE_PATH = "structures.models.owners"
 
 class TestOwner(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.alliance = EveAllianceInfoFactory(
             alliance_name="Wayne Enterprises", alliance_ticker="WYE"
         )
@@ -223,7 +224,8 @@ class TestOwner(NoSocketsTestCase):
 
 class TestOwnerHasSov(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
         EveSovereigntyMapFactory(
@@ -474,7 +476,8 @@ class TestOwnerFetchToken(NoSocketsTestCase):
 
 class TestOwnerCharacters(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.owner = OwnerFactory()
 
     def test_should_return_str(self):
@@ -544,7 +547,8 @@ class TestOwnerCharacters(NoSocketsTestCase):
 @patch(MODULE_PATH + ".notify_admins", spec=True)
 class TestOwnerDeleteCharacter(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.owner = OwnerFactory(characters=False)
 
     def test_should_delete_character_and_notify(self, mock_notify_admins, mock_notify):

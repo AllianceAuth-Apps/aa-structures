@@ -36,7 +36,8 @@ OWNERS_PATH = "structures.models.owners"
 @patch(VIEWS_PATH + ".STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED", False)
 class TestIndexRedirect(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
 
     def test_should_redirect_to_public_view(self):
@@ -106,7 +107,8 @@ class TestIndexRedirect(TestCase):
 
 class TestIndexTagFilter(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         StructureTagFactory(name="tag_a", is_default=True)
         cls.user = UserMainDefaultFactory()
@@ -136,7 +138,8 @@ class TestIndexTagFilter(TestCase):
 
 class TestStructureListDataFilterVariant(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultFactory()
@@ -233,7 +236,8 @@ class TestStructureListDataFilterVariant(TestCase):
 
 class TestStructureListDataPermissions(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
 
@@ -303,7 +307,8 @@ class TestStructureListDataPermissions(TestCase):
 
 class TestStructureListTagFilters(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.factory = RequestFactory()
         cls.user = UserMainDefaultFactory()
@@ -409,7 +414,8 @@ class TestStructureListTagFilters(TestCase):
 
 class TestStructurePowerModes(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
@@ -515,7 +521,8 @@ class TestStructurePowerModes(TestCase):
 
 class TestAddStructureOwner(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
@@ -651,7 +658,8 @@ class TestAddStructureOwner(TestCase):
 
 class TestStatus(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         # Owner.objects.filter(is_included_in_service_status=True)
 
@@ -732,7 +740,8 @@ class TestStatus(TestCase):
 
 class TestStructureFittingModal(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.character = EveCharacterFactory()
@@ -775,7 +784,8 @@ class TestStructureFittingModal(TestCase):
 
 class TestDetailsModal(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultFactory()

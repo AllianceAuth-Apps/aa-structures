@@ -50,7 +50,8 @@ class TestSendMessagesForWebhook(TestCase):
 @patch(MODULE_PATH + ".Owner.update_structures_esi", spec=True)
 class TestUpdateStructuresEsi(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
@@ -85,7 +86,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
 @patch(MODULE_PATH + ".update_structures_for_owner", spec=True)
 class TestUpdateStructuresForOwner(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
@@ -117,7 +119,8 @@ class TestUpdateStructuresForOwner(NoSocketsTestCase):
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 class TestUpdateOwnerAsset(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
@@ -157,7 +160,8 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
 @patch(MODULE_PATH + ".process_notifications_for_owner", spec=True)
 class TestFetchAllNotifications(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
@@ -245,7 +249,8 @@ class TestFetchAllNotifications(NoSocketsTestCase):
 @patch("structures.models.notifications.Webhook.send_test_message", spec=True)
 class TestSendTestNotification(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
 
@@ -281,7 +286,8 @@ class TestSendTestNotification(NoSocketsTestCase):
 @patch("structures.models.notifications.Notification.update_related_structures")
 class TestUpdateNotificationsStructureRelations(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.owner = OwnerFactory(is_alliance_main=True)
 
     def test_should_run_updates(self, mock_update_related_structures):

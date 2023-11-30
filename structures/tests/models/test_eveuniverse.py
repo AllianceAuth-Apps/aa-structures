@@ -22,7 +22,8 @@ class TestEveSovereigntyMap(NoSocketsTestCase):
 
 class TestEveSpaceType(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
 
     def test_space_type_highsec(self):

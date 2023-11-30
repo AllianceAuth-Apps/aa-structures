@@ -29,7 +29,8 @@ if "timerboard" in app_labels():
     @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     class TestNotificationAddToTimerboard(NoSocketsTestCase):
         @classmethod
-        def setUpTestData(cls):
+        def setUpClass(cls):
+            super().setUpClass()
             load_eveuniverse()
             load_eve_entities()
             cls.owner = OwnerFactory(is_alliance_main=True)

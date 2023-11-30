@@ -28,7 +28,8 @@ MODULE_PATH = "structures.models.notifications"
 
 class TestNotification(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         load_eve_entities()
         cls.owner = OwnerFactory()
@@ -191,7 +192,8 @@ class TestNotificationFilterForAllianceLevel(NoSocketsTestCase):
 
 class TestNotificationCreateFromStructure(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         EveEntityCorporationFactory(id=1000137, name="DED")
         cls.owner = OwnerFactory()
@@ -256,7 +258,8 @@ class TestNotificationCreateFromStructure(NoSocketsTestCase):
 
 class TestNotificationRelevantWebhooks(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         load_eve_entities()
 
@@ -407,7 +410,8 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
 
 class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
 
     @patch(MODULE_PATH + ".Notification.send_to_webhook")
@@ -546,7 +550,8 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message")
 class TestNotificationSendToWebhook(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         EveEntityCorporationFactory(id=1000137, name="DED")
 
@@ -736,7 +741,8 @@ class TestNotificationSendMessage(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestNotificationPings(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         corporation = EveEntityCorporationFactory()
         cls.notif_params = {

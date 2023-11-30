@@ -11,7 +11,8 @@ from .utils import json_response_to_dict
 
 class TestPocoListDataView(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainBasicFactory()

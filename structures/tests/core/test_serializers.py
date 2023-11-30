@@ -28,7 +28,8 @@ def to_dict(lst: List[dict], key="id"):
 
 class TestStructureListSerializer(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultFactory()
@@ -138,7 +139,8 @@ class TestStructureListSerializer(NoSocketsTestCase):
 
 class TestPocoListSerializer(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.factory = RequestFactory()
         load_eveuniverse()
         alliance = EveAllianceInfoFactory(

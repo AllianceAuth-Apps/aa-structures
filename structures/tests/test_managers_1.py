@@ -38,7 +38,8 @@ MODULE_PATH_ESI_FETCH = "structures.helpers.esi_fetch"
 
 class TestEveSovereigntyMapManagerUpdateFromEsi(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls) -> None:
+    def setUpClass(cls):
+        super().setUpClass()
         endpoints = [
             EsiEndpoint(
                 "Sovereignty",
@@ -109,7 +110,8 @@ class TestEveSovereigntyMapManagerUpdateFromEsi(NoSocketsTestCase):
 
 class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.corporation = EveCorporationInfoFactory()
         solar_system = EveSolarSystem.objects.get(name="1-PGSG")
@@ -168,7 +170,8 @@ class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
 @patch(MODULE_PATH + ".esi")
 class TestStructureManagerEsi(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.token = cls.owner.fetch_token()
@@ -294,7 +297,8 @@ class TestStructureManagerEsi(NoSocketsTestCase):
 
 class TestStructureQuerySet(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.structure = StructureFactory(owner=cls.owner)
@@ -328,7 +332,8 @@ class TestStructureQuerySet(NoSocketsTestCase):
 
 class TestStructureQuerySetVisibleForUser(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
         # same alliance
@@ -439,7 +444,8 @@ class TestStructureQuerySetVisibleForUser(NoSocketsTestCase):
 
 class TestStructureQuerySetFilterTags(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         owner = OwnerFactory()
         tag_a = StructureTagFactory(name="tag_a")
@@ -489,7 +495,8 @@ class TestStructureQuerySetFilterTags(NoSocketsTestCase):
 
 class TestStructureManagerCreateFromDict(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.owner = OwnerFactory()
 
@@ -683,7 +690,8 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
 
 class TestStructureTagManager(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.corporation = EveCorporationInfoFactory()
         solar_system = EveSolarSystem.objects.get(name="1-PGSG")

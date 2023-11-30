@@ -363,7 +363,8 @@ class TestStructureFuelAlerts(NoSocketsTestCase):
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestJumpFuelAlerts(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         EveEntityCorporationFactory(id=1000137, name="DED")
 
@@ -592,7 +593,8 @@ class TestJumpFuelAlerts(NoSocketsTestCase):
 
 class TestNotificationRelatedStructures(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         load_eve_entities()
         cls.owner = OwnerFactory()

@@ -39,7 +39,8 @@ NOTIFICATIONS_PATH = "structures.models.notifications"
 @patch(OWNERS_PATH + ".esi")
 class TestFetchNotificationsEsi(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.sender_corporation = EveEntityCorporationFactory()
         cls.character = EveCharacterFactory()
@@ -254,7 +255,8 @@ class TestFetchNotificationsEsi(NoSocketsTestCase):
 @patch(NOTIFICATIONS_PATH + ".Webhook.send_message", spec=True)
 class TestSendNewNotifications(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         load_eve_entities()
         cls.owner = OwnerFactory(
@@ -383,7 +385,8 @@ class TestSendNewNotifications(NoSocketsTestCase):
 @patch(OWNERS_PATH + ".esi")
 class TestOwnerUpdateAssetEsi(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.corporation = EveCharacterFactory()
         character = EveCharacterFactory(corporation=cls.corporation)
@@ -737,7 +740,8 @@ class TestOwnerToken(NoSocketsTestCase):
 @patch(OWNERS_PATH + ".notify_admins")
 class TestOwnerUpdateIsUp(NoSocketsTestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         load_eveuniverse()
         cls.corporation = EveCorporationInfoFactory()
 

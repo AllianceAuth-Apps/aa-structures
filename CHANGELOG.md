@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Fixed
+
+- Parallel tests no longer work with Django 4.2
+
 ## [2.8.0] - 2023-11-28
 
 ### Added

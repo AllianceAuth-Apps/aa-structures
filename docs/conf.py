@@ -4,6 +4,9 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
+import sys
+
 import sphinx_rtd_theme  # noqa
 
 # -- Path setup --------------------------------------------------------------
@@ -15,6 +18,10 @@ import sphinx_rtd_theme  # noqa
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+
+
+sys.path.insert(0, os.path.abspath(".."))
+os.environ["DJANGO_SETTINGS_MODULE"] = "testauth.settings_aa4.local_core"
 
 
 # -- Project information -----------------------------------------------------
@@ -29,7 +36,12 @@ author = "Erik Kalkoken"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["myst_parser", "sphinx_rtd_theme", "sphinx_copybutton"]
+extensions = [
+    "myst_parser",
+    "sphinx.ext.autodoc",
+    "sphinx_rtd_theme",
+    "sphinx_copybutton",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -56,3 +68,6 @@ html_css_files = ["css/rtd_dark.css"]
 
 # -- Options for myst -------------------------------------------------
 myst_heading_anchors = 3
+
+# autodoc
+add_module_names = False

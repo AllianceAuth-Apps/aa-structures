@@ -332,9 +332,9 @@ STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS = True
 
 Structure fuel alerts can be configured to provide additional alert notification about low fuel levels of your structures. They are highly customizable to accommodate all kinds of use cases. You can configure one ore multiple structure fuel alerts. All configuration is done through the admin site.
 
-Here is an example:
+Here are some examples:
 
-_First configuration_
+##### First configuration
 
 When fuel is down to 3 days, send a warning notification every 12 hours. For this the configuration would be:
 
@@ -344,7 +344,7 @@ When fuel is down to 3 days, send a warning notification every 12 hours. For thi
 - channel pings: @here
 - color: warning
 
-_Second configuration_
+##### Second configuration
 
 When fuel is down to 24 hours, send a danger notification every 6 hours and ping everybody. For this the configuration would be:
 
@@ -362,34 +362,14 @@ Jump fuel alerts are similar to structure fuel alerts, but made specifically to 
 
 Here is a list of available settings for this app. They can be configured by adding them to your AA settings file (`local.py`).
 
-Note that all settings are optional and the app will use the documented default settings if they are not used.
+```{note}
+All settings are optional and the app will use the documented default settings if they are not used.
+```
 
-Name | Description | Default
--- | -- | --
-`STRUCTURES_ADD_TIMERS`| Whether to automatically add timers for certain notifications on the timerboard (will have no effect if [aa-timerboard](https://allianceauth.readthedocs.io/en/latest/features/timerboard/) app is not installed). Will create timers from anchoring, lost shield and lost armor notifications  | `True`
-`STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED`| Whether admins will get notifications about import events like when someone adds a structure owner and when services for an owner are down. | `True`
-`STRUCTURES_DEFAULT_TAGS_FILTER_ENABLED`| Enable default tags filter for structure list as default | `False`
-`STRUCTURES_DEFAULT_LANGUAGE`| Sets the default language to be used in case no language can be determined. e.g. this language will be used when creating timers. Please use the language codes as defined in the base.py settings file. | `en`
-`STRUCTURES_DEFAULT_PAGE_LENGTH`| Default page size for structure list. Must be an integer value from the available options in the app. | `10`
-`STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES`| Max retries before a character is deleted when ESI claims the character is not a director (Since this sometimes is reported wrongly by ESI). | `3`
-`STRUCTURES_FEATURE_CUSTOMS_OFFICES`| Enable / disable custom offices feature | `True`
-`STRUCTURES_FEATURE_STARBASES`| Enable / disable starbases feature | `True`
-`STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS`| Enable / disable refueled notifications feature | `False`
-`STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION`| Defines after how many hours a notification is regarded as stale. Stale notifications are no longer sent automatically. | `24`
-`STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED`| whether to create / remove timers from moon extraction notifications  | `True`
-`STRUCTURES_NOTIFICATION_DISABLE_ESI_FUEL_ALERTS`| This allows you to turn off ESI fuel alert notifications to use the Structure's generated fuel notifications exclusively.  | `False`
-`STRUCTURES_NOTIFICATION_MAX_RETRIES`| Max number of retries after a HTTP error occurred incl. rate limiting  | `3`
-`STRUCTURES_NOTIFICATION_SET_AVATAR`| Wether structures sets the name and avatar icon of a webhook. When `False` the webhook will use it's own values as set on the platform | `True`
-`STRUCTURES_NOTIFICATION_SHOW_MOON_ORE`| Wether ore details are shown on moon notifications | `True`
-`STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES`| Max time in minutes since last successful notifications sync before service is reported as down  | `40`
-`STRUCTURES_NOTIFICATION_WAIT_SEC`| Default wait time in seconds before retrying after HTTP error (not used for rate limits)  | `5`
-`STRUCTURES_PAGING_ENABLED`| Wether paging is enabled for the structure list. | `True`
-`STRUCTURES_REPORT_NPC_ATTACKS`| Enable / disable sending notifications for attacks by NPCs (structure reinforcements are still reported) | `True`
-`STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE`| Enable / disable whether fuel expire is shown as relative figure | `True`
-`STRUCTURES_SHOW_JUMP_GATES`| Whether to show the jump gates tab | `True`
-`STRUCTURES_STRUCTURE_SYNC_GRACE_MINUTES`| Max time in minutes since last successful structures sync before service is reported as down  | `120`
-`STRUCTURES_TASKS_TIME_LIMIT`| Hard timeout for tasks in seconds to reduce task accumulation during outages | `7200`
-`STRUCTURES_TIMERS_ARE_CORP_RESTRICTED`| whether created timers are corp restricted on the timerboard  | `False`
+```{eval-rst}
+.. automodule:: structures.app_settings
+    :members:
+```
 
 ## Permissions
 

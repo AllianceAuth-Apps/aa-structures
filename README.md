@@ -70,6 +70,6 @@ This is an example for a notification posted on Discord:
 
 ![Notification example](https://i.imgur.com/oqBqeFy.png)
 
-## Installation
+## Documentation
 
 Please see the [operation manual](https://aa-structures.readthedocs.io/en/latest/operations.html#installation) for the installation guide.

@@ -5,3 +5,24 @@ default_app_config = "structures.apps.StructuresConfig"
 
 __version__ = "2.8.0"
 __title__ = "Structures"
+
+
+# Implementing issue #92
+
+# [ ] AcceptedAlly (o)
+# [ ] AllWarCorpJoinedAllianceMsg
+# [ ] AllWarSurrenderMsg
+# [ ] DeclareWar
+# [ ] MercOfferedNegotiationMsg (o)
+# [ ] MercOfferRetractedMsg
+# [ ] OfferedToAlly
+# [ ] OfferedSurrender
+# [ ] WarHQRemovedFromSpace (o)
+# [ ] WarInvalid (o)
+
+# [ ] CorporationGoalCreated (o)
+# [ ] CorporationGoalCompleted
+
+# [ ] CorpAllBillMsg (o)
+
+# [ ] CharAppRejectMsg (o)

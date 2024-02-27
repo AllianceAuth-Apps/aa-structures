@@ -20,9 +20,6 @@ __title__ = "Structures"
 # [ ] WarHQRemovedFromSpace (o)
 # [ ] WarInvalid (o)
 
-# [ ] CorporationGoalCreated (o)
-# [ ] CorporationGoalCompleted
-
 # [ ] CorpAllBillMsg (o)
 
 # [ ] CharAppRejectMsg (o)

@@ -100,7 +100,7 @@ class TestNotification(NoSocketsTestCase):
                     self.assertTrue(notif.can_be_rendered)
 
     def test_can_be_rendered_3(self):
-        for notif_type in ["DeclareWar"]:
+        for notif_type in ["UnknownNotificationType"]:
             with self.subTest(notification_type=notif_type):
                 notif = Notification.objects.filter(notif_type=notif_type).first()
                 if notif:
@@ -616,17 +616,6 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         _, kwargs = mock_send_message.call_args
         self.assertIsNotNone(kwargs["content"])
         self.assertIsNotNone(kwargs["embeds"])
-
-    def test_should_ignore_unsupported_notif_types(self, mock_send_message):
-        # given
-        mock_send_message.return_value = 1
-        obj = NotificationFactory(
-            owner=self.owner, notif_type="XXXUnsupportedNotificationTypeXXX"
-        )
-        # when
-        result = obj.send_to_webhook(self.webhook)
-        # then
-        self.assertFalse(result)
 
     def test_mark_notification_as_sent_when_successful(self, mock_send_message):
         # given

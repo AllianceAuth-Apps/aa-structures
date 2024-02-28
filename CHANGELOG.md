@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Added
+
+- Added support for these notification types:
+
+  - AcceptedAlly (#92)
+  - AllWarCorpJoinedAllianceMsg
+  - AllWarSurrenderMsg
+  - DeclareWar
+  - MercOfferedNegotiationMsg (#92)
+  - MercOfferRetractedMsg
+  - OfferedToAlly
+  - OfferedSurrender
+  - WarHQRemovedFromSpace (#92)
+  - WarInvalid (#92)
+  - CorpAllBillMsg (#92)
+  - CharAppRejectMsg (#92)
+
+### Changed
+
+- Now generates minimal embed instead of raising exception for unknown notification types
+
 ### Fixed
 
 - Parallel tests no longer work with Django 4.2

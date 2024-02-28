@@ -70,15 +70,6 @@ class TestNotificationEmbeds(TestCase):
         )
         self.assertEqual(str(notification_embed), "1000000999:CorpBecameWarEligible")
 
-    def test_should_raise_exception_for_unsupported_notif_types(self):
-        # given
-        notification = NotificationFactory(
-            owner=self.owner, notif_type="XXXUnsupportedNotificationTypeXXX"
-        )
-        # when / then
-        with self.assertRaises(NotImplementedError):
-            NotificationBaseEmbed.create(notification)
-
     def test_should_require_notification_for_init(self):
         with self.assertRaises(TypeError):
             NotificationBaseEmbed(notification="dummy")

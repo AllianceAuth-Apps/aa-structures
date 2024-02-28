@@ -2,6 +2,7 @@
 
 # pylint: disable=missing-class-docstring
 
+import re
 from typing import Optional
 
 import dhooks_lite
@@ -153,7 +154,7 @@ class NotificationBaseEmbed:
 
     # pylint: disable = too-many-locals
     @staticmethod
-    def create(notification: "NotificationBase") -> "NotificationBaseEmbed":
+    def create(notif: "NotificationBase") -> "NotificationBaseEmbed":
         """Creates a new instance of the respective subclass for given Notification."""
 
         from .billing_embeds import (
@@ -224,7 +225,7 @@ class NotificationBaseEmbed:
             NotificationWarSurrenderOfferMsg,
         )
 
-        if not isinstance(notification, NotificationBase):
+        if not isinstance(notif, NotificationBase):
             raise TypeError("notification must be of type NotificationBase")
 
         NT = NotificationType
@@ -292,8 +293,22 @@ class NotificationBaseEmbed:
             NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
         }
         try:
-            notif_class = notif_type_2_class[notification.notif_type]
+            notif_class = notif_type_2_class[notif.notif_type]
         except KeyError:
-            raise NotImplementedError(repr(notification.notif_type)) from None
+            return NotificationGenericEmbed(notif)
 
-        return notif_class(notification)
+        return notif_class(notif)
+
+
+class NotificationGenericEmbed(NotificationBaseEmbed):
+    """A generic embed for undefined notifs."""
+
+    def __init__(self, notif: Notification) -> None:
+        super().__init__(notif)
+        self._title = re.sub(
+            r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r" \1", notif.notif_type
+        )
+        self._color = Webhook.Color.INFO
+        self._thumbnail = dhooks_lite.Thumbnail(
+            notif.sender.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )

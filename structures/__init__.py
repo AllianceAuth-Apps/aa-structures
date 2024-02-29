@@ -14,7 +14,7 @@ __title__ = "Structures"
 # [x] AllWarSurrenderMsg
 # [x] DeclareWar
 # [x] MercOfferedNegotiationMsg (o)
-# [ ] MercOfferRetractedMsg
+# [x] MercOfferRetractedMsg
 # [ ] OfferedToAlly
 # [ ] OfferedSurrender
 # [ ] WarHQRemovedFromSpace (o)

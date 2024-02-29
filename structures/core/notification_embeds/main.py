@@ -294,6 +294,7 @@ class NotificationBaseEmbed:
             NT.WAR_MERC_OFFERED_NEGOTIATION_MSG: NotificationMercOfferedNegotiationMsg,
             NT.WAR_MERC_OFFER_RETRACTED_MSG: NotificationMercOfferRetractedMsg,
             NT.WAR_CORP_WAR_SURRENDER_MSG: NotificationCorpWarSurrenderMsg,
+            NT.WAR_OFFERED_TO_ALLY: NotificationMercOfferedNegotiationMsg,
             NT.WAR_WAR_ADOPTED: NotificationWarAdopted,
             NT.WAR_WAR_DECLARED: NotificationWarDeclared,
             NT.WAR_WAR_INHERITED: NotificationWarInherited,

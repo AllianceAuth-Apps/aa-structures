@@ -191,7 +191,7 @@ class NotificationMercOfferedNegotiationMsg(NotificationBaseEmbed):
         self._thumbnail = dhooks_lite.Thumbnail(
             mercenary.icon_url(size=self.ICON_DEFAULT_SIZE)
         )
-        self._color = Webhook.Color.WARNING
+        self._color = Webhook.Color.INFO
 
 
 class NotificationMercOfferRetractedMsg(NotificationBaseEmbed):

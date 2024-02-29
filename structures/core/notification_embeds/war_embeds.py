@@ -88,6 +88,28 @@ class NotificationAllWarCorpJoinedAllianceMsg(NotificationBaseEmbed):
         self._color = Webhook.Color.INFO
 
 
+class NotificationAllWarSurrenderMsg(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("XX has surrendered")
+        opponent: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["againstID"]
+        )
+        declarer: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["declaredByID"]
+        )
+        self._description = _(
+            "%(declarer)s has surrendered in the war against  %(opponent)s."
+        ) % {
+            "declarer": gen_eve_entity_link(declarer),
+            "opponent": gen_eve_entity_link(opponent),
+        }
+        self._thumbnail = dhooks_lite.Thumbnail(
+            declarer.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+        self._color = Webhook.Color.INFO
+
+
 class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)

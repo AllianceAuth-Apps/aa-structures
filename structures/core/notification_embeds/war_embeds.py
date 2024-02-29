@@ -170,6 +170,30 @@ class NotificationDeclareWar(NotificationBaseEmbed):
         self._color = Webhook.Color.DANGER
 
 
+class NotificationMercOfferedNegotiationMsg(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Mercenary offered services")
+        aggressor = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["aggressorID"]
+        )
+        defender = get_or_create_esi_obj(EveEntity, id=self._parsed_text["defenderID"])
+        mercenary = get_or_create_esi_obj(EveEntity, id=self._parsed_text["mercID"])
+        isk_value = self._parsed_text["iskValue"]
+        self._description = _(
+            "%(mercenary)s has offered his services to %(defender)s in a war against %(aggressor)s for %(isk_value)s. "
+        ) % {
+            "aggressor": gen_eve_entity_link(aggressor),
+            "defender": gen_eve_entity_link(defender),
+            "mercenary": gen_eve_entity_link(mercenary),
+            "isk_value": humanize_number(isk_value),
+        }
+        self._thumbnail = dhooks_lite.Thumbnail(
+            mercenary.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+        self._color = Webhook.Color.WARNING
+
+
 class NotificationWarAdopted(NotificationWarEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)

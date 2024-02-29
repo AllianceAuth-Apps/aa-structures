@@ -13,7 +13,7 @@ __title__ = "Structures"
 # [x] AllWarCorpJoinedAllianceMsg
 # [x] AllWarSurrenderMsg
 # [x] DeclareWar
-# [ ] MercOfferedNegotiationMsg (o)
+# [x] MercOfferedNegotiationMsg (o)
 # [ ] MercOfferRetractedMsg
 # [ ] OfferedToAlly
 # [ ] OfferedSurrender

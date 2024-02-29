@@ -175,7 +175,7 @@ class TestNotificationEmbedsGenerate(TestCase):
 
                 # then
                 self.assertIsInstance(obj, dhooks_lite.Embed)
-                # self.assertTrue(obj.description) # TODO: Enable!
+                self.assertTrue(obj.description)
 
     def test_should_set_ping_everyone_for_color_danger(self):
         # given

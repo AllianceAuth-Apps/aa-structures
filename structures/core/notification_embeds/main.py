@@ -229,6 +229,7 @@ class NotificationBaseEmbed:
             NotificationWarDeclared,
             NotificationWarHQRemovedFromSpace,
             NotificationWarInherited,
+            NotificationWarInvalid,
             NotificationWarRetractedByConcord,
             NotificationWarSurrenderOfferMsg,
         )
@@ -302,6 +303,7 @@ class NotificationBaseEmbed:
             NT.WAR_WAR_ADOPTED: NotificationWarAdopted,
             NT.WAR_WAR_DECLARED: NotificationWarDeclared,
             NT.WAR_WAR_INHERITED: NotificationWarInherited,
+            NT.WAR_INVALID: NotificationWarInvalid,
             NT.WAR_WAR_RETRACTED_BY_CONCORD: NotificationWarRetractedByConcord,
             NT.WAR_WAR_SURRENDER_OFFER_MSG: NotificationWarSurrenderOfferMsg,
             # Billing

@@ -359,10 +359,28 @@ class NotificationWarInherited(NotificationWarBaseEmbed):
         self._color = Webhook.Color.DANGER
 
 
-class NotificationWarRetractedByConcord(NotificationWarBaseEmbed):
+class NotificationWarInvalid(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("CONCORD invalidates war")
+        war_ends = ldap_time_2_datetime(self._parsed_text["endDate"])
+        self._description = _(
+            "The war between %(declared_by)s and %(against)s "
+            "has been invalidated.\n"
+            "After %(end_date)s CONCORD will again respond to any hostilities "
+            "between those involved with full force."
+        ) % {
+            "declared_by": gen_eve_entity_link(self._declared_by),
+            "against": gen_eve_entity_link(self._against),
+            "end_date": target_datetime_formatted(war_ends),
+        }
+        self._color = Webhook.Color.WARNING
+
+
+class NotificationWarRetractedByConcord(NotificationWarBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("CONCORD retracts war")
         war_ends = ldap_time_2_datetime(self._parsed_text["endDate"])
         self._description = _(
             "The war between %(declared_by)s and %(against)s "

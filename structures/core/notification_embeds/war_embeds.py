@@ -281,10 +281,23 @@ class NotificationCorpWarSurrenderMsg(NotificationWarBaseEmbed):
         self._color = Webhook.Color.WARNING
 
 
+class NotificationWarHQRemovedFromSpace(NotificationWarBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        war_hq = self._parsed_text["warHQ"]
+        self._title = (
+            _("War against %s: War HQ removed from space") % self._against.name
+        )
+        self._description = _("The war HQ %s has been removed from space.") % war_hq
+        self._color = Webhook.Color.WARNING
+
+
 class NotificationWarAdopted(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        alliance = get_or_create_esi_obj(EveEntity, id=self._parsed_text["allianceID"])
+        alliance: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["allianceID"]
+        )
         self._title = _("War update: %(against)s has left %(alliance)s") % {
             "against": self._against.name,
             "alliance": alliance.name,

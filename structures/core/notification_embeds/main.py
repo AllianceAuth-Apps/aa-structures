@@ -161,6 +161,7 @@ class NotificationBaseEmbed:
             NotificationBillingBillOutOfMoneyMsg,
             NotificationBillingIHubBillAboutToExpire,
             NotificationBillingIHubDestroyedByBillFailure,
+            NotificationCorpAllBillMsg,
         )
         from .character_embeds import (
             NotificationCharAppAcceptMsg,
@@ -239,6 +240,11 @@ class NotificationBaseEmbed:
 
         NT = NotificationType
         notif_type_2_class = {
+            # Billing
+            NT.BILLING_CORP_ALL_BILL_MSG: NotificationCorpAllBillMsg,
+            NT.BILLING_BILL_OUT_OF_MONEY_MSG: NotificationBillingBillOutOfMoneyMsg,
+            NT.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE: NotificationBillingIHubBillAboutToExpire,
+            NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
             # character
             NT.CORP_APP_NEW_MSG: NotificationCorpAppNewMsg,
             NT.CORP_APP_INVITED_MSG: NotificationCorpAppInvitedMsg,
@@ -252,7 +258,23 @@ class NotificationBaseEmbed:
             NT.MOONMINING_AUTOMATIC_FRACTURE: NotificationMoonminningAutomaticFracture,
             NT.MOONMINING_EXTRACTION_CANCELLED: NotificationMoonminningExtractionCanceled,
             NT.MOONMINING_LASER_FIRED: NotificationMoonminningLaserFired,
-            # upwell structures
+            # Orbitals
+            NT.ORBITAL_ATTACKED: NotificationOrbitalAttacked,
+            NT.ORBITAL_REINFORCED: NotificationOrbitalReinforced,
+            # Sov
+            NT.SOV_ENTOSIS_CAPTURE_STARTED: NotificationSovEntosisCaptureStarted,
+            NT.SOV_COMMAND_NODE_EVENT_STARTED: NotificationSovCommandNodeEventStarted,
+            NT.SOV_ALL_CLAIM_ACQUIRED_MSG: NotificationSovAllClaimAcquiredMsg,
+            NT.SOV_ALL_CLAIM_LOST_MSG: NotificationSovAllClaimLostMsg,
+            NT.SOV_STRUCTURE_REINFORCED: NotificationSovStructureReinforced,
+            NT.SOV_STRUCTURE_DESTROYED: NotificationSovStructureDestroyed,
+            NT.SOV_ALL_ANCHORING_MSG: NotificationSovAllAnchoringMsg,
+            # Towers
+            NT.TOWER_ALERT_MSG: NotificationTowerAlertMsg,
+            NT.TOWER_RESOURCE_ALERT_MSG: NotificationTowerResourceAlertMsg,
+            NT.TOWER_REFUELED_EXTRA: NotificationTowerRefueledExtra,
+            NT.TOWER_REINFORCED_EXTRA: NotificationTowerReinforcedExtra,
+            # Upwell structures
             NT.STRUCTURE_ONLINE: NotificationStructureOnline,
             NT.STRUCTURE_FUEL_ALERT: NotificationStructureFuelAlert,
             NT.STRUCTURE_JUMP_FUEL_ALERT: NotificationStructureJumpFuelAlert,
@@ -268,22 +290,6 @@ class NotificationBaseEmbed:
             NT.OWNERSHIP_TRANSFERRED: NotificationStructureOwnershipTransferred,
             NT.STRUCTURE_ANCHORING: NotificationStructureAnchoring,
             NT.STRUCTURE_REINFORCEMENT_CHANGED: NotificationStructureReinforceChange,
-            # Orbitals
-            NT.ORBITAL_ATTACKED: NotificationOrbitalAttacked,
-            NT.ORBITAL_REINFORCED: NotificationOrbitalReinforced,
-            # Towers
-            NT.TOWER_ALERT_MSG: NotificationTowerAlertMsg,
-            NT.TOWER_RESOURCE_ALERT_MSG: NotificationTowerResourceAlertMsg,
-            NT.TOWER_REFUELED_EXTRA: NotificationTowerRefueledExtra,
-            NT.TOWER_REINFORCED_EXTRA: NotificationTowerReinforcedExtra,
-            # Sov
-            NT.SOV_ENTOSIS_CAPTURE_STARTED: NotificationSovEntosisCaptureStarted,
-            NT.SOV_COMMAND_NODE_EVENT_STARTED: NotificationSovCommandNodeEventStarted,
-            NT.SOV_ALL_CLAIM_ACQUIRED_MSG: NotificationSovAllClaimAcquiredMsg,
-            NT.SOV_ALL_CLAIM_LOST_MSG: NotificationSovAllClaimLostMsg,
-            NT.SOV_STRUCTURE_REINFORCED: NotificationSovStructureReinforced,
-            NT.SOV_STRUCTURE_DESTROYED: NotificationSovStructureDestroyed,
-            NT.SOV_ALL_ANCHORING_MSG: NotificationSovAllAnchoringMsg,
             # War
             NT.WAR_ACCEPTED_ALLY: NotificationAcceptedAlly,
             NT.WAR_ALLY_JOINED_WAR_AGGRESSOR_MSG: NotificationAllyJoinedWarMsg,
@@ -306,10 +312,6 @@ class NotificationBaseEmbed:
             NT.WAR_INVALID: NotificationWarInvalid,
             NT.WAR_WAR_RETRACTED_BY_CONCORD: NotificationWarRetractedByConcord,
             NT.WAR_WAR_SURRENDER_OFFER_MSG: NotificationWarSurrenderOfferMsg,
-            # Billing
-            NT.BILLING_BILL_OUT_OF_MONEY_MSG: NotificationBillingBillOutOfMoneyMsg,
-            NT.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE: NotificationBillingIHubBillAboutToExpire,
-            NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
         }
         try:
             notif_class = notif_type_2_class[notif.notif_type]

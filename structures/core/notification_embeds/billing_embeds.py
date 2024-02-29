@@ -7,15 +7,20 @@ import dhooks_lite
 
 from django.db import models
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveType
+from eveuniverse.models import EveEntity, EveType
 
 from app_utils.datetime import ldap_time_2_datetime
+from app_utils.helpers import humanize_number
 
 from structures.constants import EveTypeId
 from structures.helpers import get_or_create_esi_obj
 from structures.models import Notification, Webhook
 
-from .helpers import gen_solar_system_text, target_datetime_formatted
+from .helpers import (
+    gen_eve_entity_link,
+    gen_solar_system_text,
+    target_datetime_formatted,
+)
 from .main import NotificationBaseEmbed
 
 
@@ -91,4 +96,34 @@ class NotificationBillingIHubDestroyedByBillFailure(NotificationBaseEmbed):
         self._color = Webhook.Color.DANGER
         self._thumbnail = dhooks_lite.Thumbnail(
             structure_type.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+
+
+class NotificationCorpAllBillMsg(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        amount = self._parsed_text["amount"]
+        bill_type_id = self._parsed_text["billTypeID"]
+        bill_type_str = BillType.to_enum(bill_type_id).label
+        due_date = ldap_time_2_datetime(self._parsed_text["dueDate"])
+        creditor: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["creditorID"]
+        )
+        debtor: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["debtorID"]
+        )
+        self._title = _("New bill")
+        self._description = _(
+            "%(debtor)s has to pay %(amount)s to %(creditor)s "
+            "by %(due_date)s for %(bill_type)s."
+        ) % {
+            "amount": humanize_number(amount),
+            "bill_type": bill_type_str,
+            "creditor": gen_eve_entity_link(creditor),
+            "debtor": gen_eve_entity_link(debtor),
+            "due_date": target_datetime_formatted(due_date),
+        }
+        self._color = Webhook.Color.WARNING
+        self._thumbnail = dhooks_lite.Thumbnail(
+            debtor.icon_url(size=self.ICON_DEFAULT_SIZE)
         )

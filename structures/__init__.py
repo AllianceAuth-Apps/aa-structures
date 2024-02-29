@@ -20,6 +20,6 @@ __title__ = "Structures"
 # [x] WarHQRemovedFromSpace (o)
 # [x] WarInvalid (o)
 
-# [ ] CorpAllBillMsg (o)
+# [x] CorpAllBillMsg (o)
 
 # [ ] CharAppRejectMsg (o)

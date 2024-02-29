@@ -702,7 +702,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "amount: 6000000\nbillTypeID: 5\ncreditorID: 1000125\ncurrentDate: 133462502887835953\ndebtorID: 2001\ndueDate: 133488422887817240\nexternalID: 3001\nexternalID2: -1",
+            "text": "amount: 6000000\nbillTypeID: 5\ncreditorID: 2011\ncurrentDate: 133462502887835953\ndebtorID: 2001\ndueDate: 133488422887817240\nexternalID: 3001\nexternalID2: -1",
             "is_read": false,
             "is_sent": false
         },

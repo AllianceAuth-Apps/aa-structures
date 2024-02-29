@@ -22,4 +22,4 @@ __title__ = "Structures"
 
 # [x] CorpAllBillMsg (o)
 
-# [ ] CharAppRejectMsg (o)
+# [x] CharAppRejectMsg (o)

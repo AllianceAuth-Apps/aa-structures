@@ -21,10 +21,10 @@ from .main import NotificationBaseEmbed
 class NotificationCorpCharEmbed(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._character = get_or_create_esi_obj(
+        self._character: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["charID"]
         )
-        self._corporation = get_or_create_esi_obj(
+        self._corporation: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["corpID"]
         )
         self._character_link = gen_eve_entity_link(self._character)
@@ -77,6 +77,24 @@ class NotificationCorpAppInvitedMsg(NotificationCorpCharEmbed):
         self._color = Webhook.Color.INFO
 
 
+class NotificationCharAppRejectMsg(NotificationCorpCharEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Rejected application from %(character_name)s") % {
+            "character_name": self._character.name
+        }
+        self._description = _(
+            "Application from %(character_name)s to join %(corporation_name)s:\n"
+            "> %(application_text)s\n"
+            "Has been rejected\n"
+        ) % {
+            "character_name": self._character_link,
+            "corporation_name": self._corporation_link,
+            "application_text": self._application_text,
+        }
+        self._color = Webhook.Color.INFO
+
+
 class NotificationCorpAppRejectCustomMsg(NotificationCorpCharEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
@@ -94,7 +112,6 @@ class NotificationCorpAppRejectCustomMsg(NotificationCorpCharEmbed):
             "application_text": self._application_text,
             "customMessage": self._parsed_text.get("customMessage", ""),
         }
-
         self._color = Webhook.Color.INFO
 
 

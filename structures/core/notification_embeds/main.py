@@ -165,6 +165,7 @@ class NotificationBaseEmbed:
         )
         from .character_embeds import (
             NotificationCharAppAcceptMsg,
+            NotificationCharAppRejectMsg,
             NotificationCharAppWithdrawMsg,
             NotificationCharLeftCorpMsg,
             NotificationCorpAppInvitedMsg,
@@ -249,6 +250,7 @@ class NotificationBaseEmbed:
             NT.CORP_APP_NEW_MSG: NotificationCorpAppNewMsg,
             NT.CORP_APP_INVITED_MSG: NotificationCorpAppInvitedMsg,
             NT.CORP_APP_REJECT_CUSTOM_MSG: NotificationCorpAppRejectCustomMsg,
+            NT.CORP_APP_REJECT_MSG: NotificationCharAppRejectMsg,
             NT.CHAR_APP_WITHDRAW_MSG: NotificationCharAppWithdrawMsg,
             NT.CHAR_APP_ACCEPT_MSG: NotificationCharAppAcceptMsg,
             NT.CHAR_LEFT_CORP_MSG: NotificationCharLeftCorpMsg,

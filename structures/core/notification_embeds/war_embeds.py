@@ -15,26 +15,8 @@ from app_utils.helpers import humanize_number
 from structures.helpers import get_or_create_esi_obj
 from structures.models import Notification, Webhook
 
-from .helpers import (
-    gen_eve_entity_link,
-    gen_eve_entity_link_from_id,
-    target_datetime_formatted,
-)
+from .helpers import gen_eve_entity_link, target_datetime_formatted
 from .main import NotificationBaseEmbed
-
-
-class NotificationWarEmbed(NotificationBaseEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        self._declared_by = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["declaredByID"]
-        )
-        self._against = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["againstID"]
-        )
-        self._thumbnail = dhooks_lite.Thumbnail(
-            self._declared_by.icon_url(size=self.ICON_DEFAULT_SIZE)
-        )
 
 
 class NotificationAcceptedAlly(NotificationBaseEmbed):
@@ -135,21 +117,6 @@ class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
         self._color = Webhook.Color.WARNING
 
 
-class NotificationCorpWarSurrenderMsg(NotificationWarEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        self._title = _("One party has surrendered")
-        self._description = _(
-            "The war between %(against)s and %(declared_by)s is coming to an end "
-            "as one party has surrendered. "
-            "The war will be declared as being over after approximately 24 hours."
-        ) % {
-            "declared_by": gen_eve_entity_link(self._declared_by),
-            "against": gen_eve_entity_link(self._against),
-        }
-        self._color = Webhook.Color.WARNING
-
-
 class NotificationDeclareWar(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
@@ -216,7 +183,57 @@ class NotificationMercOfferRetractedMsg(NotificationBaseEmbed):
         self._color = Webhook.Color.INFO
 
 
-class NotificationWarAdopted(NotificationWarEmbed):
+class NotificationOfferedSurrender(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        entity: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["entityID"]
+        )
+        offered: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["offeredID"]
+        )
+        isk_value = self._parsed_text["iskValue"]
+        self._title = _("War update: %s offered surrender") % entity.name
+        self._description = _(
+            "%(entity)s has offered to surrender to %(offered)s for %(isk_value)s ISK."
+        ) % {
+            "entity": gen_eve_entity_link(entity),
+            "offered": gen_eve_entity_link(offered),
+            "isk_value": humanize_number(isk_value),
+        }
+        self._color = Webhook.Color.WARNING
+
+
+class NotificationWarBaseEmbed(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._declared_by = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["declaredByID"]
+        )
+        self._against = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["againstID"]
+        )
+        self._thumbnail = dhooks_lite.Thumbnail(
+            self._declared_by.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+
+
+class NotificationCorpWarSurrenderMsg(NotificationWarBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("One party has surrendered")
+        self._description = _(
+            "The war between %(against)s and %(declared_by)s is coming to an end "
+            "as one party has surrendered. "
+            "The war will be declared as being over after approximately 24 hours."
+        ) % {
+            "declared_by": gen_eve_entity_link(self._declared_by),
+            "against": gen_eve_entity_link(self._against),
+        }
+        self._color = Webhook.Color.WARNING
+
+
+class NotificationWarAdopted(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         alliance = get_or_create_esi_obj(EveEntity, id=self._parsed_text["allianceID"])
@@ -237,7 +254,7 @@ class NotificationWarAdopted(NotificationWarEmbed):
         self._color = Webhook.Color.WARNING
 
 
-class NotificationWarDeclared(NotificationWarEmbed):
+class NotificationWarDeclared(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("%(declared_by)s Declares War Against %(against)s") % {
@@ -258,7 +275,7 @@ class NotificationWarDeclared(NotificationWarEmbed):
         self._color = Webhook.Color.DANGER
 
 
-class NotificationWarInherited(NotificationWarEmbed):
+class NotificationWarInherited(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         alliance = get_or_create_esi_obj(EveEntity, id=self._parsed_text["allianceID"])
@@ -313,7 +330,7 @@ class NotificationWarCorporationNoLongerEligible(NotificationBaseEmbed):
         self._color = Webhook.Color.INFO
 
 
-class NotificationWarRetractedByConcord(NotificationWarEmbed):
+class NotificationWarRetractedByConcord(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("CONCORD invalidates war")
@@ -334,14 +351,18 @@ class NotificationWarRetractedByConcord(NotificationWarEmbed):
 class NotificationWarSurrenderOfferMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        isk_value = self._parsed_text.get("iskValue", 0)
         owner_1 = get_or_create_esi_obj(EveEntity, id=self._parsed_text.get("ownerID1"))
-        owner_1_link = gen_eve_entity_link(owner_1)
-        owner_2_link = gen_eve_entity_link_from_id(self._parsed_text.get("ownerID2"))
-        self._title = _("%s has offered a surrender") % (owner_1,)
+        owner_2 = get_or_create_esi_obj(EveEntity, id=self._parsed_text.get("ownerID2"))
+        isk_value = self._parsed_text.get("iskValue", 0)
+        self._title = _("%s has offered a surrender") % owner_1.name
         self._description = _(
-            "%s has offered to end the war with %s in the exchange for %s ISK. "
+            "%(owner_1)s has offered to end the war with %(owner_2)s in the exchange "
+            "for %(isk_value)s ISK. "
             "If accepted, the war will end in 24 hours and your organizations will "
             "be unable to declare new wars against each other for the next 2 weeks."
-        ) % (owner_1_link, owner_2_link, f"{isk_value:,.2f}")
+        ) % {
+            "owner_1": gen_eve_entity_link(owner_1),
+            "owner_2": gen_eve_entity_link(owner_2),
+            "isk_value": humanize_number(isk_value),
+        }
         self._color = Webhook.Color.INFO

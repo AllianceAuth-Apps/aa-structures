@@ -617,7 +617,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         self.assertIsNotNone(kwargs["content"])
         self.assertIsNotNone(kwargs["embeds"])
 
-    def test_mark_notification_as_sent_when_successful(self, mock_send_message):
+    def test_should_mark_notification_as_sent_when_successful(self, mock_send_message):
         # given
         mock_send_message.return_value = True
         obj = NotificationFactory(owner=self.owner)
@@ -627,7 +627,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         obj.refresh_from_db()
         self.assertTrue(obj.is_sent)
 
-    def test_dont_mark_notification_as_sent_when_error(self, mock_send_message):
+    def test_should_not_mark_notification_as_sent_when_error(self, mock_send_message):
         # given
         mock_send_message.return_value = 0
         obj = NotificationFactory(owner=self.owner)
@@ -637,7 +637,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         obj.refresh_from_db()
         self.assertFalse(obj.is_sent)
 
-    def test_send_to_webhook_all_notification_types(self, mock_send_message):
+    def test_can_send_all_notification_types(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
         types_tested = set()

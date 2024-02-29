@@ -602,7 +602,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "allyID: 99009500\ncharID: 94706017\nenemyID: 498125261\niskValue: 0.0\ntime: 132476139000000000",
+            "text": "allyID: 2001\ncharID: 1011\nenemyID: 3011\niskValue: 0.0\ntime: 132476139000000000",
             "is_read": false,
             "is_sent": false
         },
@@ -612,7 +612,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "aggressorID: 99011719\ndefenderID: 99010323\niskValue: 0.0\nmercID: 98620447",
+            "text": "aggressorID: 3011\ndefenderID: 3001\niskValue: 0.0\nmercID: 2001",
             "is_read": false,
             "is_sent": false
         },
@@ -622,7 +622,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "aggressorID: 99001134\ndefenderID: 99009052n\nmercID: 99005382",
+            "text": "aggressorID: 3011\ndefenderID: 3001\nmercID: 2001",
             "is_read": false,
             "is_sent": false
         },
@@ -632,7 +632,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "againstID: 99011022\ndeclaredByID: 99010015\ntimeDeclared: 133330953000000000\nwarHQ: Ikuchi - Hisec Loves You",
+            "text": "againstID: 3011\ndeclaredByID: 2001\ntimeDeclared: 133330953000000000\nwarHQ: Ikuchi - Hisec Loves You",
             "is_read": false,
             "is_sent": false
         },
@@ -642,7 +642,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "againstID: 98491592\ndeclaredByID: 99012205\nendDate: 133441135200000000",
+            "text": "againstID: 2001\ndeclaredByID: 3011\nendDate: 133441135200000000",
             "is_read": false,
             "is_sent": false
         },
@@ -652,7 +652,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "charID: 2115099159\ndefenderID: 98491592\nentityID: 99012205",
+            "text": "charID: 1011\ndefenderID: 3001\nentityID: 3011",
             "is_read": false,
             "is_sent": false
         },
@@ -662,7 +662,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "charID: 2115099159\nentityID: 99009052\niskValue: 100000000.0\nofferedID: 99008786",
+            "text": "charID: 1001\nentityID: 3001\niskValue: 100000000.0\nofferedID: 2001",
             "is_read": false,
             "is_sent": false
         },
@@ -672,7 +672,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "aggressorID: 99010015\ncharID: 92098038\ndefenderID: 98659636\nenemyID: 99010015\niskValue: 0.0\nmercID: 99004804",
+            "text": "aggressorID: 3011\ncharID: 1001\ndefenderID: 3001\nenemyID: 3011\niskValue: 0.0\nmercID: 2001",
             "is_read": false,
             "is_sent": false
         },
@@ -682,7 +682,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "allianceID: 99008777\ncorpID: 98604097",
+            "text": "allianceID: 3001\ncorpID: 2001",
             "is_read": false,
             "is_sent": false
         },
@@ -692,7 +692,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "againstID: 99009052\ncost: null\ndeclaredByID: 99008786\ndelayHours: null\nhostileState: null",
+            "text": "againstID: 3011\ncost: null\ndeclaredByID: 2001\ndelayHours: null\nhostileState: null",
             "is_read": false,
             "is_sent": false
         },
@@ -702,7 +702,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "amount: 6000000\nbillTypeID: 5\ncreditorID: 1000125\ncurrentDate: 133462502887835953\ndebtorID: 99011022\ndueDate: 133488422887817240\nexternalID: 99011022\nexternalID2: -1",
+            "text": "amount: 6000000\nbillTypeID: 5\ncreditorID: 1000125\ncurrentDate: 133462502887835953\ndebtorID: 2001\ndueDate: 133488422887817240\nexternalID: 3001\nexternalID2: -1",
             "is_read": false,
             "is_sent": false
         },
@@ -712,7 +712,7 @@
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-11-18 20:00:00",
-            "text": "applicationText: ''\ncharID: 1369039881\ncorpID: 98267621",
+            "text": "applicationText: ''\ncharID: 1011\ncorpID: 2001",
             "is_read": false,
             "is_sent": false
         },

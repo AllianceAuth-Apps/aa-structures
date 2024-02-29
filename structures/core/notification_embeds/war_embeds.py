@@ -10,6 +10,7 @@ from django.utils.translation import gettext as _
 from eveuniverse.models import EveEntity
 
 from app_utils.datetime import ldap_time_2_datetime
+from app_utils.helpers import humanize_number
 
 from structures.helpers import get_or_create_esi_obj
 from structures.models import Notification, Webhook
@@ -34,6 +35,62 @@ class NotificationWarEmbed(NotificationBaseEmbed):
         self._thumbnail = dhooks_lite.Thumbnail(
             self._declared_by.icon_url(size=self.ICON_DEFAULT_SIZE)
         )
+
+
+class NotificationAcceptedAlly(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Accepted Ally")
+        ally: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["allyID"]
+        )
+        enemy: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["enemyID"]
+        )
+        character: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["charID"]
+        )
+        isk_value = self._parsed_text["iskValue"]
+        time = ldap_time_2_datetime(self._parsed_text["time"])
+        self._description = _(
+            "%(ally)s has been accepted in a war against %(enemy)s. "
+            "The offer was accepted at %(time)s by %(character)s for %(isk_value)s ISK."
+        ) % {
+            "enemy": gen_eve_entity_link(enemy),
+            "ally": gen_eve_entity_link(ally),
+            "character": gen_eve_entity_link(character),
+            "isk_value": humanize_number(isk_value),
+            "time": target_datetime_formatted(time),
+        }
+        self._thumbnail = dhooks_lite.Thumbnail(
+            ally.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+        self._color = Webhook.Color.WARNING
+
+
+class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Ally Has Joined a War")
+        aggressor = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["aggressorID"]
+        )
+        ally = get_or_create_esi_obj(EveEntity, id=self._parsed_text["allyID"])
+        defender = get_or_create_esi_obj(EveEntity, id=self._parsed_text["defenderID"])
+        start_time = ldap_time_2_datetime(self._parsed_text["startTime"])
+        self._description = _(
+            "%(ally)s has joined %(defender)s in a war against %(aggressor)s. "
+            "Their participation in the war will start at %(start_time)s."
+        ) % {
+            "aggressor": gen_eve_entity_link(aggressor),
+            "ally": gen_eve_entity_link(ally),
+            "defender": gen_eve_entity_link(defender),
+            "start_time": target_datetime_formatted(start_time),
+        }
+        self._thumbnail = dhooks_lite.Thumbnail(
+            ally.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+        self._color = Webhook.Color.WARNING
 
 
 class NotificationCorpWarSurrenderMsg(NotificationWarEmbed):
@@ -116,24 +173,6 @@ class NotificationWarInherited(NotificationWarEmbed):
         self._color = Webhook.Color.DANGER
 
 
-class NotificationWarRetractedByConcord(NotificationWarEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        self._title = _("CONCORD invalidates war")
-        war_ends = ldap_time_2_datetime(self._parsed_text["endDate"])
-        self._description = _(
-            "The war between %(declared_by)s and %(against)s "
-            "has been retracted by CONCORD.\n"
-            "After %(end_date)s CONCORD will again respond to any hostilities "
-            "between those involved with full force."
-        ) % {
-            "declared_by": gen_eve_entity_link(self._declared_by),
-            "against": gen_eve_entity_link(self._against),
-            "end_date": target_datetime_formatted(war_ends),
-        }
-        self._color = Webhook.Color.WARNING
-
-
 class NotificationWarCorporationBecameEligible(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
@@ -166,6 +205,24 @@ class NotificationWarCorporationNoLongerEligible(NotificationBaseEmbed):
         self._color = Webhook.Color.INFO
 
 
+class NotificationWarRetractedByConcord(NotificationWarEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("CONCORD invalidates war")
+        war_ends = ldap_time_2_datetime(self._parsed_text["endDate"])
+        self._description = _(
+            "The war between %(declared_by)s and %(against)s "
+            "has been retracted by CONCORD.\n"
+            "After %(end_date)s CONCORD will again respond to any hostilities "
+            "between those involved with full force."
+        ) % {
+            "declared_by": gen_eve_entity_link(self._declared_by),
+            "against": gen_eve_entity_link(self._against),
+            "end_date": target_datetime_formatted(war_ends),
+        }
+        self._color = Webhook.Color.WARNING
+
+
 class NotificationWarSurrenderOfferMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
@@ -180,28 +237,3 @@ class NotificationWarSurrenderOfferMsg(NotificationBaseEmbed):
             "be unable to declare new wars against each other for the next 2 weeks."
         ) % (owner_1_link, owner_2_link, f"{isk_value:,.2f}")
         self._color = Webhook.Color.INFO
-
-
-class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        self._title = _("Ally Has Joined a War")
-        aggressor = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["aggressorID"]
-        )
-        ally = get_or_create_esi_obj(EveEntity, id=self._parsed_text["allyID"])
-        defender = get_or_create_esi_obj(EveEntity, id=self._parsed_text["defenderID"])
-        start_time = ldap_time_2_datetime(self._parsed_text["startTime"])
-        self._description = _(
-            "%(ally)s has joined %(defender)s in a war against %(aggressor)s. "
-            "Their participation in the war will start at %(start_time)s."
-        ) % {
-            "aggressor": gen_eve_entity_link(aggressor),
-            "ally": gen_eve_entity_link(ally),
-            "defender": gen_eve_entity_link(defender),
-            "start_time": target_datetime_formatted(start_time),
-        }
-        self._thumbnail = dhooks_lite.Thumbnail(
-            ally.icon_url(size=self.ICON_DEFAULT_SIZE)
-        )
-        self._color = Webhook.Color.WARNING

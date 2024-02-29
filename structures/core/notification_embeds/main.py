@@ -214,6 +214,7 @@ class NotificationBaseEmbed:
             NotificationTowerResourceAlertMsg,
         )
         from .war_embeds import (
+            NotificationAcceptedAlly,
             NotificationAllyJoinedWarMsg,
             NotificationCorpWarSurrenderMsg,
             NotificationWarAdopted,
@@ -276,16 +277,17 @@ class NotificationBaseEmbed:
             NT.SOV_STRUCTURE_DESTROYED: NotificationSovStructureDestroyed,
             NT.SOV_ALL_ANCHORING_MSG: NotificationSovAllAnchoringMsg,
             # War
+            NT.WAR_ACCEPTED_ALLY: NotificationAcceptedAlly,
             NT.WAR_ALLY_JOINED_WAR_AGGRESSOR_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_ALLY_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_DEFENDER_MSG: NotificationAllyJoinedWarMsg,
+            NT.WAR_CORPORATION_BECAME_ELIGIBLE: NotificationWarCorporationBecameEligible,
+            NT.WAR_CORPORATION_NO_LONGER_ELIGIBLE: NotificationWarCorporationNoLongerEligible,
             NT.WAR_CORP_WAR_SURRENDER_MSG: NotificationCorpWarSurrenderMsg,
             NT.WAR_WAR_ADOPTED: NotificationWarAdopted,
             NT.WAR_WAR_DECLARED: NotificationWarDeclared,
             NT.WAR_WAR_INHERITED: NotificationWarInherited,
             NT.WAR_WAR_RETRACTED_BY_CONCORD: NotificationWarRetractedByConcord,
-            NT.WAR_CORPORATION_BECAME_ELIGIBLE: NotificationWarCorporationBecameEligible,
-            NT.WAR_CORPORATION_NO_LONGER_ELIGIBLE: NotificationWarCorporationNoLongerEligible,
             NT.WAR_WAR_SURRENDER_OFFER_MSG: NotificationWarSurrenderOfferMsg,
             # Billing
             NT.BILLING_BILL_OUT_OF_MONEY_MSG: NotificationBillingBillOutOfMoneyMsg,

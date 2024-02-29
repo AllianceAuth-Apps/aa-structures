@@ -215,6 +215,7 @@ class NotificationBaseEmbed:
         )
         from .war_embeds import (
             NotificationAcceptedAlly,
+            NotificationAllWarCorpJoinedAllianceMsg,
             NotificationAllyJoinedWarMsg,
             NotificationCorpWarSurrenderMsg,
             NotificationWarAdopted,
@@ -281,6 +282,7 @@ class NotificationBaseEmbed:
             NT.WAR_ALLY_JOINED_WAR_AGGRESSOR_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_ALLY_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_DEFENDER_MSG: NotificationAllyJoinedWarMsg,
+            NT.WAR_ALL_WAR_CORP_JOINED_ALLIANCE_MSG: NotificationAllWarCorpJoinedAllianceMsg,
             NT.WAR_CORPORATION_BECAME_ELIGIBLE: NotificationWarCorporationBecameEligible,
             NT.WAR_CORPORATION_NO_LONGER_ELIGIBLE: NotificationWarCorporationNoLongerEligible,
             NT.WAR_CORP_WAR_SURRENDER_MSG: NotificationCorpWarSurrenderMsg,

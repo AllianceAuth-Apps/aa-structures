@@ -68,6 +68,26 @@ class NotificationAcceptedAlly(NotificationBaseEmbed):
         self._color = Webhook.Color.WARNING
 
 
+class NotificationAllWarCorpJoinedAllianceMsg(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Corp joined alliance during war")
+        alliance: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["allianceID"]
+        )
+        corporation: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["corpID"]
+        )
+        self._description = _("%(corporation)s has joined %(alliance)s during war.") % {
+            "alliance": gen_eve_entity_link(alliance),
+            "corporation": gen_eve_entity_link(corporation),
+        }
+        self._thumbnail = dhooks_lite.Thumbnail(
+            corporation.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+        self._color = Webhook.Color.INFO
+
+
 class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)

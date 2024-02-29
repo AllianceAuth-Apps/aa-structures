@@ -10,7 +10,7 @@ __title__ = "Structures"
 # Implementing issue #92
 
 # [x] AcceptedAlly (o)
-# [ ] AllWarCorpJoinedAllianceMsg
+# [x] AllWarCorpJoinedAllianceMsg
 # [ ] AllWarSurrenderMsg
 # [ ] DeclareWar
 # [ ] MercOfferedNegotiationMsg (o)

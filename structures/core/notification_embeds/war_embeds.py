@@ -91,13 +91,13 @@ class NotificationAllWarCorpJoinedAllianceMsg(NotificationBaseEmbed):
 class NotificationAllWarSurrenderMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._title = _("XX has surrendered")
         opponent: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["againstID"]
         )
         declarer: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["declaredByID"]
         )
+        self._title = _("%s has surrendered") % declarer.name
         self._description = _(
             "%(declarer)s has surrendered in the war against  %(opponent)s."
         ) % {
@@ -107,7 +107,7 @@ class NotificationAllWarSurrenderMsg(NotificationBaseEmbed):
         self._thumbnail = dhooks_lite.Thumbnail(
             declarer.icon_url(size=self.ICON_DEFAULT_SIZE)
         )
-        self._color = Webhook.Color.INFO
+        self._color = Webhook.Color.WARNING
 
 
 class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
@@ -148,6 +148,26 @@ class NotificationCorpWarSurrenderMsg(NotificationWarEmbed):
             "against": gen_eve_entity_link(self._against),
         }
         self._color = Webhook.Color.WARNING
+
+
+class NotificationDeclareWar(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        entity: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["entityID"]
+        )
+        defender: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["defenderID"]
+        )
+        self._title = _("%s has declared war") % entity.name
+        self._description = _("%(entity)s has declared war against %(defender)s.") % {
+            "entity": gen_eve_entity_link(entity),
+            "defender": gen_eve_entity_link(defender),
+        }
+        self._thumbnail = dhooks_lite.Thumbnail(
+            entity.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+        self._color = Webhook.Color.DANGER
 
 
 class NotificationWarAdopted(NotificationWarEmbed):

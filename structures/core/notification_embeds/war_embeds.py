@@ -70,28 +70,6 @@ class NotificationAllWarCorpJoinedAllianceMsg(NotificationBaseEmbed):
         self._color = Webhook.Color.INFO
 
 
-class NotificationAllWarSurrenderMsg(NotificationBaseEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        opponent: EveEntity = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["againstID"]
-        )
-        declarer: EveEntity = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["declaredByID"]
-        )
-        self._title = _("%s has surrendered") % declarer.name
-        self._description = _(
-            "%(declarer)s has surrendered in the war against  %(opponent)s."
-        ) % {
-            "declarer": gen_eve_entity_link(declarer),
-            "opponent": gen_eve_entity_link(opponent),
-        }
-        self._thumbnail = dhooks_lite.Thumbnail(
-            declarer.icon_url(size=self.ICON_DEFAULT_SIZE)
-        )
-        self._color = Webhook.Color.WARNING
-
-
 class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
@@ -204,18 +182,88 @@ class NotificationOfferedSurrender(NotificationBaseEmbed):
         self._color = Webhook.Color.WARNING
 
 
+class NotificationWarCorporationBecameEligible(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _(
+            "Corporation or alliance is now eligible for formal war declarations"
+        )
+        self._description = _(
+            "Your corporation or alliance is **now eligible** to participate in "
+            "formal war declarations. This could be because your corporation "
+            "and/or one of the corporations in your alliance owns a structure "
+            "deployed in space."
+        )
+        self._color = Webhook.Color.WARNING
+
+
+class NotificationWarCorporationNoLongerEligible(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _(
+            "Corporation or alliance is no longer eligible for formal war declarations"
+        )
+        self._description = _(
+            "Your corporation or alliance is **no longer eligible** to participate "
+            "in formal war declarations.\n"
+            "Neither your corporation nor any of the corporations "
+            "in your alliance own a structure deployed in space at this time. "
+            "If your corporation or alliance is currently involved in a formal war, "
+            "that war will end in 24 hours."
+        )
+        self._color = Webhook.Color.INFO
+
+
+class NotificationWarSurrenderOfferMsg(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        owner_1 = get_or_create_esi_obj(EveEntity, id=self._parsed_text.get("ownerID1"))
+        owner_2 = get_or_create_esi_obj(EveEntity, id=self._parsed_text.get("ownerID2"))
+        isk_value = self._parsed_text.get("iskValue", 0)
+        self._title = _("%s has offered a surrender") % owner_1.name
+        self._description = _(
+            "%(owner_1)s has offered to end the war with %(owner_2)s in the exchange "
+            "for %(isk_value)s ISK. "
+            "If accepted, the war will end in 24 hours and your organizations will "
+            "be unable to declare new wars against each other for the next 2 weeks."
+        ) % {
+            "owner_1": gen_eve_entity_link(owner_1),
+            "owner_2": gen_eve_entity_link(owner_2),
+            "isk_value": humanize_number(isk_value),
+        }
+        self._color = Webhook.Color.INFO
+
+
+#################################
+# War notifs with common elements
+#################################
+
+
 class NotificationWarBaseEmbed(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._declared_by = get_or_create_esi_obj(
+        self._declared_by: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["declaredByID"]
         )
-        self._against = get_or_create_esi_obj(
+        self._against: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["againstID"]
         )
         self._thumbnail = dhooks_lite.Thumbnail(
             self._declared_by.icon_url(size=self.ICON_DEFAULT_SIZE)
         )
+
+
+class NotificationAllWarSurrenderMsg(NotificationWarBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("%s has surrendered") % self._declared_by.name
+        self._description = _(
+            "%(declared_by)s has surrendered in the war against  %(against)s."
+        ) % {
+            "declared_by": gen_eve_entity_link(self._declared_by),
+            "against": gen_eve_entity_link(self._against),
+        }
+        self._color = Webhook.Color.WARNING
 
 
 class NotificationCorpWarSurrenderMsg(NotificationWarBaseEmbed):
@@ -298,38 +346,6 @@ class NotificationWarInherited(NotificationWarBaseEmbed):
         self._color = Webhook.Color.DANGER
 
 
-class NotificationWarCorporationBecameEligible(NotificationBaseEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        self._title = _(
-            "Corporation or alliance is now eligible for formal war declarations"
-        )
-        self._description = _(
-            "Your corporation or alliance is **now eligible** to participate in "
-            "formal war declarations. This could be because your corporation "
-            "and/or one of the corporations in your alliance owns a structure "
-            "deployed in space."
-        )
-        self._color = Webhook.Color.WARNING
-
-
-class NotificationWarCorporationNoLongerEligible(NotificationBaseEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        self._title = _(
-            "Corporation or alliance is no longer eligible for formal war declarations"
-        )
-        self._description = _(
-            "Your corporation or alliance is **no longer eligible** to participate "
-            "in formal war declarations.\n"
-            "Neither your corporation nor any of the corporations "
-            "in your alliance own a structure deployed in space at this time. "
-            "If your corporation or alliance is currently involved in a formal war, "
-            "that war will end in 24 hours."
-        )
-        self._color = Webhook.Color.INFO
-
-
 class NotificationWarRetractedByConcord(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
@@ -346,23 +362,3 @@ class NotificationWarRetractedByConcord(NotificationWarBaseEmbed):
             "end_date": target_datetime_formatted(war_ends),
         }
         self._color = Webhook.Color.WARNING
-
-
-class NotificationWarSurrenderOfferMsg(NotificationBaseEmbed):
-    def __init__(self, notification: Notification) -> None:
-        super().__init__(notification)
-        owner_1 = get_or_create_esi_obj(EveEntity, id=self._parsed_text.get("ownerID1"))
-        owner_2 = get_or_create_esi_obj(EveEntity, id=self._parsed_text.get("ownerID2"))
-        isk_value = self._parsed_text.get("iskValue", 0)
-        self._title = _("%s has offered a surrender") % owner_1.name
-        self._description = _(
-            "%(owner_1)s has offered to end the war with %(owner_2)s in the exchange "
-            "for %(isk_value)s ISK. "
-            "If accepted, the war will end in 24 hours and your organizations will "
-            "be unable to declare new wars against each other for the next 2 weeks."
-        ) % {
-            "owner_1": gen_eve_entity_link(owner_1),
-            "owner_2": gen_eve_entity_link(owner_2),
-            "isk_value": humanize_number(isk_value),
-        }
-        self._color = Webhook.Color.INFO

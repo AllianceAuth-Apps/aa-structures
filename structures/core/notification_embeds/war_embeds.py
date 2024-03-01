@@ -53,14 +53,18 @@ class NotificationAcceptedAlly(NotificationBaseEmbed):
 class NotificationAllWarCorpJoinedAllianceMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._title = _("Corp joined alliance during war")
+        self._title = _("Corporation you are at war with is joining an alliance")
         alliance: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["allianceID"]
         )
         corporation: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["corpID"]
         )
-        self._description = _("%(corporation)s has joined %(alliance)s during war.") % {
+        self._description = _(
+            "%(corporation)s is joining %(alliance)s alliance. "
+            "Since you are at war with %(corporation)s, "
+            "in 24 hours you will also be at war with %(alliance)s."
+        ) % {
             "alliance": gen_eve_entity_link(alliance),
             "corporation": gen_eve_entity_link(corporation),
         }
@@ -104,8 +108,14 @@ class NotificationDeclareWar(NotificationBaseEmbed):
         defender: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["defenderID"]
         )
-        self._title = _("%s has declared war") % entity.name
-        self._description = _("%(entity)s has declared war against %(defender)s.") % {
+        self._title = _("%(entity)s Declares War Against %(defender)s") % {
+            "entity": entity.name,
+            "defender": defender.name,
+        }
+        self._description = _(
+            "%(entity)s has declared war on %(defender)s. "
+            "Within 24 hours fighting can legally occur between those involved."
+        ) % {
             "entity": gen_eve_entity_link(entity),
             "defender": gen_eve_entity_link(defender),
         }
@@ -118,15 +128,17 @@ class NotificationDeclareWar(NotificationBaseEmbed):
 class NotificationMercOfferedNegotiationMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._title = _("Mercenary offered support")
         aggressor = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["aggressorID"]
         )
         defender = get_or_create_esi_obj(EveEntity, id=self._parsed_text["defenderID"])
         mercenary = get_or_create_esi_obj(EveEntity, id=self._parsed_text["mercID"])
         isk_value = self._parsed_text["iskValue"]
+        self._title = (
+            _("%s has offered its services in one of your wars") % mercenary.name
+        )
         self._description = _(
-            "%(mercenary)s has offered to support %(defender)s in the war against %(aggressor)s for %(isk_value)s. "
+            "%(mercenary)s has offered %(defender)s it's services in it's war against %(aggressor)s for %(isk_value)s. "
         ) % {
             "aggressor": gen_eve_entity_link(aggressor),
             "defender": gen_eve_entity_link(defender),
@@ -161,9 +173,41 @@ class NotificationMercOfferRetractedMsg(NotificationBaseEmbed):
         self._color = Webhook.Color.INFO
 
 
+class NotificationOfferedToAlly(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        aggressor = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["aggressorID"]
+        )
+        defender: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["defenderID"]
+        )
+        character: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["mercID"]
+        )
+        isk_value = self._parsed_text["iskValue"]
+        self._title = _("You have offered to ally with %s ") % defender.name
+        self._description = _(
+            "%(character)s has offered to ally to %(defender)s in their war "
+            "against %(aggressor)s. The offer asked for %(isk_value)s ISK as payment."
+        ) % {
+            "aggressor": gen_eve_entity_link(aggressor),
+            "defender": gen_eve_entity_link(defender),
+            "character": gen_eve_entity_link(character),
+            "isk_value": humanize_number(isk_value),
+        }
+        self._thumbnail = dhooks_lite.Thumbnail(
+            character.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+        self._color = Webhook.Color.INFO
+
+
 class NotificationOfferedSurrender(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
+        character: EveEntity = get_or_create_esi_obj(
+            EveEntity, id=self._parsed_text["charID"]
+        )
         entity: EveEntity = get_or_create_esi_obj(
             EveEntity, id=self._parsed_text["entityID"]
         )
@@ -171,11 +215,14 @@ class NotificationOfferedSurrender(NotificationBaseEmbed):
             EveEntity, id=self._parsed_text["offeredID"]
         )
         isk_value = self._parsed_text["iskValue"]
-        self._title = _("War update: %s offered surrender") % entity.name
+        self._title = _("%s offered to surrender") % entity.name
         self._description = _(
-            "%(entity)s has offered to surrender to %(offered)s for %(isk_value)s ISK."
+            "%(character)s has offered to surrender to %(offered)s, "
+            "offering %(isk_value)s ISK. If accepted, the war will end in 24 hours "
+            "and neither organization will be able to declare new wars against "
+            "the other for the next 2 weeks."
         ) % {
-            "entity": gen_eve_entity_link(entity),
+            "character": gen_eve_entity_link(character),
             "offered": gen_eve_entity_link(offered),
             "isk_value": humanize_number(isk_value),
         }

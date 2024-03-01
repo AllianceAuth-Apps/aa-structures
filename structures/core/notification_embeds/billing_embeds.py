@@ -41,9 +41,9 @@ class BillType(models.IntegerChoices):
 class NotificationBillingBillOutOfMoneyMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        bill_type_id = self._parsed_text["billTypeID"]
+        bill_type_id = self._data["billTypeID"]
         bill_type_str = BillType.to_enum(bill_type_id).label
-        due_date = ldap_time_2_datetime(self._parsed_text["dueDate"])
+        due_date = ldap_time_2_datetime(self._data["dueDate"])
         self._title = _("Insufficient Funds for Bill")
         self._description = _(
             "The selected corporation wallet division for automatic payments "
@@ -62,7 +62,7 @@ class NotificationBillingIHubBillAboutToExpire(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         solar_system_link = gen_solar_system_text(self._notification.eve_solar_system())
-        due_date = ldap_time_2_datetime(self._parsed_text.get("dueDate"))
+        due_date = ldap_time_2_datetime(self._data.get("dueDate"))
         self._title = _("IHub Bill About to Expire")
         self._description = _(
             "Maintenance bill for Infrastructure Hub in %(solar_system)s "
@@ -101,12 +101,12 @@ class NotificationBillingIHubDestroyedByBillFailure(NotificationBaseEmbed):
 class NotificationCorpAllBillMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        amount = self._parsed_text["amount"]
-        bill_type_id = self._parsed_text["billTypeID"]
+        amount = self._data["amount"]
+        bill_type_id = self._data["billTypeID"]
         bill_type_str = BillType.to_enum(bill_type_id).label
-        due_date = ldap_time_2_datetime(self._parsed_text["dueDate"])
-        creditor = get_or_create_eve_entity(id=self._parsed_text["creditorID"])
-        debtor = get_or_create_eve_entity(id=self._parsed_text["debtorID"])
+        due_date = ldap_time_2_datetime(self._data["dueDate"])
+        creditor = get_or_create_eve_entity(id=self._data["creditorID"])
+        debtor = get_or_create_eve_entity(id=self._data["debtorID"])
         self._title = _("New bill")
         self._description = _(
             "%(debtor)s has to pay %(amount)s to %(creditor)s "

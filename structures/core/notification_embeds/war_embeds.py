@@ -22,11 +22,11 @@ class NotificationAcceptedAlly(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("Accepted Ally")
-        ally = get_or_create_eve_entity(id=self._parsed_text["allyID"])
-        enemy = get_or_create_eve_entity(id=self._parsed_text["enemyID"])
-        character = get_or_create_eve_entity(id=self._parsed_text["charID"])
-        isk_value = self._parsed_text["iskValue"]
-        time = ldap_time_2_datetime(self._parsed_text["time"])
+        ally = get_or_create_eve_entity(id=self._data["allyID"])
+        enemy = get_or_create_eve_entity(id=self._data["enemyID"])
+        character = get_or_create_eve_entity(id=self._data["charID"])
+        isk_value = self._data["iskValue"]
+        time = ldap_time_2_datetime(self._data["time"])
         self._description = _(
             "%(ally)s has been accepted in a war against %(enemy)s. "
             "The offer was accepted at %(time)s by %(character)s for %(isk_value)s ISK."
@@ -47,8 +47,8 @@ class NotificationAllWarCorpJoinedAllianceMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("Corporation you are at war with is joining an alliance")
-        alliance = get_or_create_eve_entity(id=self._parsed_text["allianceID"])
-        corporation = get_or_create_eve_entity(id=self._parsed_text["corpID"])
+        alliance = get_or_create_eve_entity(id=self._data["allianceID"])
+        corporation = get_or_create_eve_entity(id=self._data["corpID"])
         self._description = _(
             "%(corporation)s is joining %(alliance)s alliance. "
             "Since you are at war with %(corporation)s, "
@@ -67,10 +67,10 @@ class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("Ally Has Joined a War")
-        aggressor = get_or_create_eve_entity(id=self._parsed_text["aggressorID"])
-        ally = get_or_create_eve_entity(id=self._parsed_text["allyID"])
-        defender = get_or_create_eve_entity(id=self._parsed_text["defenderID"])
-        start_time = ldap_time_2_datetime(self._parsed_text["startTime"])
+        aggressor = get_or_create_eve_entity(id=self._data["aggressorID"])
+        ally = get_or_create_eve_entity(id=self._data["allyID"])
+        defender = get_or_create_eve_entity(id=self._data["defenderID"])
+        start_time = ldap_time_2_datetime(self._data["startTime"])
         self._description = _(
             "%(ally)s has joined %(defender)s in a war against %(aggressor)s. "
             "Their participation in the war will start at %(start_time)s."
@@ -89,8 +89,8 @@ class NotificationAllyJoinedWarMsg(NotificationBaseEmbed):
 class NotificationDeclareWar(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        entity = get_or_create_eve_entity(id=self._parsed_text["entityID"])
-        defender = get_or_create_eve_entity(id=self._parsed_text["defenderID"])
+        entity = get_or_create_eve_entity(id=self._data["entityID"])
+        defender = get_or_create_eve_entity(id=self._data["defenderID"])
         self._title = _("%(entity)s Declares War Against %(defender)s") % {
             "entity": entity.name,
             "defender": defender.name,
@@ -111,10 +111,10 @@ class NotificationDeclareWar(NotificationBaseEmbed):
 class NotificationMercOfferedNegotiationMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        aggressor = get_or_create_eve_entity(id=self._parsed_text["aggressorID"])
-        defender = get_or_create_eve_entity(id=self._parsed_text["defenderID"])
-        mercenary = get_or_create_eve_entity(id=self._parsed_text["mercID"])
-        isk_value = self._parsed_text["iskValue"]
+        aggressor = get_or_create_eve_entity(id=self._data["aggressorID"])
+        defender = get_or_create_eve_entity(id=self._data["defenderID"])
+        mercenary = get_or_create_eve_entity(id=self._data["mercID"])
+        isk_value = self._data["iskValue"]
         self._title = (
             _("%s has offered its services in one of your wars") % mercenary.name
         )
@@ -136,9 +136,9 @@ class NotificationMercOfferRetractedMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("Mercenary offered services")
-        aggressor = get_or_create_eve_entity(id=self._parsed_text["aggressorID"])
-        defender = get_or_create_eve_entity(id=self._parsed_text["defenderID"])
-        mercenary = get_or_create_eve_entity(id=self._parsed_text["mercID"])
+        aggressor = get_or_create_eve_entity(id=self._data["aggressorID"])
+        defender = get_or_create_eve_entity(id=self._data["defenderID"])
+        mercenary = get_or_create_eve_entity(id=self._data["mercID"])
         self._description = _(
             "%(mercenary)s has retracted it's offer to support %(defender)s in a war against %(aggressor)s."
         ) % {
@@ -155,10 +155,10 @@ class NotificationMercOfferRetractedMsg(NotificationBaseEmbed):
 class NotificationOfferedToAlly(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        aggressor = get_or_create_eve_entity(id=self._parsed_text["aggressorID"])
-        defender = get_or_create_eve_entity(id=self._parsed_text["defenderID"])
-        character = get_or_create_eve_entity(id=self._parsed_text["mercID"])
-        isk_value = self._parsed_text["iskValue"]
+        aggressor = get_or_create_eve_entity(id=self._data["aggressorID"])
+        defender = get_or_create_eve_entity(id=self._data["defenderID"])
+        character = get_or_create_eve_entity(id=self._data["mercID"])
+        isk_value = self._data["iskValue"]
         self._title = _("You have offered to ally with %s ") % defender.name
         self._description = _(
             "%(character)s has offered to ally to %(defender)s in their war "
@@ -178,10 +178,10 @@ class NotificationOfferedToAlly(NotificationBaseEmbed):
 class NotificationOfferedSurrender(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        character = get_or_create_eve_entity(id=self._parsed_text["charID"])
-        entity = get_or_create_eve_entity(id=self._parsed_text["entityID"])
-        offered = get_or_create_eve_entity(id=self._parsed_text["offeredID"])
-        isk_value = self._parsed_text["iskValue"]
+        character = get_or_create_eve_entity(id=self._data["charID"])
+        entity = get_or_create_eve_entity(id=self._data["entityID"])
+        offered = get_or_create_eve_entity(id=self._data["offeredID"])
+        isk_value = self._data["iskValue"]
         self._title = _("%s offered to surrender") % entity.name
         self._description = _(
             "%(character)s has offered to surrender to %(offered)s, "
@@ -231,9 +231,9 @@ class NotificationWarCorporationNoLongerEligible(NotificationBaseEmbed):
 class NotificationWarSurrenderOfferMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        owner_1 = get_or_create_eve_entity(id=self._parsed_text.get("ownerID1"))
-        owner_2 = get_or_create_eve_entity(id=self._parsed_text.get("ownerID2"))
-        isk_value = self._parsed_text.get("iskValue", 0)
+        owner_1 = get_or_create_eve_entity(id=self._data.get("ownerID1"))
+        owner_2 = get_or_create_eve_entity(id=self._data.get("ownerID2"))
+        isk_value = self._data.get("iskValue", 0)
         self._title = _("%s has offered a surrender") % owner_1.name
         self._description = _(
             "%(owner_1)s has offered to end the war with %(owner_2)s in the exchange "
@@ -256,10 +256,8 @@ class NotificationWarSurrenderOfferMsg(NotificationBaseEmbed):
 class NotificationWarBaseEmbed(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._declared_by = get_or_create_eve_entity(
-            id=self._parsed_text["declaredByID"]
-        )
-        self._against = get_or_create_eve_entity(id=self._parsed_text["againstID"])
+        self._declared_by = get_or_create_eve_entity(id=self._data["declaredByID"])
+        self._against = get_or_create_eve_entity(id=self._data["againstID"])
         self._thumbnail = dhooks_lite.Thumbnail(
             self._declared_by.icon_url(size=self.ICON_DEFAULT_SIZE)
         )
@@ -296,7 +294,7 @@ class NotificationCorpWarSurrenderMsg(NotificationWarBaseEmbed):
 class NotificationWarHQRemovedFromSpace(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        war_hq = self._parsed_text["warHQ"]
+        war_hq = self._data["warHQ"]
         self._title = (
             _("War against %s: War HQ removed from space") % self._against.name
         )
@@ -307,7 +305,7 @@ class NotificationWarHQRemovedFromSpace(NotificationWarBaseEmbed):
 class NotificationWarAdopted(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        alliance = get_or_create_eve_entity(id=self._parsed_text["allianceID"])
+        alliance = get_or_create_eve_entity(id=self._data["allianceID"])
         self._title = _("War update: %(against)s has left %(alliance)s") % {
             "against": self._against.name,
             "alliance": alliance.name,
@@ -340,8 +338,8 @@ class NotificationWarDeclared(NotificationWarBaseEmbed):
         ) % {
             "declared_by": gen_eve_entity_link(self._declared_by),
             "against": gen_eve_entity_link(self._against),
-            "war_hq": Webhook.text_bold(strip_tags(self._parsed_text["warHQ"])),
-            "delay_hours": Webhook.text_bold(self._parsed_text["delayHours"]),
+            "war_hq": Webhook.text_bold(strip_tags(self._data["warHQ"])),
+            "delay_hours": Webhook.text_bold(self._data["delayHours"]),
         }
         self._color = Webhook.Color.DANGER
 
@@ -349,9 +347,9 @@ class NotificationWarDeclared(NotificationWarBaseEmbed):
 class NotificationWarInherited(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        alliance = get_or_create_eve_entity(id=self._parsed_text["allianceID"])
-        opponent = get_or_create_eve_entity(id=self._parsed_text["opponentID"])
-        quitter = get_or_create_eve_entity(id=self._parsed_text["quitterID"])
+        alliance = get_or_create_eve_entity(id=self._data["allianceID"])
+        opponent = get_or_create_eve_entity(id=self._data["opponentID"])
+        quitter = get_or_create_eve_entity(id=self._data["quitterID"])
         self._title = _("%(alliance)s inherits war against %(opponent)s") % {
             "alliance": alliance.name,
             "opponent": opponent.name,
@@ -373,7 +371,7 @@ class NotificationWarInvalid(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("CONCORD invalidates war")
-        war_ends = ldap_time_2_datetime(self._parsed_text["endDate"])
+        war_ends = ldap_time_2_datetime(self._data["endDate"])
         self._description = _(
             "The war between %(declared_by)s and %(against)s "
             "has been invalidated.\n"
@@ -391,7 +389,7 @@ class NotificationWarRetractedByConcord(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("CONCORD retracts war")
-        war_ends = ldap_time_2_datetime(self._parsed_text["endDate"])
+        war_ends = ldap_time_2_datetime(self._data["endDate"])
         self._description = _(
             "The war between %(declared_by)s and %(against)s "
             "has been retracted by CONCORD.\n"

@@ -33,7 +33,7 @@ class NotificationBaseEmbed:
         if not isinstance(notification, NotificationBase):
             raise TypeError("notification must be of type Notification")
         self._notification = notification
-        self._parsed_text = notification.parsed_text()
+        self._data = notification.parsed_text()
         self._title = ""
         self._description = ""
         self._color = None
@@ -66,24 +66,24 @@ class NotificationBaseEmbed:
         damage_parts = []
         for prop in damage_labels:
             field_name = f"{prop[0]}{field_postfix}"
-            if field_name in self._parsed_text:
+            if field_name in self._data:
                 label = prop[1]
-                value = self._parsed_text[field_name] * factor
+                value = self._data[field_name] * factor
                 damage_parts.append(f"{label}: {value:.1f}%")
         damage_text = " | ".join(damage_parts)
         return damage_text
 
     def get_aggressor_link(self) -> str:
         """Returns the aggressor link from a parsed_text for POS and POCOs only."""
-        if self._parsed_text.get("aggressorAllianceID"):
+        if self._data.get("aggressorAllianceID"):
             key = "aggressorAllianceID"
-        elif self._parsed_text.get("aggressorCorpID"):
+        elif self._data.get("aggressorCorpID"):
             key = "aggressorCorpID"
-        elif self._parsed_text.get("aggressorID"):
+        elif self._data.get("aggressorID"):
             key = "aggressorID"
         else:
             return "(Unknown aggressor)"
-        entity = get_or_create_eve_entity(id=self._parsed_text[key])
+        entity = get_or_create_eve_entity(id=self._data[key])
         return Webhook.create_link(entity.name, entity.profile_url)
 
     def fuel_expires_target_date(self) -> str:

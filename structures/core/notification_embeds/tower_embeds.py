@@ -69,8 +69,8 @@ class NotificationTowerAlertMsg(NotificationTowerEmbed):
 class NotificationTowerResourceAlertMsg(NotificationTowerEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        if "wants" in self._parsed_text and self._parsed_text["wants"]:
-            fuel_quantity = self._parsed_text["wants"][0]["quantity"]
+        if "wants" in self._data and self._data["wants"]:
+            fuel_quantity = self._data["wants"][0]["quantity"]
             starbase_type = self._notification.eve_structure_type("typeID")
             seconds = starbases.fuel_duration(
                 starbase_type=starbase_type,

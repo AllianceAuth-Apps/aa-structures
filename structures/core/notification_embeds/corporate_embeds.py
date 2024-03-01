@@ -20,11 +20,11 @@ from .main import NotificationBaseEmbed
 class NotificationCorpCharEmbed(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._character = get_or_create_eve_entity(id=self._parsed_text["charID"])
-        self._corporation = get_or_create_eve_entity(id=self._parsed_text["corpID"])
+        self._character = get_or_create_eve_entity(id=self._data["charID"])
+        self._corporation = get_or_create_eve_entity(id=self._data["corpID"])
         self._character_link = gen_eve_entity_link(self._character)
         self._corporation_link = gen_corporation_link(self._corporation.name)
-        self._application_text = self._parsed_text.get("applicationText", "")
+        self._application_text = self._data.get("applicationText", "")
         self._thumbnail = dhooks_lite.Thumbnail(
             self._character.icon_url(size=self.ICON_DEFAULT_SIZE)
         )
@@ -55,7 +55,7 @@ class NotificationCorpAppInvitedMsg(NotificationCorpCharEmbed):
             "character_name": self._character.name
         }
         inviting_character = gen_eve_entity_link_from_id(
-            self._parsed_text.get("invokingCharID")
+            self._data.get("invokingCharID")
         )
         self._description = _(
             "%(character_name)s has been invited to join %(corporation_name)s "
@@ -105,7 +105,7 @@ class NotificationCorpAppRejectCustomMsg(NotificationCorpCharEmbed):
             "character_name": self._character_link,
             "corporation_name": self._corporation_link,
             "application_text": self._application_text,
-            "customMessage": self._parsed_text.get("customMessage", ""),
+            "customMessage": self._data.get("customMessage", ""),
         }
         self._color = Webhook.Color.INFO
 

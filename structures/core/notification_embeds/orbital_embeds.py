@@ -58,9 +58,7 @@ class NotificationOrbitalAttacked(NotificationOrbitalEmbed):
 class NotificationOrbitalReinforced(NotificationOrbitalEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        reinforce_exit_time = ldap_time_2_datetime(
-            self._parsed_text["reinforceExitTime"]
-        )
+        reinforce_exit_time = ldap_time_2_datetime(self._data["reinforceExitTime"])
         self._title = _("Orbital reinforced")
         self._description = _(
             "The %(structure_type)s at %(planet)s in %(solar_system)s "

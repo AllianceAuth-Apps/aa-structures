@@ -75,17 +75,15 @@ class NotificationCorpAppInvitedMsg(NotificationCorpCharEmbed):
 class NotificationCharAppRejectMsg(NotificationCorpCharEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._title = _("Rejected application from %(character_name)s") % {
+        self._title = _("%(character_name)s rejects invitation") % {
             "character_name": self._character.name
         }
         self._description = _(
-            "Application from %(character_name)s to join %(corporation_name)s:\n"
-            "> %(application_text)s\n"
-            "Has been rejected\n"
+            "Application from %(character_name)s to join %(corporation_name)s "
+            "has been rejected."
         ) % {
             "character_name": self._character_link,
             "corporation_name": self._corporation_link,
-            "application_text": self._application_text,
         }
         self._color = Webhook.Color.INFO
 

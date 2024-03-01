@@ -104,18 +104,21 @@ class NotificationCorpAllBillMsg(NotificationBaseEmbed):
         amount = self._data["amount"]
         bill_type_id = self._data["billTypeID"]
         bill_type_str = BillType.to_enum(bill_type_id).label
+        current_date = ldap_time_2_datetime(self._data["currentDate"])
         due_date = ldap_time_2_datetime(self._data["dueDate"])
         creditor = get_or_create_eve_entity(id=self._data["creditorID"])
         debtor = get_or_create_eve_entity(id=self._data["debtorID"])
-        self._title = _("New bill")
+        self._title = _("Bill issued")
         self._description = _(
-            "%(debtor)s has to pay %(amount)s to %(creditor)s "
-            "by %(due_date)s for %(bill_type)s."
+            "A bill of %(amount)s ISK, due %(due_date)s owed by %(debtor)s "
+            "to %(creditor)s was issued %(current_date)s. "
+            "This bill is for %(bill_type)s."
         ) % {
             "amount": humanize_number(amount),
             "bill_type": bill_type_str,
             "creditor": gen_eve_entity_link(creditor),
             "debtor": gen_eve_entity_link(debtor),
+            "current_date": target_datetime_formatted(current_date),
             "due_date": target_datetime_formatted(due_date),
         }
         self._color = Webhook.Color.WARNING

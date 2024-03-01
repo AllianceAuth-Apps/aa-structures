@@ -295,10 +295,19 @@ class NotificationWarHQRemovedFromSpace(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         war_hq = self._data["warHQ"]
-        self._title = (
-            _("War against %s: War HQ removed from space") % self._against.name
-        )
-        self._description = _("The war HQ %s has been removed from space.") % war_hq
+        time_declared = ldap_time_2_datetime(self._data["timeDeclared"])
+        self._title = _("WarHQ %s lost") % war_hq
+        self._description = _(
+            "The war HQ %(war_hq)s is no more. "
+            "As a consequence, the war declared by %(declared_by)s "
+            "against %(against)s on %(time_declared)s "
+            "has been declared invalid by CONCORD and has entered its cooldown period."
+        ) % {
+            "war_hq": war_hq,
+            "declared_by": self._declared_by,
+            "against": self._against,
+            "time_declared": time_declared,
+        }
         self._color = Webhook.Color.WARNING
 
 
@@ -370,13 +379,14 @@ class NotificationWarInherited(NotificationWarBaseEmbed):
 class NotificationWarInvalid(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        self._title = _("CONCORD invalidates war")
         war_ends = ldap_time_2_datetime(self._data["endDate"])
+        self._title = _("CONCORD invalidates war")
         self._description = _(
             "The war between %(declared_by)s and %(against)s "
-            "has been invalidated.\n"
-            "After %(end_date)s CONCORD will again respond to any hostilities "
-            "between those involved with full force."
+            "has been retracted by CONCORD, "
+            "because at least one of the involved parties "
+            "has become ineligible for war declarations."
+            "Fighting must cease on %(end_date)s."
         ) % {
             "declared_by": gen_eve_entity_link(self._declared_by),
             "against": gen_eve_entity_link(self._against),

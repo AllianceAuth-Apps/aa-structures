@@ -1,4 +1,4 @@
-"""Character & corporation embeds."""
+"""Corporate embeds."""
 
 # pylint: disable=missing-class-docstring
 

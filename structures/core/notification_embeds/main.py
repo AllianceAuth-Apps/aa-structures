@@ -163,7 +163,7 @@ class NotificationBaseEmbed:
             NotificationBillingIHubDestroyedByBillFailure,
             NotificationCorpAllBillMsg,
         )
-        from .character_embeds import (
+        from .corporate_embeds import (
             NotificationCharAppAcceptMsg,
             NotificationCharAppRejectMsg,
             NotificationCharAppWithdrawMsg,

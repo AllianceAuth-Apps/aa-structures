@@ -5,13 +5,17 @@
 import dhooks_lite
 
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveEntity, EveMoon, EveType
+from eveuniverse.models import EveMoon
 
 from app_utils.datetime import ldap_time_2_datetime
 
 from structures.constants import EveTypeId
 from structures.core import sovereignty
-from structures.helpers import get_or_create_esi_obj
+from structures.helpers import (
+    get_or_create_esi_obj,
+    get_or_create_eve_entity,
+    get_or_create_eve_type,
+)
 from structures.models import Notification, Webhook
 
 from .helpers import (
@@ -39,7 +43,7 @@ class NotificationSovEmbed(NotificationBaseEmbed):
             )
         else:
             structure_type_id = EveTypeId.TCU
-        structure_type = get_or_create_esi_obj(EveType, id=structure_type_id)
+        structure_type = get_or_create_eve_type(id=structure_type_id)
         self._structure_type_name = structure_type.name
         try:
             self._sov_owner_link = gen_alliance_link(notification.sender.name)
@@ -95,8 +99,8 @@ class NotificationSovCommandNodeEventStarted(NotificationSovEmbed):
 class NotificationSovAllClaimAcquiredMsg(NotificationSovEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        alliance = get_or_create_esi_obj(EveEntity, id=self._parsed_text["allianceID"])
-        corporation = get_or_create_esi_obj(EveEntity, id=self._parsed_text["corpID"])
+        alliance = get_or_create_eve_entity(id=self._parsed_text["allianceID"])
+        corporation = get_or_create_eve_entity(id=self._parsed_text["corpID"])
         self._title = (
             _("DED Sovereignty claim acknowledgment: %s") % self._solar_system.name
         )
@@ -115,8 +119,8 @@ class NotificationSovAllClaimAcquiredMsg(NotificationSovEmbed):
 class NotificationSovAllClaimLostMsg(NotificationSovEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        alliance = get_or_create_esi_obj(EveEntity, id=self._parsed_text["allianceID"])
-        corporation = get_or_create_esi_obj(EveEntity, id=self._parsed_text["corpID"])
+        alliance = get_or_create_eve_entity(id=self._parsed_text["allianceID"])
+        corporation = get_or_create_eve_entity(id=self._parsed_text["corpID"])
         self._title = _("Lost sovereignty in: %s") % self._solar_system.name
         self._description = _(
             "DED acknowledges that member corporation %(corporation)s has lost its "
@@ -175,13 +179,11 @@ class NotificationSovStructureDestroyed(NotificationSovEmbed):
 class NotificationSovAllAnchoringMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        corporation = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text.get("corpID")
-        )
+        corporation = get_or_create_eve_entity(id=self._parsed_text.get("corpID"))
         corp_link = gen_eve_entity_link(corporation)
         alliance_id = self._parsed_text.get("allianceID")
         if alliance_id:
-            alliance = get_or_create_esi_obj(EveEntity, id=alliance_id)
+            alliance = get_or_create_eve_entity(id=alliance_id)
             structure_owner = f"{corp_link} ({alliance.name})"
         else:
             structure_owner = corp_link
@@ -189,7 +191,7 @@ class NotificationSovAllAnchoringMsg(NotificationBaseEmbed):
         structure_type = self._notification.eve_structure_type("typeID")
         moon_id = self._parsed_text.get("moonID")
         if moon_id:
-            eve_moon = get_or_create_esi_obj(EveMoon, id=moon_id)
+            eve_moon: EveMoon = get_or_create_esi_obj(EveMoon, id=moon_id)
             location_text = _(" near **%s**") % eve_moon.name
         else:
             location_text = ""

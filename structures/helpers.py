@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
-from eveuniverse.models import EveEntity
+from eveuniverse.models import EveEntity, EveType
 
 
 def hours_until_deadline(
@@ -46,7 +46,13 @@ def get_or_create_esi_obj(model_class: type, *args, **kwargs) -> Any:
 
 def get_or_create_eve_entity(*args, **kwargs) -> EveEntity:
     """Get or create an EveEntity object from ESI and return it."""
-    obj, _ = EveEntity.objects.get_or_create_esi(*args, **kwargs)
+    obj = get_or_create_esi_obj(EveEntity, *args, **kwargs)
+    return obj
+
+
+def get_or_create_eve_type(*args, **kwargs) -> EveType:
+    """Get or create an EveEntity object from ESI and return it."""
+    obj = get_or_create_esi_obj(EveType, *args, **kwargs)
     return obj
 
 

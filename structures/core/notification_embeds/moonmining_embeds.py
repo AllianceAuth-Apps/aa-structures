@@ -6,12 +6,11 @@
 import dhooks_lite
 
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveEntity, EveType
 
 from app_utils.datetime import ldap_time_2_datetime
 
 from structures.app_settings import STRUCTURES_NOTIFICATION_SHOW_MOON_ORE
-from structures.helpers import get_or_create_esi_obj
+from structures.helpers import get_or_create_eve_entity, get_or_create_eve_type
 from structures.models import Notification, Webhook
 
 from .helpers import (
@@ -49,7 +48,7 @@ class NotificationMoonminingEmbed(NotificationBaseEmbed):
 
         ore_list = []
         for ore_type_id, volume in self._parsed_text["oreVolumeByType"].items():
-            ore_type = get_or_create_esi_obj(EveType, id=ore_type_id)
+            ore_type = get_or_create_eve_type(id=ore_type_id)
             if ore_type:
                 ore_list.append(
                     {"id": ore_type_id, "name": ore_type.name, "volume": volume}
@@ -64,7 +63,7 @@ class NotificationMoonminingEmbed(NotificationBaseEmbed):
 class NotificationMoonminningExtractionStarted(NotificationMoonminingEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        started_by = get_or_create_esi_obj(EveEntity, id=self._parsed_text["startedBy"])
+        started_by = get_or_create_eve_entity(id=self._parsed_text["startedBy"])
         ready_time = ldap_time_2_datetime(self._parsed_text["readyTime"])
         auto_time = ldap_time_2_datetime(self._parsed_text["autoTime"])
         self._title = _("Moon mining extraction started")
@@ -136,9 +135,7 @@ class NotificationMoonminningExtractionCanceled(NotificationMoonminingEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         if self._parsed_text["cancelledBy"]:
-            cancelled_by = get_or_create_esi_obj(
-                EveEntity, id=self._parsed_text["cancelledBy"]
-            )
+            cancelled_by = get_or_create_eve_entity(id=self._parsed_text["cancelledBy"])
         else:
             cancelled_by = _("(unknown)")
         self._title = _("Extraction cancelled")
@@ -159,9 +156,7 @@ class NotificationMoonminningExtractionCanceled(NotificationMoonminingEmbed):
 class NotificationMoonminningLaserFired(NotificationMoonminingEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        fired_by = EveEntity.objects.get_or_create_esi(id=self._parsed_text["firedBy"])[
-            0
-        ]
+        fired_by = get_or_create_eve_entity(id=self._parsed_text["firedBy"])
         self._title = _("Moon drill fired")
         self._description = _(
             "The moon drill fitted to %(structure_name)s at %(moon)s "

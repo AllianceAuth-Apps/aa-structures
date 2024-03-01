@@ -7,11 +7,10 @@ from collections import namedtuple
 import dhooks_lite
 
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveEntity, EveType
 
 from app_utils.datetime import ldap_time_2_datetime, ldap_timedelta_2_timedelta
 
-from structures.helpers import get_or_create_esi_obj
+from structures.helpers import get_or_create_eve_entity, get_or_create_eve_type
 from structures.models import Notification, Structure, Webhook
 
 from .helpers import (
@@ -229,13 +228,13 @@ class NotificationStructureOwnershipTransferred(NotificationBaseEmbed):
                 self._notification.eve_solar_system()
             ),
         }
-        from_corporation = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["oldOwnerCorpID"]
+        from_corporation = get_or_create_eve_entity(
+            id=self._parsed_text["oldOwnerCorpID"]
         )
-        to_corporation = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["newOwnerCorpID"]
+        to_corporation = get_or_create_eve_entity(
+            id=self._parsed_text["newOwnerCorpID"]
         )
-        character = get_or_create_esi_obj(EveEntity, id=self._parsed_text["charID"])
+        character = get_or_create_eve_entity(id=self._parsed_text["charID"])
         self._description += _(
             "has been transferred from %(from_corporation)s "
             "to %(to_corporation)s by %(character)s."
@@ -291,7 +290,7 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
                 all_structure_info.append(
                     self.StructureInfo(
                         name=structure_info[1],
-                        eve_type=get_or_create_esi_obj(EveType, id=structure_info[2]),
+                        eve_type=get_or_create_eve_type(id=structure_info[2]),
                         eve_solar_system=None,
                         owner_link=_("(unknown)"),
                     )

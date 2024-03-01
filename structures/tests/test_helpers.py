@@ -3,13 +3,15 @@ import datetime as dt
 from django.test import TestCase
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
-from eveuniverse.models import EveType
+from eveuniverse.models import EveEntity, EveType
 from eveuniverse.tests.testdata.factories_2 import EveTypeFactory
 
 from structures.helpers import (
     datetime_almost_equal,
     floating_icon_with_text_html,
     get_or_create_esi_obj,
+    get_or_create_eve_entity,
+    get_or_create_eve_type,
     hours_until_deadline,
     is_absolute_url,
 )
@@ -78,12 +80,30 @@ class TestIsAbsoluteUrl(TestCase):
                 self.assertIs(is_absolute_url(url), expected_result)
 
 
-class TestGetOrCreateEsiObj(TestCase):
-    def test_should_return_existing_obj(self):
+class TestGetOrCreateObjs(TestCase):
+    def test_should_return_existing_obj_generic(self):
         # given
         obj = EveTypeFactory()
         # when
         obj_2 = get_or_create_esi_obj(EveType, id=obj.id)
+        # then
+        self.assertEqual(obj, obj_2)
+
+    def test_should_return_existing_obj_type(self):
+        # given
+        obj = EveTypeFactory()
+        # when
+        obj_2 = get_or_create_eve_type(id=obj.id)
+        # then
+        self.assertEqual(obj, obj_2)
+
+    def test_should_return_existing_obj_entity(self):
+        # given
+        obj = EveEntity.objects.create(
+            id=99, name="test", category=EveEntity.CATEGORY_CHARACTER
+        )
+        # when
+        obj_2 = get_or_create_eve_entity(id=obj.id)
         # then
         self.assertEqual(obj, obj_2)
 

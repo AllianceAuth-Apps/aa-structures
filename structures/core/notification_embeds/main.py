@@ -9,13 +9,12 @@ import dhooks_lite
 
 from django.conf import settings
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveEntity
 
 from app_utils.urls import reverse_absolute, static_file_absolute_url
 
 from structures import __title__
 from structures.core.notification_types import NotificationType
-from structures.helpers import get_or_create_esi_obj, is_absolute_url
+from structures.helpers import get_or_create_eve_entity, is_absolute_url
 from structures.models.notifications import Notification, NotificationBase, Webhook
 
 from .helpers import target_datetime_formatted
@@ -84,7 +83,7 @@ class NotificationBaseEmbed:
             key = "aggressorID"
         else:
             return "(Unknown aggressor)"
-        entity = get_or_create_esi_obj(EveEntity, id=self._parsed_text[key])
+        entity = get_or_create_eve_entity(id=self._parsed_text[key])
         return Webhook.create_link(entity.name, entity.profile_url)
 
     def fuel_expires_target_date(self) -> str:

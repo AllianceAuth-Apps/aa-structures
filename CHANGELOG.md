@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased] - yyyy-mm-dd
+## [2.9.0] - TBD
 
 ### Added
 
-- Added support for these notification types:
+- Added support for additional notification types:
 
   - AcceptedAlly (#92)
   - AllWarCorpJoinedAllianceMsg
@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   - WarInvalid (#92)
   - CorpAllBillMsg (#92)
   - CharAppRejectMsg (#92)
+
+- SQL script for removing all tables
 
 ### Changed
 

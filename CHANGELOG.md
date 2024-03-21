@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.9.0] - TBD
+## [2.9.0] - 2024-03-21
+
+### Update notes
+
+Please remember to update your webhooks on the admin page if you want to use any of the newly added notification types.
 
 ### Added
 

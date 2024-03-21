@@ -100,7 +100,7 @@ class TestNotification(NoSocketsTestCase):
                     self.assertTrue(notif.can_be_rendered)
 
     def test_can_be_rendered_3(self):
-        for notif_type in ["DeclareWar"]:
+        for notif_type in ["UnknownNotificationType"]:
             with self.subTest(notification_type=notif_type):
                 notif = Notification.objects.filter(notif_type=notif_type).first()
                 if notif:
@@ -617,18 +617,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         self.assertIsNotNone(kwargs["content"])
         self.assertIsNotNone(kwargs["embeds"])
 
-    def test_should_ignore_unsupported_notif_types(self, mock_send_message):
-        # given
-        mock_send_message.return_value = 1
-        obj = NotificationFactory(
-            owner=self.owner, notif_type="XXXUnsupportedNotificationTypeXXX"
-        )
-        # when
-        result = obj.send_to_webhook(self.webhook)
-        # then
-        self.assertFalse(result)
-
-    def test_mark_notification_as_sent_when_successful(self, mock_send_message):
+    def test_should_mark_notification_as_sent_when_successful(self, mock_send_message):
         # given
         mock_send_message.return_value = True
         obj = NotificationFactory(owner=self.owner)
@@ -638,7 +627,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         obj.refresh_from_db()
         self.assertTrue(obj.is_sent)
 
-    def test_dont_mark_notification_as_sent_when_error(self, mock_send_message):
+    def test_should_not_mark_notification_as_sent_when_error(self, mock_send_message):
         # given
         mock_send_message.return_value = 0
         obj = NotificationFactory(owner=self.owner)
@@ -648,7 +637,7 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         obj.refresh_from_db()
         self.assertFalse(obj.is_sent)
 
-    def test_send_to_webhook_all_notification_types(self, mock_send_message):
+    def test_can_send_all_notification_types(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
         types_tested = set()

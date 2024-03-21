@@ -5,12 +5,11 @@
 import dhooks_lite
 
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveType
 
 from app_utils.datetime import ldap_time_2_datetime
 
 from structures.constants import EveTypeId
-from structures.helpers import get_or_create_esi_obj
+from structures.helpers import get_or_create_eve_type
 from structures.models import Notification, Webhook
 
 from .helpers import (
@@ -27,9 +26,7 @@ class NotificationOrbitalEmbed(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._planet = self._notification.eve_planet()
-        self._structure_type = get_or_create_esi_obj(
-            EveType, id=EveTypeId.CUSTOMS_OFFICE
-        )
+        self._structure_type = get_or_create_eve_type(id=EveTypeId.CUSTOMS_OFFICE)
         self._solar_system_link = gen_solar_system_text(
             self._notification.eve_solar_system()
         )
@@ -61,9 +58,7 @@ class NotificationOrbitalAttacked(NotificationOrbitalEmbed):
 class NotificationOrbitalReinforced(NotificationOrbitalEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        reinforce_exit_time = ldap_time_2_datetime(
-            self._parsed_text["reinforceExitTime"]
-        )
+        reinforce_exit_time = ldap_time_2_datetime(self._data["reinforceExitTime"])
         self._title = _("Orbital reinforced")
         self._description = _(
             "The %(structure_type)s at %(planet)s in %(solar_system)s "

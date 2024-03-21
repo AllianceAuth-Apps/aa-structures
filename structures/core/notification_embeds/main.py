@@ -2,19 +2,19 @@
 
 # pylint: disable=missing-class-docstring
 
+import re
 from typing import Optional
 
 import dhooks_lite
 
 from django.conf import settings
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveEntity
 
 from app_utils.urls import reverse_absolute, static_file_absolute_url
 
 from structures import __title__
 from structures.core.notification_types import NotificationType
-from structures.helpers import get_or_create_esi_obj, is_absolute_url
+from structures.helpers import get_or_create_eve_entity, is_absolute_url
 from structures.models.notifications import Notification, NotificationBase, Webhook
 
 from .helpers import target_datetime_formatted
@@ -33,7 +33,7 @@ class NotificationBaseEmbed:
         if not isinstance(notification, NotificationBase):
             raise TypeError("notification must be of type Notification")
         self._notification = notification
-        self._parsed_text = notification.parsed_text()
+        self._data = notification.parsed_text()
         self._title = ""
         self._description = ""
         self._color = None
@@ -66,24 +66,24 @@ class NotificationBaseEmbed:
         damage_parts = []
         for prop in damage_labels:
             field_name = f"{prop[0]}{field_postfix}"
-            if field_name in self._parsed_text:
+            if field_name in self._data:
                 label = prop[1]
-                value = self._parsed_text[field_name] * factor
+                value = self._data[field_name] * factor
                 damage_parts.append(f"{label}: {value:.1f}%")
         damage_text = " | ".join(damage_parts)
         return damage_text
 
     def get_aggressor_link(self) -> str:
         """Returns the aggressor link from a parsed_text for POS and POCOs only."""
-        if self._parsed_text.get("aggressorAllianceID"):
+        if self._data.get("aggressorAllianceID"):
             key = "aggressorAllianceID"
-        elif self._parsed_text.get("aggressorCorpID"):
+        elif self._data.get("aggressorCorpID"):
             key = "aggressorCorpID"
-        elif self._parsed_text.get("aggressorID"):
+        elif self._data.get("aggressorID"):
             key = "aggressorID"
         else:
             return "(Unknown aggressor)"
-        entity = get_or_create_esi_obj(EveEntity, id=self._parsed_text[key])
+        entity = get_or_create_eve_entity(id=self._data[key])
         return Webhook.create_link(entity.name, entity.profile_url)
 
     def fuel_expires_target_date(self) -> str:
@@ -153,16 +153,18 @@ class NotificationBaseEmbed:
 
     # pylint: disable = too-many-locals
     @staticmethod
-    def create(notification: "NotificationBase") -> "NotificationBaseEmbed":
+    def create(notif: "NotificationBase") -> "NotificationBaseEmbed":
         """Creates a new instance of the respective subclass for given Notification."""
 
         from .billing_embeds import (
             NotificationBillingBillOutOfMoneyMsg,
             NotificationBillingIHubBillAboutToExpire,
             NotificationBillingIHubDestroyedByBillFailure,
+            NotificationCorpAllBillMsg,
         )
-        from .character_embeds import (
+        from .corporate_embeds import (
             NotificationCharAppAcceptMsg,
+            NotificationCharAppRejectMsg,
             NotificationCharAppWithdrawMsg,
             NotificationCharLeftCorpMsg,
             NotificationCorpAppInvitedMsg,
@@ -213,26 +215,42 @@ class NotificationBaseEmbed:
             NotificationTowerResourceAlertMsg,
         )
         from .war_embeds import (
+            NotificationAcceptedAlly,
+            NotificationAllWarCorpJoinedAllianceMsg,
+            NotificationAllWarSurrenderMsg,
             NotificationAllyJoinedWarMsg,
             NotificationCorpWarSurrenderMsg,
+            NotificationDeclareWar,
+            NotificationMercOfferedNegotiationMsg,
+            NotificationMercOfferRetractedMsg,
+            NotificationOfferedSurrender,
+            NotificationOfferedToAlly,
             NotificationWarAdopted,
             NotificationWarCorporationBecameEligible,
             NotificationWarCorporationNoLongerEligible,
             NotificationWarDeclared,
+            NotificationWarHQRemovedFromSpace,
             NotificationWarInherited,
+            NotificationWarInvalid,
             NotificationWarRetractedByConcord,
             NotificationWarSurrenderOfferMsg,
         )
 
-        if not isinstance(notification, NotificationBase):
+        if not isinstance(notif, NotificationBase):
             raise TypeError("notification must be of type NotificationBase")
 
         NT = NotificationType
         notif_type_2_class = {
+            # Billing
+            NT.BILLING_CORP_ALL_BILL_MSG: NotificationCorpAllBillMsg,
+            NT.BILLING_BILL_OUT_OF_MONEY_MSG: NotificationBillingBillOutOfMoneyMsg,
+            NT.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE: NotificationBillingIHubBillAboutToExpire,
+            NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
             # character
             NT.CORP_APP_NEW_MSG: NotificationCorpAppNewMsg,
             NT.CORP_APP_INVITED_MSG: NotificationCorpAppInvitedMsg,
             NT.CORP_APP_REJECT_CUSTOM_MSG: NotificationCorpAppRejectCustomMsg,
+            NT.CORP_APP_REJECT_MSG: NotificationCharAppRejectMsg,
             NT.CHAR_APP_WITHDRAW_MSG: NotificationCharAppWithdrawMsg,
             NT.CHAR_APP_ACCEPT_MSG: NotificationCharAppAcceptMsg,
             NT.CHAR_LEFT_CORP_MSG: NotificationCharLeftCorpMsg,
@@ -242,7 +260,23 @@ class NotificationBaseEmbed:
             NT.MOONMINING_AUTOMATIC_FRACTURE: NotificationMoonminningAutomaticFracture,
             NT.MOONMINING_EXTRACTION_CANCELLED: NotificationMoonminningExtractionCanceled,
             NT.MOONMINING_LASER_FIRED: NotificationMoonminningLaserFired,
-            # upwell structures
+            # Orbitals
+            NT.ORBITAL_ATTACKED: NotificationOrbitalAttacked,
+            NT.ORBITAL_REINFORCED: NotificationOrbitalReinforced,
+            # Sov
+            NT.SOV_ENTOSIS_CAPTURE_STARTED: NotificationSovEntosisCaptureStarted,
+            NT.SOV_COMMAND_NODE_EVENT_STARTED: NotificationSovCommandNodeEventStarted,
+            NT.SOV_ALL_CLAIM_ACQUIRED_MSG: NotificationSovAllClaimAcquiredMsg,
+            NT.SOV_ALL_CLAIM_LOST_MSG: NotificationSovAllClaimLostMsg,
+            NT.SOV_STRUCTURE_REINFORCED: NotificationSovStructureReinforced,
+            NT.SOV_STRUCTURE_DESTROYED: NotificationSovStructureDestroyed,
+            NT.SOV_ALL_ANCHORING_MSG: NotificationSovAllAnchoringMsg,
+            # Towers
+            NT.TOWER_ALERT_MSG: NotificationTowerAlertMsg,
+            NT.TOWER_RESOURCE_ALERT_MSG: NotificationTowerResourceAlertMsg,
+            NT.TOWER_REFUELED_EXTRA: NotificationTowerRefueledExtra,
+            NT.TOWER_REINFORCED_EXTRA: NotificationTowerReinforcedExtra,
+            # Upwell structures
             NT.STRUCTURE_ONLINE: NotificationStructureOnline,
             NT.STRUCTURE_FUEL_ALERT: NotificationStructureFuelAlert,
             NT.STRUCTURE_JUMP_FUEL_ALERT: NotificationStructureJumpFuelAlert,
@@ -258,42 +292,46 @@ class NotificationBaseEmbed:
             NT.OWNERSHIP_TRANSFERRED: NotificationStructureOwnershipTransferred,
             NT.STRUCTURE_ANCHORING: NotificationStructureAnchoring,
             NT.STRUCTURE_REINFORCEMENT_CHANGED: NotificationStructureReinforceChange,
-            # Orbitals
-            NT.ORBITAL_ATTACKED: NotificationOrbitalAttacked,
-            NT.ORBITAL_REINFORCED: NotificationOrbitalReinforced,
-            # Towers
-            NT.TOWER_ALERT_MSG: NotificationTowerAlertMsg,
-            NT.TOWER_RESOURCE_ALERT_MSG: NotificationTowerResourceAlertMsg,
-            NT.TOWER_REFUELED_EXTRA: NotificationTowerRefueledExtra,
-            NT.TOWER_REINFORCED_EXTRA: NotificationTowerReinforcedExtra,
-            # Sov
-            NT.SOV_ENTOSIS_CAPTURE_STARTED: NotificationSovEntosisCaptureStarted,
-            NT.SOV_COMMAND_NODE_EVENT_STARTED: NotificationSovCommandNodeEventStarted,
-            NT.SOV_ALL_CLAIM_ACQUIRED_MSG: NotificationSovAllClaimAcquiredMsg,
-            NT.SOV_ALL_CLAIM_LOST_MSG: NotificationSovAllClaimLostMsg,
-            NT.SOV_STRUCTURE_REINFORCED: NotificationSovStructureReinforced,
-            NT.SOV_STRUCTURE_DESTROYED: NotificationSovStructureDestroyed,
-            NT.SOV_ALL_ANCHORING_MSG: NotificationSovAllAnchoringMsg,
             # War
+            NT.WAR_ACCEPTED_ALLY: NotificationAcceptedAlly,
             NT.WAR_ALLY_JOINED_WAR_AGGRESSOR_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_ALLY_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_DEFENDER_MSG: NotificationAllyJoinedWarMsg,
+            NT.WAR_ALL_WAR_CORP_JOINED_ALLIANCE_MSG: NotificationAllWarCorpJoinedAllianceMsg,
+            NT.WAR_ALL_WAR_SURRENDER_MSG: NotificationAllWarSurrenderMsg,
+            NT.WAR_CORPORATION_BECAME_ELIGIBLE: NotificationWarCorporationBecameEligible,
+            NT.WAR_CORPORATION_NO_LONGER_ELIGIBLE: NotificationWarCorporationNoLongerEligible,
+            NT.WAR_DECLARE_WAR: NotificationDeclareWar,
+            NT.WAR_MERC_OFFERED_NEGOTIATION_MSG: NotificationMercOfferedNegotiationMsg,
+            NT.WAR_MERC_OFFER_RETRACTED_MSG: NotificationMercOfferRetractedMsg,
             NT.WAR_CORP_WAR_SURRENDER_MSG: NotificationCorpWarSurrenderMsg,
+            NT.WAR_HQ_REMOVED_FROM_SPACE: NotificationWarHQRemovedFromSpace,
+            NT.WAR_OFFERED_TO_ALLY: NotificationOfferedToAlly,
+            NT.WAR_OFFERED_SURRENDER: NotificationOfferedSurrender,
             NT.WAR_WAR_ADOPTED: NotificationWarAdopted,
             NT.WAR_WAR_DECLARED: NotificationWarDeclared,
             NT.WAR_WAR_INHERITED: NotificationWarInherited,
+            NT.WAR_INVALID: NotificationWarInvalid,
             NT.WAR_WAR_RETRACTED_BY_CONCORD: NotificationWarRetractedByConcord,
-            NT.WAR_CORPORATION_BECAME_ELIGIBLE: NotificationWarCorporationBecameEligible,
-            NT.WAR_CORPORATION_NO_LONGER_ELIGIBLE: NotificationWarCorporationNoLongerEligible,
             NT.WAR_WAR_SURRENDER_OFFER_MSG: NotificationWarSurrenderOfferMsg,
-            # Billing
-            NT.BILLING_BILL_OUT_OF_MONEY_MSG: NotificationBillingBillOutOfMoneyMsg,
-            NT.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE: NotificationBillingIHubBillAboutToExpire,
-            NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
         }
         try:
-            notif_class = notif_type_2_class[notification.notif_type]
+            notif_class = notif_type_2_class[notif.notif_type]
         except KeyError:
-            raise NotImplementedError(repr(notification.notif_type)) from None
+            return NotificationGenericEmbed(notif)
 
-        return notif_class(notification)
+        return notif_class(notif)
+
+
+class NotificationGenericEmbed(NotificationBaseEmbed):
+    """A generic embed for undefined notifs."""
+
+    def __init__(self, notif: Notification) -> None:
+        super().__init__(notif)
+        self._title = re.sub(
+            r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r" \1", notif.notif_type
+        )
+        self._color = Webhook.Color.INFO
+        self._thumbnail = dhooks_lite.Thumbnail(
+            notif.sender.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )

@@ -7,15 +7,19 @@ import dhooks_lite
 
 from django.db import models
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveType
 
 from app_utils.datetime import ldap_time_2_datetime
+from app_utils.helpers import humanize_number
 
 from structures.constants import EveTypeId
-from structures.helpers import get_or_create_esi_obj
+from structures.helpers import get_or_create_eve_entity, get_or_create_eve_type
 from structures.models import Notification, Webhook
 
-from .helpers import gen_solar_system_text, target_datetime_formatted
+from .helpers import (
+    gen_eve_entity_link,
+    gen_solar_system_text,
+    target_datetime_formatted,
+)
 from .main import NotificationBaseEmbed
 
 
@@ -37,9 +41,9 @@ class BillType(models.IntegerChoices):
 class NotificationBillingBillOutOfMoneyMsg(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        bill_type_id = self._parsed_text["billTypeID"]
+        bill_type_id = self._data["billTypeID"]
         bill_type_str = BillType.to_enum(bill_type_id).label
-        due_date = ldap_time_2_datetime(self._parsed_text["dueDate"])
+        due_date = ldap_time_2_datetime(self._data["dueDate"])
         self._title = _("Insufficient Funds for Bill")
         self._description = _(
             "The selected corporation wallet division for automatic payments "
@@ -58,7 +62,7 @@ class NotificationBillingIHubBillAboutToExpire(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         solar_system_link = gen_solar_system_text(self._notification.eve_solar_system())
-        due_date = ldap_time_2_datetime(self._parsed_text.get("dueDate"))
+        due_date = ldap_time_2_datetime(self._data.get("dueDate"))
         self._title = _("IHub Bill About to Expire")
         self._description = _(
             "Maintenance bill for Infrastructure Hub in %(solar_system)s "
@@ -69,7 +73,7 @@ class NotificationBillingIHubBillAboutToExpire(NotificationBaseEmbed):
             "due_date": target_datetime_formatted(due_date),
         }
         self._color = Webhook.Color.DANGER
-        structure_type = get_or_create_esi_obj(EveType, id=EveTypeId.IHUB)
+        structure_type = get_or_create_eve_type(id=EveTypeId.IHUB)
         self._thumbnail = dhooks_lite.Thumbnail(
             structure_type.icon_url(size=self.ICON_DEFAULT_SIZE)
         )
@@ -91,4 +95,33 @@ class NotificationBillingIHubDestroyedByBillFailure(NotificationBaseEmbed):
         self._color = Webhook.Color.DANGER
         self._thumbnail = dhooks_lite.Thumbnail(
             structure_type.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+
+
+class NotificationCorpAllBillMsg(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        amount = self._data["amount"]
+        bill_type_id = self._data["billTypeID"]
+        bill_type_str = BillType.to_enum(bill_type_id).label
+        current_date = ldap_time_2_datetime(self._data["currentDate"])
+        due_date = ldap_time_2_datetime(self._data["dueDate"])
+        creditor = get_or_create_eve_entity(id=self._data["creditorID"])
+        debtor = get_or_create_eve_entity(id=self._data["debtorID"])
+        self._title = _("Bill issued")
+        self._description = _(
+            "A bill of %(amount)s ISK, due %(due_date)s owed by %(debtor)s "
+            "to %(creditor)s was issued %(current_date)s. "
+            "This bill is for %(bill_type)s."
+        ) % {
+            "amount": humanize_number(amount),
+            "bill_type": bill_type_str,
+            "creditor": gen_eve_entity_link(creditor),
+            "debtor": gen_eve_entity_link(debtor),
+            "current_date": target_datetime_formatted(current_date),
+            "due_date": target_datetime_formatted(due_date),
+        }
+        self._color = Webhook.Color.WARNING
+        self._thumbnail = dhooks_lite.Thumbnail(
+            debtor.icon_url(size=self.ICON_DEFAULT_SIZE)
         )

@@ -70,15 +70,6 @@ class TestNotificationEmbeds(TestCase):
         )
         self.assertEqual(str(notification_embed), "1000000999:CorpBecameWarEligible")
 
-    def test_should_raise_exception_for_unsupported_notif_types(self):
-        # given
-        notification = NotificationFactory(
-            owner=self.owner, notif_type="XXXUnsupportedNotificationTypeXXX"
-        )
-        # when / then
-        with self.assertRaises(NotImplementedError):
-            NotificationBaseEmbed.create(notification)
-
     def test_should_require_notification_for_init(self):
         with self.assertRaises(TypeError):
             NotificationBaseEmbed(notification="dummy")
@@ -147,38 +138,44 @@ class TestNotificationEmbedsGenerate(TestCase):
         for notif_type in NotificationType.esi_notifications():
             with self.subTest(notif_type=notif_type):
                 # given
-                notification = (
+                notif = (
                     Notification.objects.select_related("owner", "sender")
                     .filter(notif_type=notif_type)
                     .first()
                 )
-                self.assertIsInstance(notification, Notification)
-                notification_embed = NotificationBaseEmbed.create(notification)
+                self.assertIsInstance(notif, Notification)
+                notif_embed = NotificationBaseEmbed.create(notif)
+
                 # when
-                discord_embed = notification_embed.generate_embed()
+                obj = notif_embed.generate_embed()
+
                 # then
-                self.assertIsInstance(discord_embed, dhooks_lite.Embed)
+                self.assertIsInstance(obj, dhooks_lite.Embed)
 
     def test_should_generate_embed_for_all_supported_esi_notification_types_normal(
         self,
     ):
-        # Structures references in notifications are pre-generated
+        # Pre-generate structures referenced in notifications
         StructureFactory(owner=self.owner, id=1000000000001, eve_type_name="Astrahus")
         StructureFactory(owner=self.owner, id=1000000000002, eve_type_name="Athanor")
+
         for notif_type in NotificationType.esi_notifications():
             with self.subTest(notif_type=notif_type):
                 # given
-                notification = (
+                notif = (
                     Notification.objects.select_related("owner", "sender")
                     .filter(notif_type=notif_type)
                     .first()
                 )
-                self.assertIsInstance(notification, Notification)
-                notification_embed = NotificationBaseEmbed.create(notification)
+                self.assertIsInstance(notif, Notification)
+                notif_embed = NotificationBaseEmbed.create(notif)
+
                 # when
-                discord_embed = notification_embed.generate_embed()
+                obj = notif_embed.generate_embed()
+
                 # then
-                self.assertIsInstance(discord_embed, dhooks_lite.Embed)
+                self.assertIsInstance(obj, dhooks_lite.Embed)
+                self.assertTrue(obj.description)
 
     def test_should_set_ping_everyone_for_color_danger(self):
         # given
@@ -348,7 +345,7 @@ class TestEveNotificationEmbeds(NoSocketsTestCase):
         # when
         obj = embed.generate_embed()
         # then
-        self.assertIsInstance(obj, dhooks_lite.Embed)
+        self.assertTrue(obj.description)
 
     def test_should_create_sov_embed_without_sender(self):
         # given
@@ -362,4 +359,4 @@ class TestEveNotificationEmbeds(NoSocketsTestCase):
         # when
         obj = embed.generate_embed()
         # then
-        self.assertIsInstance(obj, dhooks_lite.Embed)
+        self.assertTrue(obj.description)

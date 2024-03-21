@@ -7,11 +7,10 @@ from collections import namedtuple
 import dhooks_lite
 
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveEntity, EveType
 
 from app_utils.datetime import ldap_time_2_datetime, ldap_timedelta_2_timedelta
 
-from structures.helpers import get_or_create_esi_obj
+from structures.helpers import get_or_create_eve_entity, get_or_create_eve_type
 from structures.models import Notification, Structure, Webhook
 
 from .helpers import (
@@ -31,7 +30,7 @@ class NotificationStructureEmbed(NotificationBaseEmbed):
         super().__init__(notification)
         try:
             structure = Structure.objects.select_related_defaults().get(
-                id=self._parsed_text["structureID"]
+                id=self._data["structureID"]
             )
         except Structure.DoesNotExist:
             structure = None
@@ -97,7 +96,7 @@ class NotificationStructureJumpFuelAlert(NotificationStructureEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         self._title = _("Jump gate low on Liquid Ozone")
-        threshold_str = f"{self._parsed_text['threshold']:,}"
+        threshold_str = f"{self._data['threshold']:,}"
         quantity_str = f"{self._structure.jump_fuel_quantity():,}"
         self._description += _(
             "is below %(threshold)s units on Liquid Ozone.\n"
@@ -153,7 +152,7 @@ class NotificationStructureUnanchoring(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Structure un-anchoring")
         unanchored_at = notification.timestamp + ldap_timedelta_2_timedelta(
-            self._parsed_text["timeLeft"]
+            self._data["timeLeft"]
         )
         self._description += _(
             "has started un-anchoring. It will be fully un-anchored at: %s"
@@ -173,11 +172,11 @@ class NotificationStructureUnderAttack(NotificationStructureEmbed):
 
     def _get_attacker_link(self) -> str:
         """Returns the attacker link from a parsed_text for Upwell structures only."""
-        if self._parsed_text.get("allianceName"):
-            return gen_alliance_link(self._parsed_text["allianceName"])
+        if self._data.get("allianceName"):
+            return gen_alliance_link(self._data["allianceName"])
 
-        if self._parsed_text.get("corpName"):
-            return gen_corporation_link(self._parsed_text["corpName"])
+        if self._data.get("corpName"):
+            return gen_corporation_link(self._data["corpName"])
 
         return _("(unknown)")
 
@@ -187,7 +186,7 @@ class NotificationStructureLostShield(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Structure lost shield")
         timer_ends_at = notification.timestamp + ldap_timedelta_2_timedelta(
-            self._parsed_text["timeLeft"]
+            self._data["timeLeft"]
         )
         self._description += _(
             "has lost its shields. Armor timer end at: %s"
@@ -200,7 +199,7 @@ class NotificationStructureLostArmor(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Structure lost armor")
         timer_ends_at = notification.timestamp + ldap_timedelta_2_timedelta(
-            self._parsed_text["timeLeft"]
+            self._data["timeLeft"]
         )
         self._description += _(
             "has lost its armor. Hull timer end at: %s"
@@ -224,18 +223,14 @@ class NotificationStructureOwnershipTransferred(NotificationBaseEmbed):
             "The %(structure_type)s %(structure_name)s in %(solar_system)s "
         ) % {
             "structure_type": structure_type.name,
-            "structure_name": Webhook.text_bold(self._parsed_text["structureName"]),
+            "structure_name": Webhook.text_bold(self._data["structureName"]),
             "solar_system": gen_solar_system_text(
                 self._notification.eve_solar_system()
             ),
         }
-        from_corporation = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["oldOwnerCorpID"]
-        )
-        to_corporation = get_or_create_esi_obj(
-            EveEntity, id=self._parsed_text["newOwnerCorpID"]
-        )
-        character = get_or_create_esi_obj(EveEntity, id=self._parsed_text["charID"])
+        from_corporation = get_or_create_eve_entity(id=self._data["oldOwnerCorpID"])
+        to_corporation = get_or_create_eve_entity(id=self._data["newOwnerCorpID"])
+        character = get_or_create_eve_entity(id=self._data["charID"])
         self._description += _(
             "has been transferred from %(from_corporation)s "
             "to %(to_corporation)s by %(character)s."
@@ -256,9 +251,7 @@ class NotificationStructureAnchoring(NotificationBaseEmbed):
         super().__init__(notification)
         structure_type = self._notification.eve_structure_type()
         solar_system = self._notification.eve_solar_system("solarsystemID")
-        owner_link = gen_corporation_link(
-            self._parsed_text.get("ownerCorpName", "(unknown)")
-        )
+        owner_link = gen_corporation_link(self._data.get("ownerCorpName", "(unknown)"))
         self._description = _(
             "A %(structure_type)s belonging to %(owner_link)s "
             "has started anchoring in %(solar_system)s. "
@@ -282,7 +275,7 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
         all_structure_info = []
-        for structure_info in self._parsed_text["allStructureInfo"]:
+        for structure_info in self._data["allStructureInfo"]:
             try:
                 structure = Structure.objects.select_related_defaults().get(
                     id=structure_info[0]
@@ -291,7 +284,7 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
                 all_structure_info.append(
                     self.StructureInfo(
                         name=structure_info[1],
-                        eve_type=get_or_create_esi_obj(EveType, id=structure_info[2]),
+                        eve_type=get_or_create_eve_type(id=structure_info[2]),
                         eve_solar_system=None,
                         owner_link=_("(unknown)"),
                     )
@@ -307,11 +300,11 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
                 )
 
         self._title = _("Structure reinforcement time changed")
-        change_effective = ldap_time_2_datetime(self._parsed_text["timestamp"])
+        change_effective = ldap_time_2_datetime(self._data["timestamp"])
         self._description = _(
             "Reinforcement hour has been changed to %s "
             "for the following structures:\n"
-        ) % Webhook.text_bold(self._parsed_text["hour"])
+        ) % Webhook.text_bold(self._data["hour"])
         for structure_info in all_structure_info:
             if eve_solar_system := structure_info.eve_solar_system:
                 solar_system_text = gen_solar_system_text(eve_solar_system)

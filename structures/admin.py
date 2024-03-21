@@ -1040,9 +1040,9 @@ class WebhookAdmin(admin.ModelAdmin):
 
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
-        form.base_fields[
-            "notification_types"
-        ].choices = NotificationType.choices_enabled()
+        form.base_fields["notification_types"].choices = sorted(
+            NotificationType.choices_enabled(), key=lambda k: k[1]
+        )
         return form
 
     def get_queryset(self, request):

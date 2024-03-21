@@ -5,7 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased] - yyyy-mm-dd
+## [2.9.0] - 2024-03-21
+
+### Update notes
+
+Please remember to update your webhooks on the admin page if you want to use any of the newly added notification types.
+
+### Added
+
+- Added support for additional notification types:
+
+  - AcceptedAlly (#92)
+  - AllWarCorpJoinedAllianceMsg
+  - AllWarSurrenderMsg
+  - DeclareWar
+  - MercOfferedNegotiationMsg (#92)
+  - MercOfferRetractedMsg
+  - OfferedToAlly
+  - OfferedSurrender
+  - WarHQRemovedFromSpace (#92)
+  - WarInvalid (#92)
+  - CorpAllBillMsg (#92)
+  - CharAppRejectMsg (#92)
+
+- SQL script for removing all tables
+
+### Changed
+
+- Now generates minimal embed instead of raising exception for unknown notification types
 
 ### Fixed
 

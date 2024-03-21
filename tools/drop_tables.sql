@@ -1,0 +1,27 @@
+-- Deletes all Structures tables from the database
+SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS structures_evesovereigntymap;
+DROP TABLE IF EXISTS structures_fuelalert;
+DROP TABLE IF EXISTS structures_fuelalertconfig;
+DROP TABLE IF EXISTS structures_generatednotification;
+DROP TABLE IF EXISTS structures_generatednotification_structures;
+DROP TABLE IF EXISTS structures_jumpfuelalert;
+DROP TABLE IF EXISTS structures_jumpfuelalertconfig;
+DROP TABLE IF EXISTS structures_notification;
+DROP TABLE IF EXISTS structures_notification_structures;
+DROP TABLE IF EXISTS structures_owner;
+DROP TABLE IF EXISTS structures_owner_ping_groups;
+DROP TABLE IF EXISTS structures_owner_webhooks;
+DROP TABLE IF EXISTS structures_ownercharacter;
+DROP TABLE IF EXISTS structures_pocodetails;
+DROP TABLE IF EXISTS structures_starbasedetail;
+DROP TABLE IF EXISTS structures_starbasedetailfuel;
+DROP TABLE IF EXISTS structures_structure;
+DROP TABLE IF EXISTS structures_structure_tags;
+DROP TABLE IF EXISTS structures_structure_webhooks;
+DROP TABLE IF EXISTS structures_structureitem;
+DROP TABLE IF EXISTS structures_structureservice;
+DROP TABLE IF EXISTS structures_structuretag;
+DROP TABLE IF EXISTS structures_webhook;
+DROP TABLE IF EXISTS structures_webhook_ping_groups;
+SET FOREIGN_KEY_CHECKS=1;

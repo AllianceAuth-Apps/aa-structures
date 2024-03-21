@@ -409,7 +409,7 @@ class NotificationBase(models.Model):
         logger.info("%s: Trying to sent to webhook: %s", self, webhook)
         try:
             embed, ping_type = self._generate_embed(webhook.language_code)
-        except (OSError, NotImplementedError) as ex:
+        except OSError as ex:
             logger.warning("%s: Failed to generate embed: %s", self, ex, exc_info=True)
             return False
 

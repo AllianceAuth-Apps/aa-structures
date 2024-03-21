@@ -595,6 +595,156 @@
             "text": "solarSystemID: 30000474\nstructureTypeID: 32458\n",
             "is_read": false,
             "is_sent": false
+        },
+        {
+            "notification_id": 1000001121,
+            "type": "AcceptedAlly",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "allyID: 2001\ncharID: 1011\nenemyID: 3011\niskValue: 0.0\ntime: 132476139000000000",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001122,
+            "type": "MercOfferedNegotiationMsg",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "aggressorID: 3011\ndefenderID: 3001\niskValue: 0.0\nmercID: 2001",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001123,
+            "type": "MercOfferRetractedMsg",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "aggressorID: 3011\ndefenderID: 3001\nmercID: 2001",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001124,
+            "type": "WarHQRemovedFromSpace",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "againstID: 3011\ndeclaredByID: 2001\ntimeDeclared: 133330953000000000\nwarHQ: Ikuchi - Hisec Loves You",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001125,
+            "type": "WarInvalid",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "againstID: 2001\ndeclaredByID: 3011\nendDate: 133441135200000000",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001126,
+            "type": "DeclareWar",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "charID: 1011\ndefenderID: 3001\nentityID: 3011",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001127,
+            "type": "OfferedSurrender",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "charID: 1001\nentityID: 3001\niskValue: 100000000.0\nofferedID: 2001",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001128,
+            "type": "OfferedToAlly",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "aggressorID: 3011\ncharID: 1001\ndefenderID: 3001\nenemyID: 3011\niskValue: 0.0\nmercID: 2001",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001129,
+            "type": "AllWarCorpJoinedAllianceMsg",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "allianceID: 3001\ncorpID: 2001",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001130,
+            "type": "AllWarSurrenderMsg",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "againstID: 3011\ncost: null\ndeclaredByID: 2001\ndelayHours: null\nhostileState: null",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001102,
+            "type": "CorpAllBillMsg",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "amount: 6000000\nbillTypeID: 5\ncreditorID: 2011\ncurrentDate: 133462502887835953\ndebtorID: 2001\ndueDate: 133488422887817240\nexternalID: 3001\nexternalID2: -1",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001103,
+            "type": "CharAppRejectMsg",
+            "sender_id": 2902,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "applicationText: ''\ncharID: 1011\ncorpID: 2001",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001110,
+            "type": "CorporationGoalCreated",
+            "sender_id": 2001,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "corporation_id: 2001\ncreator_id: 1001\ngoal_id: 24595525861100907652819857792401564217\ngoal_name: Stratios For the Grandmaster",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001111,
+            "type": "CorporationGoalCompleted",
+            "sender_id": 2001,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "corporation_id: 2001\ncreator_id: 1001\ngoal_id: 24595525861100907652819857792401564217\ngoal_name: Stratios For the Grandmaster",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1999999999,
+            "type": "UnknownNotificationType",
+            "sender_id": 2001,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "",
+            "is_read": false,
+            "is_sent": false
         }
     ]
 }

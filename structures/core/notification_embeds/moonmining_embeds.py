@@ -6,12 +6,11 @@
 import dhooks_lite
 
 from django.utils.translation import gettext as _
-from eveuniverse.models import EveEntity, EveType
 
 from app_utils.datetime import ldap_time_2_datetime
 
 from structures.app_settings import STRUCTURES_NOTIFICATION_SHOW_MOON_ORE
-from structures.helpers import get_or_create_esi_obj
+from structures.helpers import get_or_create_eve_entity, get_or_create_eve_type
 from structures.models import Notification, Webhook
 
 from .helpers import (
@@ -31,7 +30,7 @@ class NotificationMoonminingEmbed(NotificationBaseEmbed):
         self._solar_system_link = gen_solar_system_text(
             self._notification.eve_solar_system()
         )
-        self._structure_name = self._parsed_text["structureName"]
+        self._structure_name = self._data["structureName"]
         self._owner_link = gen_corporation_link(str(notification.owner))
         structure_type = self._notification.eve_structure_type()
         self._thumbnail = dhooks_lite.Thumbnail(
@@ -44,12 +43,12 @@ class NotificationMoonminingEmbed(NotificationBaseEmbed):
         )
 
     def _ore_composition_text(self) -> str:
-        if "oreVolumeByType" not in self._parsed_text:
+        if "oreVolumeByType" not in self._data:
             return ""
 
         ore_list = []
-        for ore_type_id, volume in self._parsed_text["oreVolumeByType"].items():
-            ore_type = get_or_create_esi_obj(EveType, id=ore_type_id)
+        for ore_type_id, volume in self._data["oreVolumeByType"].items():
+            ore_type = get_or_create_eve_type(id=ore_type_id)
             if ore_type:
                 ore_list.append(
                     {"id": ore_type_id, "name": ore_type.name, "volume": volume}
@@ -64,9 +63,9 @@ class NotificationMoonminingEmbed(NotificationBaseEmbed):
 class NotificationMoonminningExtractionStarted(NotificationMoonminingEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        started_by = get_or_create_esi_obj(EveEntity, id=self._parsed_text["startedBy"])
-        ready_time = ldap_time_2_datetime(self._parsed_text["readyTime"])
-        auto_time = ldap_time_2_datetime(self._parsed_text["autoTime"])
+        started_by = get_or_create_eve_entity(id=self._data["startedBy"])
+        ready_time = ldap_time_2_datetime(self._data["readyTime"])
+        auto_time = ldap_time_2_datetime(self._data["autoTime"])
         self._title = _("Moon mining extraction started")
         self._description = _(
             "A moon mining extraction has been started "
@@ -92,7 +91,7 @@ class NotificationMoonminningExtractionStarted(NotificationMoonminingEmbed):
 class NotificationMoonminningExtractionFinished(NotificationMoonminingEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        auto_time = ldap_time_2_datetime(self._parsed_text["autoTime"])
+        auto_time = ldap_time_2_datetime(self._data["autoTime"])
         self._title = _("Extraction finished")
         self._description = _(
             "The extraction for %(structure_name)s at %(moon)s "
@@ -135,10 +134,8 @@ class NotificationMoonminningAutomaticFracture(NotificationMoonminingEmbed):
 class NotificationMoonminningExtractionCanceled(NotificationMoonminingEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        if self._parsed_text["cancelledBy"]:
-            cancelled_by = get_or_create_esi_obj(
-                EveEntity, id=self._parsed_text["cancelledBy"]
-            )
+        if self._data["cancelledBy"]:
+            cancelled_by = get_or_create_eve_entity(id=self._data["cancelledBy"])
         else:
             cancelled_by = _("(unknown)")
         self._title = _("Extraction cancelled")
@@ -159,9 +156,7 @@ class NotificationMoonminningExtractionCanceled(NotificationMoonminingEmbed):
 class NotificationMoonminningLaserFired(NotificationMoonminingEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        fired_by = EveEntity.objects.get_or_create_esi(id=self._parsed_text["firedBy"])[
-            0
-        ]
+        fired_by = get_or_create_eve_entity(id=self._data["firedBy"])
         self._title = _("Moon drill fired")
         self._description = _(
             "The moon drill fitted to %(structure_name)s at %(moon)s "

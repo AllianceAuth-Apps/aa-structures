@@ -190,6 +190,26 @@ class TestOwner(NoSocketsTestCase):
         self.owner.refresh_from_db()
         self.assertFalse(self.owner.is_alliance_main)
 
+    def test_should_ensure_is_alliance_main_is_set_for_update_fields_1(self):
+        # given
+        corporation = EveCorporationInfoFactory(alliance=self.alliance)
+        owner = OwnerFactory(corporation=corporation, is_alliance_main=True)
+        # when
+        owner.save(update_fields={"is_active"})
+        # then
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_alliance_main)
+
+    def test_should_ensure_is_alliance_main_is_set_for_update_fields_2(self):
+        # given
+        corporation = EveCorporationInfoFactory(alliance=self.alliance)
+        owner = OwnerFactory(corporation=corporation, is_alliance_main=True)
+        # when
+        owner.save(update_fields=["is_active"])
+        # then
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_alliance_main)
+
     def test_should_allow_mains_from_other_alliances(self):
         # given
         self.owner.is_alliance_main = True

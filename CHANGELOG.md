@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.9.1] - 2024-03-29
+
+## Fixed
+
+- Adding a new owner fails with error on AA 4.0.1 (#95)
+
 ## [2.9.0] - 2024-03-21
 
 ### Update notes

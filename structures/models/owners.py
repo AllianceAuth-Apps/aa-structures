@@ -235,7 +235,9 @@ class Owner(models.Model):
                 is_alliance_main=False
             )
             if "update_fields" in kwargs:
-                kwargs["update_fields"].append("is_alliance_main")
+                u = set(kwargs["update_fields"])
+                u.add("is_alliance_main")
+                kwargs["update_fields"] = u
         super().save(*args, **kwargs)
 
     @property

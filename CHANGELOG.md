@@ -5,9 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.10.0] - TBD
+
+### Changed
+
+- The [service monitoring](https://aa-structures.readthedocs.io/en/latest/operations.html#service-monitoring) feature is now using a new approach to make it's page accessible for monitoring tools. If you are using this feature please add the following to your local settings:
+
+```python
+APPS_WITH_PUBLIC_VIEWS = [
+    "structures"
+]
+```
+
 ## [2.9.1] - 2024-03-29
 
-## Fixed
+### Fixed
 
 - Adding a new owner fails with error on AA 4.0.1 (#95)
 
@@ -623,7 +635,7 @@ Thanks @ppfeufer for your contribution
 
 > Hint:<br>For more details on how to setup multiple sync characters please check out: [Multiple Sync Characters](https://gitlab.com/ErikKalkoken/aa-structures#multiple-sync-characters)
 
-## Change
+### Change
 
 - New setting STRUCTURES_NOTIFY_THROTTLED_TIMEOUT to configure how often issue related auth notifications are sent
 - Default for repearting issue related auth notifications to users and admins reduced to 1 hour

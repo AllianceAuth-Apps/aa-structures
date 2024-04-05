@@ -393,6 +393,15 @@ In order stay alliance apprised about any potential service outages, this app ha
 
 The monitoring route is: `[your AA URL]/structures/service_status/`
 
+To make this page accessible for monitoring tools you need to enable public views for the structures app in your local settings. Example:
+
+```Python
+APPS_WITH_PUBLIC_VIEWS = [
+    "structures"
+]
+
+```
+
 Status | Reporting | Condition
 -- | -- | --
 Up | HTTP 200 and the text `service is up` | Tasks for updating of structures, updating of notifications and forwarding to webhooks have last run within the configured grace period and there are no errors

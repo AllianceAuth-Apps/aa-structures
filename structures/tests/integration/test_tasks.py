@@ -16,8 +16,7 @@ from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from structures import tasks
 from structures.core.notification_types import NotificationType
 from structures.models import Structure
-
-from ..testdata.factories import (
+from structures.tests.testdata.factories import (
     EveEntityAllianceFactory,
     EveEntityCorporationFactory,
     NotificationFactory,
@@ -28,7 +27,7 @@ from ..testdata.factories import (
     WebhookFactory,
     datetime_to_esi,
 )
-from ..testdata.load_eveuniverse import load_eveuniverse
+from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 if "structuretimers" in app_labels():
     from structuretimers.models import Timer as StructureTimer

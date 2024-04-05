@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.db.models import Prefetch
-from django.http import HttpRequest, HttpResponse, HttpResponseServerError, JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -651,19 +651,3 @@ def add_structure_owner(request: HttpRequest, token: Token):
                     title=_("%s: Character added to: %s") % (__title__, owner),
                 )
     return redirect("structures:index")
-
-
-def service_status(request: HttpRequest):
-    """Public view to 3rd party monitoring.
-
-    This is view allows running a 3rd party monitoring on the status
-    of this services. Service will be reported as down if any of the
-    configured structure or notifications syncs fails or is delayed
-    """
-    status_ok = True
-    for owner in Owner.objects.filter(is_included_in_service_status=True):
-        status_ok = status_ok and owner.are_all_syncs_ok
-
-    if status_ok:
-        return HttpResponse(_("service is up"))
-    return HttpResponseServerError(_("service is down"))

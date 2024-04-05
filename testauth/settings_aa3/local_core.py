@@ -32,6 +32,8 @@ INSTALLED_APPS += [
     "structures",
 ]
 
+APPS_WITH_PUBLIC_VIEWS = ["structures"]
+
 # Enter credentials to use MySQL/MariaDB. Comment out to use sqlite3
 """
 DATABASES['default'] = {

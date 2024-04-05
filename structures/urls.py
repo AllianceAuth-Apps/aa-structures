@@ -1,8 +1,9 @@
 """Tasks for Structures."""
 
 from django.urls import path
+from django.views.decorators.cache import never_cache
 
-from .views import public, statistics, structures
+from .views import public, statistics, status, structures
 
 app_name = "structures"
 
@@ -19,7 +20,7 @@ urlpatterns = [
         structures.add_structure_owner,
         name="add_structure_owner",
     ),
-    path("service_status", structures.service_status, name="service_status"),
+    path("service_status", never_cache(status.service_status), name="service_status"),
     path(
         "<int:structure_id>/structure_details",
         structures.structure_details,

@@ -32,4 +32,9 @@ def register_menu():
 
 @hooks.register("url_hook")
 def register_urls():
-    return UrlHook(urls, "structures", r"^structures/")
+    return UrlHook(
+        urls,
+        "structures",
+        r"^structures/",
+        excluded_views=["structures.views.structures.service_status"],
+    )

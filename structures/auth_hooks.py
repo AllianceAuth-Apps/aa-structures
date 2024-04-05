@@ -36,5 +36,5 @@ def register_urls():
         urls,
         "structures",
         r"^structures/",
-        excluded_views=["structures.views.structures.service_status"],
+        excluded_views=["structures.views.status.service_status"],
     )

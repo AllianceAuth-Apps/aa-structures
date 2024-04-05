@@ -17,6 +17,8 @@ APPS_WITH_PUBLIC_VIEWS = [
 ]
 ```
 
+- Service monitoring will no longer consider inactive owners in their status reporting
+
 ## [2.9.1] - 2024-03-29
 
 ### Fixed

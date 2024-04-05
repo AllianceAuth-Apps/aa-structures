@@ -409,6 +409,8 @@ Down | HTTP 500 and the text `service is down` | Above condition for "up" not me
 
 By default the status of all existing owners will be included in determining the overall status. However, it's also possible to manually exclude owners by setting the property "Is included in service status".
 
+> **Note**: Inactive owners are not included in determining the service status
+
 ## Admin tools
 
 ### Admin site

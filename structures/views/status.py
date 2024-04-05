@@ -14,7 +14,9 @@ def service_status(request: HttpRequest):
     configured structure or notifications syncs fails or is delayed
     """
     status_ok = True
-    for owner in Owner.objects.filter(is_included_in_service_status=True):
+    for owner in Owner.objects.filter(
+        is_included_in_service_status=True, is_active=True
+    ):
         status_ok = status_ok and owner.are_all_syncs_ok
 
     if status_ok:

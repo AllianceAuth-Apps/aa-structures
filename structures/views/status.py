@@ -1,3 +1,5 @@
+"""Status views."""
+
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError
 from django.utils.translation import gettext_lazy as _
 

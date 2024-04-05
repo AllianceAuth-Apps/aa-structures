@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from .views import public, statistics, structures
+from .views import public, statistics, status, structures
 
 app_name = "structures"
 
@@ -19,7 +19,7 @@ urlpatterns = [
         structures.add_structure_owner,
         name="add_structure_owner",
     ),
-    path("service_status", structures.service_status, name="service_status"),
+    path("service_status", status.service_status, name="service_status"),
     path(
         "<int:structure_id>/structure_details",
         structures.structure_details,

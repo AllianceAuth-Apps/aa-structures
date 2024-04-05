@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from app_utils.testing import add_character_to_user
 
-from ..testdata.factories import (
+from structures.tests.testdata.factories import (
     EveCharacterFactory,
     JumpGateFactory,
     OwnerFactory,
@@ -15,7 +15,7 @@ from ..testdata.factories import (
     UserMainBasicFactory,
     UserMainDefaultFactory,
 )
-from ..testdata.load_eveuniverse import load_eveuniverse
+from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 STRUCTURES_PATH = "structures.views.structures"
 PUBLIC_PATH = "structures.views.public"

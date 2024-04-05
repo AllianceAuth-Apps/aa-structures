@@ -1,7 +1,6 @@
 """Status views."""
 
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError
-from django.utils.translation import gettext_lazy as _
 
 from structures.models import Owner
 
@@ -13,12 +12,11 @@ def service_status(request: HttpRequest):
     of this services. Service will be reported as down if any of the
     configured structure or notifications syncs fails or is delayed
     """
-    status_ok = True
-    for owner in Owner.objects.filter(
+    active_owners = Owner.objects.filter(
         is_included_in_service_status=True, is_active=True
-    ):
-        status_ok = status_ok and owner.are_all_syncs_ok
+    )
+    for owner in active_owners:
+        if not owner.are_all_syncs_ok:
+            return HttpResponseServerError("service is down")
 
-    if status_ok:
-        return HttpResponse(_("service is up"))
-    return HttpResponseServerError(_("service is down"))
+    return HttpResponse("service is up")

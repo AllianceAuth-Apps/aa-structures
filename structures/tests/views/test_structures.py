@@ -8,14 +8,13 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
 
+from allianceauth.eveonline.models import EveCharacter
 from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import json_response_to_python
 
 import structures.views.status
 from structures.models import Owner, Structure
-from structures.views import structures
-
-from ..testdata.factories import (
+from structures.tests.testdata.factories import (
     EveCharacterFactory,
     JumpGateFactory,
     OwnerFactory,
@@ -27,7 +26,9 @@ from ..testdata.factories import (
     UserMainDefaultOwnerFactory,
     WebhookFactory,
 )
-from ..testdata.load_eveuniverse import load_eveuniverse
+from structures.tests.testdata.load_eveuniverse import load_eveuniverse
+from structures.views import structures
+
 from .utils import json_response_to_dict
 
 VIEWS_PATH = "structures.views.structures"
@@ -527,7 +528,7 @@ class TestAddStructureOwner(TestCase):
         cls.factory = RequestFactory()
         load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
-        cls.character = cls.user.profile.main_character
+        cls.character: EveCharacter = cls.user.profile.main_character
         cls.character_ownership = cls.character.character_ownership
 
     def _add_structure_owner_view(self, token=None, user=None):
@@ -655,6 +656,58 @@ class TestAddStructureOwner(TestCase):
             character_ownerships,
         )
         self.assertTrue(owner.is_active)
+
+    @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
+    @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
+    @patch(VIEWS_PATH + ".notify_admins")
+    @patch(VIEWS_PATH + ".messages")
+    def test_can_readd_same_character(
+        self, mock_messages, mock_notify_admins, mock_update_all_for_owner
+    ):
+        # given
+        owner = OwnerFactory(characters=[self.character])
+        owner_character = owner.characters.first()
+        # when
+        response = self._add_structure_owner_view(user=self.user)
+        # then
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structures:index"))
+        owner.refresh_from_db()
+        character_ownerships = set(
+            owner.characters.values_list("character_ownership", flat=True)
+        )
+        self.assertSetEqual(
+            {self.character_ownership.pk, owner_character.character_ownership.pk},
+            character_ownerships,
+        )
+
+    # @patch(VIEWS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", False)
+    # @patch(VIEWS_PATH + ".tasks.update_all_for_owner")
+    # @patch(VIEWS_PATH + ".notify_admins")
+    # @patch(VIEWS_PATH + ".messages")
+    # def test_should_reenable_character_when_re_adding(
+    #     self, mock_messages, mock_notify_admins, mock_update_all_for_owner
+    # ):
+    #     # given
+    #     owner = OwnerFactory(characters=[self.character])
+    #     owner_character: OwnerCharacter = owner.characters.first()
+    #     owner_character.is_enabled = False
+    #     owner_character.save()
+    #     # when
+    #     response = self._add_structure_owner_view(user=self.user)
+    #     # then
+    #     self.assertEqual(response.status_code, 302)
+    #     self.assertEqual(response.url, reverse("structures:index"))
+    #     owner.refresh_from_db()
+    #     character_ownerships = set(
+    #         owner.characters.values_list("character_ownership", flat=True)
+    #     )
+    #     self.assertSetEqual(
+    #         {self.character_ownership.pk, owner_character.character_ownership.pk},
+    #         character_ownerships,
+    #     )
+    #     owner_character.refresh_from_db()
+    #     self.assertTrue(owner_character.is_enabled)
 
 
 class TestStructureFittingModal(TestCase):

@@ -338,12 +338,17 @@ class Owner(models.Model):
                 f"Character {character_ownership.character} does not belong "
                 "to owner corporation."
             )
-        obj, _ = self.characters.get_or_create(character_ownership=character_ownership)
+        obj: OwnerCharacter = self.characters.get_or_create(
+            character_ownership=character_ownership
+        )[0]
+        if not obj.is_enabled:
+            obj.is_enabled = True
+            obj.save()
         return obj
 
     def characters_count(self) -> int:
         """Count of valid owner characters."""
-        return self.characters.count()
+        return self.characters.filter(is_enabled=True).count()
 
     def has_sov(self, eve_solar_system: EveSolarSystem) -> bool:
         """Determine whether this owner has sov in the given solar system."""
@@ -453,7 +458,10 @@ class Owner(models.Model):
             if rotate_characters
             else "notifications_last_used_at"
         )
-        for character in self.characters.order_by(order_by_last_used):
+        enabled_characters: models.QuerySet[OwnerCharacter] = self.characters.filter(
+            is_enabled=True
+        ).order_by(order_by_last_used)
+        for character in enabled_characters:
             if (
                 character.character_ownership.character.corporation_id
                 != self.corporation.corporation_id
@@ -1336,6 +1344,11 @@ class OwnerCharacter(models.Model):
         editable=False,
         verbose_name=_("error count"),
         help_text="Count of ESI errors which happened with this character.",
+    )
+    is_enabled = models.BooleanField(
+        default=True,
+        verbose_name=_("is enabled"),
+        help_text=_("Disabled characters are not used for syncing owners"),
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -381,7 +381,7 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self.assertTrue(mock_notify.called)
         self.assertEqual(owner.characters.count(), 1)
 
-    def test_should_rotate_through_characters_for_notification(
+    def test_should_rotate_through_enabled_characters_for_notification(
         self, mock_notify_admins, mock_notify
     ):
         # given
@@ -398,6 +398,9 @@ class TestOwnerFetchToken(NoSocketsTestCase):
             owner=owner,
             notifications_last_used_at=dt.datetime(2021, 1, 1, 3, 0, tzinfo=utc),
         )
+        OwnerCharacterFactory(
+            owner=owner, is_enabled=False
+        )  # this one should be ignore
         tokens_received = []
 
         # when
@@ -546,13 +549,13 @@ class TestOwnerCharacters(NoSocketsTestCase):
         with self.assertRaises(ValueError):
             self.owner.add_character(character_ownership)
 
-    def test_should_count_characters(self):
+    def test_should_count_enabled_characters_only(self):
         # given
-        OwnerCharacterFactory(owner=self.owner)
+        OwnerCharacterFactory(owner=self.owner, is_enabled=False)
         # when
         result = self.owner.characters_count()
         # then
-        self.assertEqual(result, 2)
+        self.assertEqual(result, 1)
 
     def test_should_count_characters_when_empty(self):
         # given
@@ -561,6 +564,17 @@ class TestOwnerCharacters(NoSocketsTestCase):
         result = owner.characters_count()
         # then
         self.assertEqual(result, 0)
+
+    def test_should_reenable_character_when_re_adding(self):
+        # given
+        character: OwnerCharacter = self.owner.characters.first()
+        character.is_enabled = False
+        character.save()
+        # when
+        self.owner.add_character(character.character_ownership)
+        # then
+        character.refresh_from_db()
+        self.assertTrue(character.is_enabled)
 
 
 @patch(MODULE_PATH + ".notify", spec=True)

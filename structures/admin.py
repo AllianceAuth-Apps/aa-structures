@@ -348,6 +348,29 @@ class OwnerCharacterAdminInline(admin.TabularInline):
         return False
 
 
+class DisabledCharactersFilter(admin.SimpleListFilter):
+    title = _("has disabled characters")
+    parameter_name = "has_disabled_characters"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", _("yes")),
+            ("no", _("no")),
+        )
+
+    def queryset(self, request, queryset):
+        """Return the filtered queryset"""
+        if self.value() == "yes":
+            return queryset.annotate_characters_count().filter(
+                characters_disabled_count__gt=0
+            )
+        if self.value() == "no":
+            return queryset.annotate_characters_count().filter(
+                characters_disabled_count=0
+            )
+        return queryset
+
+
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):
     list_display = (
@@ -364,6 +387,7 @@ class OwnerAdmin(admin.ModelAdmin):
     list_filter = (
         "is_active",
         "is_up",
+        DisabledCharactersFilter,
         ("corporation__alliance", admin.RelatedOnlyFieldListFilter),
         "has_default_pings_enabled",
         "is_alliance_main",
@@ -376,6 +400,7 @@ class OwnerAdmin(admin.ModelAdmin):
         "fetch_notifications",
         "deactivate_owners",
         "activate_owners",
+        "reenable_characters",
     )
     inlines = (OwnerCharacterAdminInline,)
     filter_horizontal = ("ping_groups", "webhooks")
@@ -485,9 +510,13 @@ class OwnerAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    @admin.display(ordering="characters_count_2", description=_("characters"))
-    def _characters(self, obj: Owner) -> int:
-        return obj.characters_count_2
+    @admin.display(ordering="characters_enabled_count", description=_("characters"))
+    def _characters(self, obj: Owner) -> str:
+        enabled = obj.characters_enabled_count
+        disabled = obj.characters_disabled_count
+        if not disabled:
+            return enabled
+        return f"{enabled} ({disabled})"
 
     @admin.display(description=_("default pings"), boolean=True)
     def _has_default_pings_enabled(self, obj: Owner):
@@ -548,6 +577,15 @@ class OwnerAdmin(admin.ModelAdmin):
     def deactivate_owners(self, request, queryset):
         queryset.update(is_active=False)
         self.message_user(request, _("Deactivated %d owners") % queryset.count())
+
+    @admin.action(description=_("Re-enable all characters for selected owners"))
+    def reenable_characters(self, request, queryset):
+        for owner in queryset:
+            owner.characters.update(is_enabled=True)
+
+        self.message_user(
+            request, _("Re-enabled characters for %d owners") % queryset.count()
+        )
 
     @admin.action(description=_("Update all from EVE server for selected owners"))
     def update_all(self, request, queryset):

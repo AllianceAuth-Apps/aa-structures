@@ -580,11 +580,10 @@ class OwnerAdmin(admin.ModelAdmin):
 
     @admin.action(description=_("Re-enable all characters for selected owners"))
     def reenable_characters(self, request, queryset):
-        for owner in queryset:
-            owner.characters.update(is_enabled=True)
-
+        pks = queryset.values_list("pk", flat=True)
+        tasks.reenable_owner_characters(pks).delay()
         self.message_user(
-            request, _("Re-enabled characters for %d owners") % queryset.count()
+            request, _("Started re-enabled characters for %d owners") % queryset.count()
         )
 
     @admin.action(description=_("Update all from EVE server for selected owners"))

@@ -565,16 +565,18 @@ class TestOwnerCharacters(NoSocketsTestCase):
         # then
         self.assertEqual(result, 0)
 
-    def test_should_reenable_character_when_re_adding(self):
+    def test_should_reset_character_when_re_adding(self):
         # given
         character: OwnerCharacter = self.owner.characters.first()
         character.is_enabled = False
+        character.disabled_reason = "some reason"
         character.save()
         # when
         self.owner.add_character(character.character_ownership)
         # then
         character.refresh_from_db()
         self.assertTrue(character.is_enabled)
+        self.assertFalse(character.disabled_reason)
 
 
 @patch(MODULE_PATH + ".notify", spec=True)

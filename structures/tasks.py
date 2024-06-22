@@ -1,6 +1,6 @@
 """Tasks for Structures."""
 
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 
 from celery import chain, shared_task
 
@@ -240,6 +240,14 @@ def send_test_notifications_to_webhook(
             message=message,
             level=level,
         )
+
+
+@shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
+def reenable_owner_characters(owner_pks: List[int]) -> None:
+    """Reenable disabled characters for a set of owners."""
+    for owner in Owner.objects.filter(pk__in=owner_pks):
+        for character in owner.characters.filter(is_enabled=False):
+            character.reset()
 
 
 def _get_user(user_pk: Optional[int]) -> Optional[User]:

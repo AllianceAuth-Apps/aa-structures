@@ -342,8 +342,7 @@ class Owner(models.Model):
             character_ownership=character_ownership
         )[0]
         if not obj.is_enabled:
-            obj.is_enabled = True
-            obj.save()
+            obj.reset()
         return obj
 
     def characters_count(self) -> int:
@@ -1350,6 +1349,7 @@ class OwnerCharacter(models.Model):
         verbose_name=_("is enabled"),
         help_text=_("Disabled characters are not used for syncing owners"),
     )
+    disabled_reason = models.TextField(default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -1382,3 +1382,9 @@ class OwnerCharacter(models.Model):
             .require_valid()
             .first()
         )
+
+    def reset(self) -> None:
+        """Resets a disabled owner character."""
+        self.is_enabled = True
+        self.disabled_reason = ""
+        self.save()

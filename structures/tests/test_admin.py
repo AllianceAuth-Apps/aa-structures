@@ -262,6 +262,7 @@ class TestNotificationAdmin(TestCase):
         )
         # when
         result = self.modeladmin._structures(obj)
+        # then
         self.assertIsNone(result)
 
     # FIXME: Does not seam to work with special prefetch list
@@ -355,6 +356,52 @@ class TestNotificationAdmin(TestCase):
         queryset = changelist.get_queryset(request)
         expected = Notification.objects.filter(pk=positive_notif.pk)
         self.assertSetEqual(set(queryset), set(expected))
+
+
+class TestNotificationAdminWebhooks(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.factory = RequestFactory()
+        load_eveuniverse()
+        cls.modeladmin = NotificationAdmin(model=Notification, admin_site=AdminSite())
+        cls.user = SuperuserFactory()
+
+    def test_should_return_name_of_owner_webhook(self):
+        # given
+        owner = OwnerFactory(webhooks__name="Alpha")
+        obj = NotificationFactory(
+            owner=owner, notif_type=NotificationType.STRUCTURE_LOST_SHIELD
+        )
+        obj2 = self.modeladmin.get_queryset(MockRequest(user=self.user)).get(pk=obj.pk)
+        # when
+        result = self.modeladmin._webhooks(obj2)
+        # then
+        self.assertEqual("Alpha", result)
+
+    def test_should_report_missing_webhook(self):
+        # given
+        owner = OwnerFactory(webhooks=False)
+        obj = NotificationFactory(
+            owner=owner, notif_type=NotificationType.STRUCTURE_LOST_SHIELD
+        )
+        obj2 = self.modeladmin.get_queryset(MockRequest(user=self.user)).get(pk=obj.pk)
+        # when
+        result = self.modeladmin._webhooks(obj2)
+        # then
+        self.assertIn("Not configured", result)
+
+    def test_should_report_when_webhooks_not_configured_for_this_notif_type(self):
+        # given
+        owner = OwnerFactory()
+        obj = NotificationFactory(
+            owner=owner, notif_type=NotificationType.SOV_ENTOSIS_CAPTURE_STARTED
+        )
+        obj2 = self.modeladmin.get_queryset(MockRequest(user=self.user)).get(pk=obj.pk)
+        # when
+        result = self.modeladmin._webhooks(obj2)
+        # then
+        self.assertIn("Not configured", result)
 
 
 class TestOwnerAdmin(TestCase):

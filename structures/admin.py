@@ -578,7 +578,7 @@ class OwnerAdmin(admin.ModelAdmin):
         queryset.update(is_active=False)
         self.message_user(request, _("Deactivated %d owners") % queryset.count())
 
-    @admin.action(description=_("Reset characters for selected owners"))
+    @admin.action(description=_("Reset disabled characters for selected owners"))
     def reset_characters(self, request, queryset):
         owner_pks = queryset.values_list("pk", flat=True)
         OwnerCharacter.objects.filter(

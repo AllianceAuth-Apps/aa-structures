@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Changes of how Structures handles character errors:
+- Changes of how Structures handles character errors (#98):
   - Now disables, instead of deletes characters with these errors:
     - Token reported as invalid by ESI
     - 403 forbidden returned by ESI when trying to fetch starbases

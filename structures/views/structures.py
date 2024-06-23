@@ -630,7 +630,7 @@ def add_structure_owner(request: HttpRequest, token: Token):
                 % {
                     "corporation": owner,
                     "character": token_char,
-                    "characters_count": owner.characters_count(),
+                    "characters_count": owner.valid_characters_count(),
                 }
             ),
         )
@@ -646,7 +646,7 @@ def add_structure_owner(request: HttpRequest, token: Token):
                         "character": token_char,
                         "corporation": owner,
                         "user": request.user.username,
-                        "characters_count": owner.characters_count(),
+                        "characters_count": owner.valid_characters_count(),
                     },
                     title=_("%s: Character added to: %s") % (__title__, owner),
                 )

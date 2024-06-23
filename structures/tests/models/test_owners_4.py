@@ -7,7 +7,7 @@ from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from app_utils.testing import NoSocketsTestCase
 
 from structures.constants import EveCorporationId
-from structures.models import StarbaseDetail, Structure
+from structures.models import OwnerCharacter, StarbaseDetail, Structure
 from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     OwnerFactory,
@@ -353,12 +353,13 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         owner.refresh_from_db()
         self.assertFalse(owner.is_structure_sync_fresh)
         self.assertTrue(mock_notify)
-        character = owner.characters.first()
+        character: OwnerCharacter = owner.characters.first()
         self.assertEqual(character.error_count, 1)
+        self.assertTrue(character.is_enabled)
 
     @patch(MODULE_PATH + ".STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES", 3)
     @patch(MODULE_PATH + ".notify", spec=True)
-    def test_should_remove_character_when_not_director_while_updating_starbases(
+    def test_should_disable_character_when_not_director_while_updating_starbases(
         self, mock_notify, mock_esi
     ):
         # given
@@ -369,7 +370,7 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         )
         mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
         owner = OwnerFactory(user=self.user, structures_last_update_at=None)
-        character = owner.characters.first()
+        character: OwnerCharacter = owner.characters.first()
         character.error_count = 3
         character.save()
         # when
@@ -378,7 +379,22 @@ class TestUpdateStarbasesEsi(NoSocketsTestCase):
         owner.refresh_from_db()
         self.assertFalse(owner.is_structure_sync_fresh)
         self.assertTrue(mock_notify)
-        self.assertNotIn(character, owner.characters.all())
+        character.refresh_from_db()
+        self.assertFalse(character.is_enabled)
+
+    def test_should_reset_error_count_for_character_when_successful(self, mock_esi):
+        # given
+        mock_esi.client = self.esi_client_stub
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        character: OwnerCharacter = owner.characters.first()
+        character.error_count = 3
+        character.save()
+        # when
+        owner.update_structures_esi()
+        # then
+        character.refresh_from_db()
+        self.assertTrue(character.is_enabled)
+        self.assertEqual(character.error_count, 0)
 
     def test_should_remove_old_starbases(self, mock_esi):
         # given

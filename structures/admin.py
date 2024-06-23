@@ -400,7 +400,7 @@ class OwnerAdmin(admin.ModelAdmin):
         "fetch_notifications",
         "deactivate_owners",
         "activate_owners",
-        "reenable_characters",
+        "reset_characters",
     )
     inlines = (OwnerCharacterAdminInline,)
     filter_horizontal = ("ping_groups", "webhooks")
@@ -578,12 +578,14 @@ class OwnerAdmin(admin.ModelAdmin):
         queryset.update(is_active=False)
         self.message_user(request, _("Deactivated %d owners") % queryset.count())
 
-    @admin.action(description=_("Re-enable all characters for selected owners"))
-    def reenable_characters(self, request, queryset):
-        pks = queryset.values_list("pk", flat=True)
-        tasks.reenable_owner_characters(pks).delay()
+    @admin.action(description=_("Reset characters for selected owners"))
+    def reset_characters(self, request, queryset):
+        owner_pks = queryset.values_list("pk", flat=True)
+        OwnerCharacter.objects.filter(
+            owner__pk__in=list(owner_pks), is_enabled=False
+        ).update(is_enabled=True, disabled_reason="", error_count=0)
         self.message_user(
-            request, _("Started re-enabled characters for %d owners") % queryset.count()
+            request, _("Characters have been reset for %d owners") % len(owner_pks)
         )
 
     @admin.action(description=_("Update all from EVE server for selected owners"))

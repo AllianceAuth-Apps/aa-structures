@@ -55,7 +55,7 @@ STRUCTURES_FEATURE_STARBASES = clean_setting("STRUCTURES_FEATURE_STARBASES", Tru
 STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES = clean_setting(
     "STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES", 3
 )
-"""Max retries before a character is deleted when ESI claims the character
+"""Max retries before a character is disabled when ESI claims the character
 is not a director (Since this sometimes is reported wrongly by ESI).
 """
 

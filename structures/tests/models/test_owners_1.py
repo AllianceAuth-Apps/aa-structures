@@ -318,20 +318,21 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self.assertTrue(mock_notify.called)
         self.assertEqual(owner.characters.count(), 0)
 
-    def test_raise_error_when_token_not_found_and_delete_character(
+    def test_raise_error_when_no_valid_token_found_and_disable_character(
         self, mock_notify_admins, mock_notify
     ):
         # given
-        character = EveCharacterFactory()
-        user = UserMainDefaultOwnerFactory(main_character__character=character)
-        owner = OwnerFactory(user=user, characters=[character])
-        user.token_set.first().scopes.clear()
+        eve_character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=eve_character)
+        owner = OwnerFactory(user=user, characters=[eve_character])
+        user.token_set.first().scopes.clear()  # token no longer valid
         # when/then
         with self.assertRaises(TokenError):
             owner.fetch_token()
+        character = owner.characters.first()
+        self.assertFalse(character.is_enabled)
         self.assertTrue(mock_notify_admins.called)
         self.assertTrue(mock_notify.called)
-        self.assertEqual(owner.characters.count(), 0)
 
     def test_raise_error_when_character_no_longer_a_corporation_member_and_delete_it(
         self, mock_notify_admins, mock_notify
@@ -350,36 +351,6 @@ class TestOwnerFetchToken(NoSocketsTestCase):
         self.assertTrue(mock_notify_admins.called)
         self.assertTrue(mock_notify.called)
         self.assertEqual(owner.characters.count(), 0)
-
-    def test_should_delete_invalid_characters_and_return_token_from_valid_char(
-        self, mock_notify_admins, mock_notify
-    ):
-        # given
-        character_1 = EveCharacterFactory()
-        user = UserMainDefaultOwnerFactory(main_character__character=character_1)
-        owner = OwnerFactory(
-            user=user,
-            characters=[character_1],
-            characters__notifications_last_used_at=dt.datetime(
-                2021, 1, 1, 1, 2, tzinfo=utc
-            ),
-        )
-        character_2 = EveCharacterFactory()
-        OwnerCharacterFactory(
-            owner=owner,
-            eve_character=character_2,
-            notifications_last_used_at=dt.datetime(2021, 1, 1, 1, 1, tzinfo=utc),
-        )
-
-        # when
-        token = owner.fetch_token()
-
-        # then
-        self.assertIsInstance(token, Token)
-        self.assertEqual(token.user, user)
-        self.assertTrue(mock_notify_admins.called)
-        self.assertTrue(mock_notify.called)
-        self.assertEqual(owner.characters.count(), 1)
 
     def test_should_rotate_through_enabled_characters_for_notification(
         self, mock_notify_admins, mock_notify
@@ -496,18 +467,42 @@ class TestOwnerFetchToken(NoSocketsTestCase):
             ],
         )
 
+    def test_should_delete_invalid_characters_and_return_token_from_valid_char(
+        self, mock_notify_admins, mock_notify
+    ):
+        # given
+        character_1 = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character_1)
+        owner = OwnerFactory(
+            user=user,
+            characters=[character_1],
+            characters__notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 1, 2, tzinfo=utc
+            ),
+        )
+        character_2 = EveCharacterFactory()  # invalid, because of different corporation
+        OwnerCharacterFactory(
+            owner=owner,
+            eve_character=character_2,
+            notifications_last_used_at=dt.datetime(2021, 1, 1, 1, 1, tzinfo=utc),
+        )
+
+        # when
+        token = owner.fetch_token()
+
+        # then
+        self.assertIsInstance(token, Token)
+        self.assertEqual(token.user, user)
+        self.assertTrue(mock_notify_admins.called)
+        self.assertTrue(mock_notify.called)
+        self.assertEqual(owner.characters.count(), 1)
+
 
 class TestOwnerCharacters(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.owner = OwnerFactory()
-
-    def test_should_return_str(self):
-        # given
-        character = OwnerCharacterFactory(owner=self.owner)
-        # when/then
-        self.assertTrue(str(character))
 
     def test_should_add_new_character(self):
         # given
@@ -553,7 +548,7 @@ class TestOwnerCharacters(NoSocketsTestCase):
         # given
         OwnerCharacterFactory(owner=self.owner, is_enabled=False)
         # when
-        result = self.owner.characters_count()
+        result = self.owner.valid_characters_count()
         # then
         self.assertEqual(result, 1)
 
@@ -561,7 +556,7 @@ class TestOwnerCharacters(NoSocketsTestCase):
         # given
         owner = OwnerFactory(characters=False)
         # when
-        result = owner.characters_count()
+        result = owner.valid_characters_count()
         # then
         self.assertEqual(result, 0)
 
@@ -593,7 +588,7 @@ class TestOwnerDeleteCharacter(NoSocketsTestCase):
         user = character.character_ownership.user
 
         # when
-        self.owner.delete_character(character=character, error="dummy error")
+        self.owner.delete_character(character=character, reason="dummy error")
 
         # then
         self.assertEqual(self.owner.characters.count(), 0)
@@ -607,18 +602,50 @@ class TestOwnerDeleteCharacter(NoSocketsTestCase):
         self.assertEqual(kwargs["user"], user)
         self.assertEqual(kwargs["level"], "warning")
 
-    def test_should_not_delete_when_errors_are_allowed(
+
+@patch(MODULE_PATH + ".notify", spec=True)
+@patch(MODULE_PATH + ".notify_admins", spec=True)
+class TestOwnerDisableCharacters(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.owner = OwnerFactory(characters=False)
+
+    def test_should_disable_character_and_notify(self, mock_notify_admins, mock_notify):
+        # given
+        character = OwnerCharacterFactory(owner=self.owner)
+        user = character.character_ownership.user
+
+        # when
+        self.owner.disable_character(character=character, reason="dummy error")
+
+        # then
+        character.refresh_from_db()
+        self.assertFalse(character.is_enabled)
+        self.assertTrue(character.disabled_reason)
+        self.assertTrue(mock_notify_admins.called)
+        _, kwargs = mock_notify_admins.call_args
+        self.assertIn("dummy error", kwargs["message"])
+        self.assertEqual(kwargs["level"], "danger")
+        self.assertTrue(mock_notify.called)
+        _, kwargs = mock_notify.call_args
+        self.assertIn("dummy error", kwargs["message"])
+        self.assertEqual(kwargs["user"], user)
+        self.assertEqual(kwargs["level"], "warning")
+
+    def test_should_not_disable_when_error_counter_above_zero(
         self, mock_notify_admins, mock_notify
     ):
         # given
         character = OwnerCharacterFactory(owner=self.owner)
 
         # when
-        self.owner.delete_character(
-            character=character, error="dummy error", max_allowed_errors=1
+        self.owner.disable_character(
+            character=character, reason="dummy error", max_allowed_errors=1
         )
         # then
         character.refresh_from_db()
+        self.assertTrue(character.is_enabled)
         self.assertEqual(character.error_count, 1)
         self.assertFalse(mock_notify_admins.called)
         self.assertFalse(mock_notify.called)

@@ -32,6 +32,7 @@ from .testdata.factories import (
     EveCorporationInfoFactory,
     FuelAlertConfigFactory,
     NotificationFactory,
+    OwnerCharacterFactory,
     OwnerFactory,
     PocoFactory,
     StarbaseFactory,
@@ -419,6 +420,23 @@ class TestOwnerAdmin(TestCase):
         # then
         self.assertEqual(mock_task.delay.call_count, 1)
         self.assertTrue(mock_message_user.called)
+
+    @patch(MODULE_PATH + ".OwnerAdmin.message_user", spec=True)
+    def test_action_reset_characters(self, mock_message_user):
+        # given
+        owner_1 = OwnerFactory(characters=False)
+        character_1 = OwnerCharacterFactory(owner=owner_1, is_enabled=False)
+        owner_2 = OwnerFactory(characters=False)
+        character_2 = OwnerCharacterFactory(owner=owner_2, is_enabled=False)
+        # when
+        queryset = Owner.objects.filter(pk=owner_1.pk)
+        self.modeladmin.reset_characters(MockRequest(self.user), queryset)
+        # then
+        self.assertTrue(mock_message_user.called)
+        character_1.refresh_from_db()
+        self.assertTrue(character_1.is_enabled)
+        character_2.refresh_from_db()
+        self.assertFalse(character_2.is_enabled)
 
     def test_should_return_empty_turnaround_times(self):
         # given

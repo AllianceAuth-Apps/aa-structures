@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.11.0] - TBD
+
+### Changed
+
+- Changes of how Structures handles character errors:
+  - Now disables, instead of deletes characters with these errors:
+    - Token reported as invalid by ESI
+    - 403 forbidden returned by ESI when trying to fetch starbases
+  - Disabled characters are not used for sync, but can be re-enabled by admins
+  - User is no longer notified each time a character has an error as long as the error count is below the threshold
+  - Shows the total of disabled characters on the admin owner list page and allows filtering for those
+  - Shows which characters are disabled with reason on the detail admin page for an owner
+  - Note that characters are still deleted when these errors happen:
+    - Character's user lost permission to sync
+    - Character is no longer in the owner's corporation
+
 ## [2.10.0] - 2024-04-05
 
 ### Changed

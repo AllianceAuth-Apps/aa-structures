@@ -670,7 +670,7 @@ class OwnerAdmin(admin.ModelAdmin):
     def _assets_last_update_fresh(self, obj: Owner) -> bool:
         return obj.is_assets_sync_fresh
 
-    @admin.action(description=_("structures Count"))
+    @admin.display(description=_("structures Count"))
     def _structures_count(self, obj: Owner) -> int:
         return obj.structures.count()
 

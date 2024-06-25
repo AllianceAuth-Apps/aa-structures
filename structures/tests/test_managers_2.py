@@ -60,12 +60,13 @@ class TestOwnerManager(NoSocketsTestCase):
     def test_should_annotate_characters_count(self):
         # given
         owner = OwnerFactory()  # 1st character automatically created
-        OwnerCharacterFactory(owner=owner)  # 2nd character added
+        OwnerCharacterFactory(owner=owner, is_enabled=False)  # 2nd character added
         # when
         result = Owner.objects.annotate_characters_count()
         # then
         obj = result.get(pk=owner.pk)
-        self.assertEqual(obj.characters_count_2, 2)
+        self.assertEqual(obj.characters_enabled_count, 1)
+        self.assertEqual(obj.characters_disabled_count, 1)
 
     def test_should_return_when_structures_where_last_updated_for_several_owners(self):
         # given

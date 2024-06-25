@@ -338,12 +338,15 @@ class Owner(models.Model):
                 f"Character {character_ownership.character} does not belong "
                 "to owner corporation."
             )
-        obj, _ = self.characters.get_or_create(character_ownership=character_ownership)
+        obj: OwnerCharacter = self.characters.get_or_create(
+            character_ownership=character_ownership
+        )[0]
+        obj.reset()
         return obj
 
-    def characters_count(self) -> int:
+    def valid_characters_count(self) -> int:
         """Count of valid owner characters."""
-        return self.characters.count()
+        return self.characters.filter(is_enabled=True).count()
 
     def has_sov(self, eve_solar_system: EveSolarSystem) -> bool:
         """Determine whether this owner has sov in the given solar system."""
@@ -351,42 +354,31 @@ class Owner(models.Model):
             eve_solar_system=eve_solar_system, corporation=self.corporation
         )
 
-    def delete_character(
+    def disable_character(
         self,
         character: "OwnerCharacter",
-        error: str,
-        level: str = "warning",
+        reason: str,
         max_allowed_errors: int = 0,
     ) -> None:
-        """Delete character and notify it's owner and admin about the reason
+        """Disable character and notify it's owner and admins about it.
 
         Args:
-        - character: Character this error refers to
-        - error: Error text
-        - level: context level for the notification
-        - max_error: how many errors are permitted before character is deleted
+        - character: Character to disable
+        - reason: User friendly reason for the deletion
+        - max_allowed_errors: Maximum number of allowed errors for this type of error
         """
         if character.error_count < max_allowed_errors:
-            logger.warning(
-                (
-                    "%s: Character encountered an error and will be deleted "
-                    "if this occurs more often (%d/%d): %s"
-                ),
-                character,
-                character.error_count + 1,
-                max_allowed_errors,
-                error,
-            )
-            with transaction.atomic():
-                character.error_count = F("error_count") + 1
-                character.save(update_fields=["error_count"])
+            character.increase_error_count()
             return
 
-        title = f"{__title__}: {self}: Invalid character has been removed"
+        character.disable(reason)
+
+        title = f"{__title__}: {self}: Character has been disabled"
+        level = "warning"
         message = (
-            f"{character.character_ownership}: {error}\n"
-            "The character has been removed. "
-            "Please add a new character to restore the previous service level."
+            f"{character.character_ownership}: {reason}\n"
+            "This character caused too many errors and has been disabled. "
+            "Administrator action is required to resolve this issue."
         )
         notify(
             user=character.character_ownership.user,
@@ -394,14 +386,43 @@ class Owner(models.Model):
             message=message,
             level=level,
         )
-        if self.characters.count() == 1:
+        if not self.valid_characters_count():
             message += (
                 " This owner has no configured characters anymore "
                 "and it's services are now down."
             )
             level = "danger"
+
         notify_admins(title=f"FYI: {title}", message=message, level=level)
+
+    def delete_character(self, character: "OwnerCharacter", reason: str) -> None:
+        """Delete character and notify it's owner and admin about the reason
+
+        Args:
+        - character: Character this error refers to
+        - reason: User friendly reason for the deletion
+        """
         character.delete()
+
+        title = f"{__title__}: {self}: Invalid character has been removed"
+        level = "warning"
+        message = (
+            f"{character.character_ownership}: {reason}\n"
+            "Your character is no longer valid for syncing this owner and has been removed. "
+        )
+        notify(
+            user=character.character_ownership.user,
+            title=title,
+            message=message,
+            level=level,
+        )
+        if not self.valid_characters_count():
+            message += (
+                " This owner has no valid characters anymore "
+                "and it's services are now down."
+            )
+            level = "danger"
+        notify_admins(title=f"FYI: {title}", message=message, level=level)
 
     def _rotate_character(
         self,
@@ -421,7 +442,7 @@ class Owner(models.Model):
         )
         try:
             minimum_time_between_rotations = max(
-                rotate_characters.esi_cache_duration / self.characters.count(),
+                rotate_characters.esi_cache_duration / self.valid_characters_count(),
                 60,
             )
         except ZeroDivisionError:
@@ -453,14 +474,18 @@ class Owner(models.Model):
             if rotate_characters
             else "notifications_last_used_at"
         )
-        for character in self.characters.order_by(order_by_last_used):
+        enabled_characters: models.QuerySet[OwnerCharacter] = self.characters.filter(
+            is_enabled=True
+        ).order_by(order_by_last_used)
+        for character in enabled_characters:
             if (
                 character.character_ownership.character.corporation_id
                 != self.corporation.corporation_id
             ):
+                corporation_name = self.corporation.corporation_name
                 self.delete_character(
                     character=character,
-                    error="Character does no longer belong to the owner's corporation.",
+                    reason=f"Character is no longer a member of {corporation_name}",
                 )
                 continue
 
@@ -469,17 +494,17 @@ class Owner(models.Model):
             ):
                 self.delete_character(
                     character=character,
-                    error="Character does not have sufficient permission to sync.",
+                    reason="Character no longer has permission to sync",
                 )
                 continue
 
             token = character.valid_token()
             if not token:
-                self.delete_character(
-                    character=character,
-                    error="Character has no valid token for sync.",
+                self.disable_character(
+                    character=character, reason="No valid token found for character"
                 )
                 continue
+
             found_character = character
             break  # leave the for loop if we have found a valid token
 
@@ -797,6 +822,13 @@ class Owner(models.Model):
 
         Return True when successful, else False.
         """
+        try:
+            character: OwnerCharacter = self.characters.get(
+                character_ownership__character__character_id=token.character_id
+            )
+        except ObjectDoesNotExist:
+            return False
+
         structures = []
         try:
             starbases_data = (
@@ -824,21 +856,11 @@ class Owner(models.Model):
                 self._store_raw_data("starbases", structures)
 
         except HTTPForbidden:
-            try:
-                character = self.characters.get(
-                    character_ownership__character__character_id=token.character_id
-                )
-            except ObjectDoesNotExist:
-                pass
-            else:
-                self.delete_character(
-                    character=character,
-                    error=(
-                        "Character is not a director or CEO and therefore "
-                        "can not fetch starbases."
-                    ),
-                    max_allowed_errors=STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES,
-                )
+            self.disable_character(
+                character=character,
+                reason=("This character is not a director or CEO"),
+                max_allowed_errors=STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES,
+            )
             return False
 
         except OSError as ex:
@@ -849,6 +871,7 @@ class Owner(models.Model):
             structures_qs=self.structures.filter_starbases(),
             new_structures=structures,
         )
+        character.reset_error_counter()
         return True
 
     def _store_updates_for_starbases(self, token, structures):
@@ -1337,6 +1360,12 @@ class OwnerCharacter(models.Model):
         verbose_name=_("error count"),
         help_text="Count of ESI errors which happened with this character.",
     )
+    is_enabled = models.BooleanField(
+        default=True,
+        verbose_name=_("is enabled"),
+        help_text=_("Disabled characters are not used for syncing owners"),
+    )
+    disabled_reason = models.TextField(default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -1369,3 +1398,27 @@ class OwnerCharacter(models.Model):
             .require_valid()
             .first()
         )
+
+    def reset(self) -> None:
+        """Resets a disabled owner character."""
+        self.is_enabled = True
+        self.disabled_reason = ""
+        self.error_count = 0
+        self.save()
+
+    def reset_error_counter(self) -> None:
+        """Reset the error counter"""
+        self.error_count = 0
+        self.save(update_fields=["error_count"])
+
+    def disable(self, reason: str = "") -> None:
+        """Disables a character."""
+        self.is_enabled = False
+        self.disabled_reason = reason
+        self.save()
+
+    def increase_error_count(self):
+        """Increase error count of this character by one."""
+        with transaction.atomic():
+            self.error_count = F("error_count") + 1
+            self.save(update_fields=["error_count"])

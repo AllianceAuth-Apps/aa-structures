@@ -181,14 +181,27 @@ GeneratedNotificationManager = GeneratedNotificationManagerBase.from_queryset(
 
 class OwnerQuerySet(models.QuerySet):
     def annotate_characters_count(self) -> models.QuerySet:
-        """Add character count annotation."""
-        return self.annotate(
-            characters_count_2=Count(
+        """Add character count annotations."""
+        qs = self.annotate(
+            characters_enabled_count=Count(
                 "characters",
-                filter=Q(characters__character_ownership__isnull=False),
+                filter=Q(
+                    characters__character_ownership__isnull=False,
+                    characters__is_enabled=True,
+                ),
+                distinct=True,
+            )
+        ).annotate(
+            characters_disabled_count=Count(
+                "characters",
+                filter=Q(
+                    characters__character_ownership__isnull=False,
+                    characters__is_enabled=False,
+                ),
                 distinct=True,
             )
         )
+        return qs
 
     def structures_last_updated(self) -> Optional[dt.datetime]:
         """Date/time when structures were last updated for any of the active owners."""

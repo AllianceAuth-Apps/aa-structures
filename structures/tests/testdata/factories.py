@@ -203,9 +203,7 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
     def characters(
         obj, create: bool, extracted: Optional[List[EveCharacter]], **kwargs
     ):
-        """
-        Set extracted to False to skip creating characters.
-        """
+        # Set characters=False to skip creating characters.
         if not create or extracted is False:
             return
 
@@ -222,7 +220,8 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
 
     @factory.post_generation
     def webhooks(obj, create, extracted, **kwargs):
-        if not create:
+        # Set webhooks=False to skip creating characters.
+        if not create or extracted is False:
             return
 
         if extracted:

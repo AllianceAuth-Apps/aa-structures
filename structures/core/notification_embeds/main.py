@@ -10,6 +10,8 @@ import dhooks_lite
 from django.conf import settings
 from django.utils.translation import gettext as _
 
+from allianceauth.services.hooks import get_extension_logger
+from app_utils.logging import LoggerAddTag
 from app_utils.urls import reverse_absolute, static_file_absolute_url
 
 from structures import __title__
@@ -18,6 +20,8 @@ from structures.helpers import get_or_create_eve_entity, is_absolute_url
 from structures.models.notifications import Notification, NotificationBase, Webhook
 
 from .helpers import target_datetime_formatted
+
+logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 
 class NotificationBaseEmbed:
@@ -141,6 +145,20 @@ class NotificationBaseEmbed:
             footer_text += f" #{my_text}"
         footer_icon_url = footer_icon_url if is_absolute_url(footer_icon_url) else None
         footer = dhooks_lite.Footer(text=footer_text, icon_url=footer_icon_url)
+        max_description = dhooks_lite.Embed.MAX_DESCRIPTION
+        if self._description and len(self._description) > max_description:
+            logger.warning(
+                "%s: Description of notification is too long: %s",
+                self,
+                self._description,
+            )
+            self._description = self._description[:max_description]
+        max_title = dhooks_lite.Embed.MAX_TITLE
+        if self._title and len(self._title) > max_title:
+            logger.warning(
+                "%s: Title of notification is too long: %s", self, self._title
+            )
+            self._title = self._title[:max_title]
         return dhooks_lite.Embed(
             author=author,
             color=self._color,

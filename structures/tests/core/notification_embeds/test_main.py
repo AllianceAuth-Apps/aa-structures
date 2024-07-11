@@ -240,6 +240,26 @@ class TestNotificationEmbedsGenerate(TestCase):
         self.assertEqual(discord_embed.footer.text, "Structures")
         self.assertIn("structures_logo.png", discord_embed.footer.icon_url)
 
+    def test_should_not_break_with_too_large_description(self):
+        # given
+        notification = Notification.objects.get(notification_id=1000000403)
+        notification_embed = NotificationBaseEmbed.create(notification)
+        notification_embed._description = "x" * 2049
+        # when
+        discord_embed = notification_embed.generate_embed()
+        # then
+        self.assertIsInstance(discord_embed, dhooks_lite.Embed)
+
+    def test_should_not_break_with_too_large_title(self):
+        # given
+        notification = Notification.objects.get(notification_id=1000000403)
+        notification_embed = NotificationBaseEmbed.create(notification)
+        notification_embed._title = "x" * 257
+        # when
+        discord_embed = notification_embed.generate_embed()
+        # then
+        self.assertIsInstance(discord_embed, dhooks_lite.Embed)
+
 
 class TestNotificationEmbedsClasses(NoSocketsTestCase):
     @classmethod

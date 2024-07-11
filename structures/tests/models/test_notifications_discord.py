@@ -33,6 +33,7 @@ if "discord" in app_labels():
             super().setUpClass()
             load_eveuniverse()
             load_eve_entities()
+
             cls.group_1 = Group.objects.create(name="Dummy Group 1")
             cls.group_2 = Group.objects.create(name="Dummy Group 2")
             cls.owner = OwnerFactory()
@@ -140,3 +141,23 @@ if "discord" in app_labels():
             self.assertTrue(mock_import_discord.called)
             _, kwargs = mock_send_message.call_args
             self.assertFalse(re.search(r"(<@&\d+>)", kwargs["content"]))
+
+        def test_should_abort_when_content_is_too_large(
+            self, mock_send_message, mock_import_discord
+        ):
+            # given
+            mock_send_message.return_value = 1
+            mock_import_discord.return_value.objects.group_to_role.side_effect = (
+                self._my_group_to_role
+            )
+            webhook = WebhookFactory()
+            for i in range(286):
+                group = Group.objects.create(name=f"Group {i+1}")
+                webhook.ping_groups.add(group)
+            obj = clone_notification(
+                Notification.objects.get(notification_id=1000000509)
+            )
+            # when
+            result = obj.send_to_webhook(webhook)
+            # then
+            self.assertFalse(result)

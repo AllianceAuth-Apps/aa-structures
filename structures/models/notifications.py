@@ -410,11 +410,15 @@ class NotificationBase(models.Model):
         try:
             embed, ping_type = self._generate_embed(webhook.language_code)
         except OSError as ex:
-            logger.warning("%s: Failed to generate embed: %s", self, ex, exc_info=True)
+            logger.error("%s: Failed to generate embed: %s", self, ex, exc_info=True)
             return False
 
         content = self._create_content_with_pings(webhook, ping_type)
         content += self._add_discord_group_pings(webhook)
+        max_content = dhooks_lite.Webhook.MAX_CHARACTERS
+        if content and len(content) > max_content:
+            logger.error("%s: Content of notification is too long: %s", self, content)
+            return False
 
         username, avatar_url = self._gen_avatar()
         new_queue_size = webhook.send_message(

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.12.0] - 2024-06-25
+
+### Added
+
+- Added protection about creating too large notifications. Embeds with too large content will now automatically be truncated to ensure they can still be sent.
+
 ## [2.11.0] - 2024-06-25
 
 ### Changed

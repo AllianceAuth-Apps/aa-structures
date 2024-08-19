@@ -237,7 +237,7 @@ class StructureQuerySet(models.QuerySet):
 
     def select_related_defaults(self) -> models.QuerySet:
         """returns a QuerySet with the default select_related"""
-        return self.select_related(
+        return self.select_related(  # pylint: disable=E1102
             "owner",
             "owner__corporation",
             "owner__corporation__alliance",

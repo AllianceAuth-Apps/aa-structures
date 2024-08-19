@@ -6,7 +6,11 @@ from app_utils.datetime import ldap_time_2_datetime
 
 from structures.models import Notification, Webhook
 
-from .helpers import gen_corporation_link, target_datetime_formatted
+from .helpers import (
+    gen_corporation_link,
+    gen_solar_system_text,
+    target_datetime_formatted,
+)
 from .main import NotificationBaseEmbed
 
 
@@ -16,13 +20,14 @@ class NotificationSkyhookEmbed(NotificationBaseEmbed):
     def __init__(self, n: Notification) -> None:
         super().__init__(n)
         type_ = n.eve_structure_type("typeID")
+        solar_system = n.eve_solar_system("solarsystemID")
         self._description = _(
-            "The %(structure_type)s at %(planet)s "
-            "in %(solar_system)s belonging to %(owner_link)s"
+            "The %(structure_type)s at **%(planet)s** "
+            "in %(solar_system)s belonging to %(owner_link)s "
         ) % {
             "structure_type": type_,
             "planet": n.eve_planet(),
-            "solar_system": n.eve_solar_system("solarsystemID"),
+            "solar_system": gen_solar_system_text(solar_system),
             "owner_link": gen_corporation_link(str(n.owner)),
         }
         self._thumbnail = dhooks_lite.Thumbnail(
@@ -70,7 +75,8 @@ class NotificationSkyhookUnderAttack(NotificationSkyhookEmbed):
         super().__init__(n)
         self._title = _("Skyhook under attack")
         self._description += _(
-            "is under attack by %(attacker)s.\n%(damage_text)s"
+            "is under attack by %(attacker)s.\n"
+            "%(damage_text)s"
             % {
                 "attacker": self.gen_attacker_link(),
                 "damage_text": self.compile_damage_text("Percentage"),

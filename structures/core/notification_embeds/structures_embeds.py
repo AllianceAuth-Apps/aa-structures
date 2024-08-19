@@ -320,7 +320,8 @@ class NotificationStructureLowReagentsAlert(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Structure low on reagents")
         self._description += _(
-            "has insufficient reagents present to support one full day of moon drill activity."
+            "has insufficient reagents present to support "
+            "one full day of moon drill activity."
         )
         self._color = Webhook.Color.WARNING
 
@@ -330,6 +331,7 @@ class NotificationStructureNoReagentsAlert(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Structure out of reagents")
         self._description += _(
-            "has run out of reagents, which is preventing further moon material production."
+            "has run out of reagents, "
+            "which is preventing further moon material production."
         )
-        self._color = Webhook.Color.WARNING
+        self._color = Webhook.Color.DANGER

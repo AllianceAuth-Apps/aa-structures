@@ -41,6 +41,19 @@ class NotificationType(models.TextChoices):
     STRUCTURE_WENT_LOW_POWER = "StructureWentLowPower", _(
         "Upwell structure went low power"
     )
+    STRUCTURE_LOW_REAGENTS_ALERT = "StructureLowReagentsAlert", _(
+        "Structure low reagents alert"
+    )
+    STRUCTURE_NO_REAGENTS_ALERT = "StructureNoReagentsAlert", _(
+        "Structure no reagents alert"
+    )
+
+    # Skyhook structures
+    SKYHOOK_DEPLOYED = "SkyhookDeployed", _("Skyhook deployed")
+    SKYHOOK_DESTROYED = "SkyhookDestroyed", _("Skyhook destroyed")
+    SKYHOOK_LOST_SHIELDS = "SkyhookLostShields", _("Skyhook lost shields")
+    SKYHOOK_ONLINE = "SkyhookOnline", _("Skyhook online")
+    SKYHOOK_UNDER_ATTACK = "SkyhookUnderAttack", _("Skyhook under attack")
 
     # customs offices
     ORBITAL_ATTACKED = "OrbitalAttacked", _("Customs office attacked")
@@ -121,7 +134,7 @@ class NotificationType(models.TextChoices):
     )
     WAR_OFFERED_SURRENDER = "OfferedSurrender", _("War offered surrender")
     WAR_OFFERED_TO_ALLY = "OfferedToAlly", _("War offered to become ally")
-    WAR_WAR_ADOPTED = "WarAdopted", _("War adopted")
+    WAR_WAR_ADOPTED = "WarAdopted ", _("War adopted")
     WAR_WAR_DECLARED = "WarDeclared", _("War declared")
     WAR_WAR_INHERITED = "WarInherited", _("War inherited")
     WAR_WAR_RETRACTED_BY_CONCORD = "WarRetractedByConcord", _(
@@ -189,6 +202,10 @@ class NotificationType(models.TextChoices):
             cls.TOWER_RESOURCE_ALERT_MSG,
             cls.SOV_STRUCTURE_REINFORCED,
             cls.SOV_STRUCTURE_DESTROYED,
+            cls.SKYHOOK_LOST_SHIELDS,
+            cls.SKYHOOK_UNDER_ATTACK,
+            cls.SKYHOOK_ONLINE,
+            cls.SKYHOOK_DESTROYED,
         ]
 
     @classmethod

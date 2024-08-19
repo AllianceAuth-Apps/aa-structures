@@ -737,6 +737,66 @@
             "is_sent": false
         },
         {
+            "notification_id": 10000012001,
+            "type": "SkyhookUnderAttack",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "allianceID: 3011\nallianceLinkData:\n- showinfo\n- 16159\n- 3011\nallianceName: Big Bad Alliance\narmorPercentage: 99.97623738812345\ncharID: 1011\ncorpLinkData:\n- showinfo\n- 2\n- 2011\ncorpName: Bad Company\nhullPercentage: 100.0\nisActive: true\nitemID: &id001 1000000010001\nplanetID: 40161469\nplanetShowInfoData:\n- showinfo\n- 2016\n- 40161469\nshieldPercentage: 1.6855855838775617e-09\nskyhookShowInfoData:\n- showinfo\n- 81080\n- *id001\nsolarsystemID: 30002537\ntypeID: 81080",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 10000012003,
+            "type": "SkyhookDestroyed",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "itemID: &id001 1000000010001\nplanetID: 40161469\nplanetShowInfoData:\n- showinfo\n- 2016\n- 40161469\nskyhookShowInfoData:\n- showinfo\n- 81080\n- *id001\nsolarsystemID: 30002537\ntypeID: 81080",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 10000012004,
+            "type": "SkyhookDeployed",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "itemID: &id002 1000000010001\nownerCorpLinkData:\n- showinfo\n- 2\n- 2001\nownerCorpName: Good Company\nplanetID: &id001 40161469\nplanetShowInfoData:\n- showinfo\n- 2016\n- *id001\nskyhookShowInfoData:\n- showinfo\n- 81080\n- *id002\nsolarsystemID: 30002537\ntimeLeft: 18000000000\ntypeID: 81080",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 10000012005,
+            "type": "SkyhookOnline",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "itemID: &id002 1000000010001\nplanetID: &id001 40161469\nplanetShowInfoData:\n- showinfo\n- 2016\n- *id001\nskyhookShowInfoData:\n- showinfo\n- 81080\n- *id002\nsolarsystemID: 30002537\ntypeID: 81080",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 10000013001,
+            "type": "StructureLowReagentsAlert",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "solarsystemID: 30002537\nstructureID: &id001 1000000000001\nstructureShowInfoData:\n- showinfo\n- 81826\n- *id001\nstructureTypeID: 81826",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 10000013002,
+            "type": "StructureNoReagentsAlert",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "solarsystemID: 30002537\nstructureID: &id001 1000000000001\nstructureShowInfoData:\n- showinfo\n- 81826\n- *id001\nstructureTypeID: 81826",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
             "notification_id": 1999999999,
             "type": "UnknownNotificationType",
             "sender_id": 2001,

@@ -19,7 +19,7 @@ from structures.core.notification_types import NotificationType
 from structures.helpers import get_or_create_eve_entity, is_absolute_url
 from structures.models.notifications import Notification, NotificationBase, Webhook
 
-from .helpers import target_datetime_formatted
+from .helpers import gen_alliance_link, gen_corporation_link, target_datetime_formatted
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -77,9 +77,9 @@ class NotificationBaseEmbed:
         damage_text = " | ".join(damage_parts)
         return damage_text
 
-    def get_aggressor_link(self) -> str:
+    def gen_aggressor_link(self) -> str:
         """Returns the aggressor link from a parsed_text for POS and POCOs only."""
-        if self._data.get("aggressorAllianceID"):
+        if key := self._data.get("aggressorAllianceID"):
             key = "aggressorAllianceID"
         elif self._data.get("aggressorCorpID"):
             key = "aggressorCorpID"
@@ -89,6 +89,16 @@ class NotificationBaseEmbed:
             return "(Unknown aggressor)"
         entity = get_or_create_eve_entity(id=self._data[key])
         return Webhook.create_link(entity.name, entity.profile_url)
+
+    def gen_attacker_link(self) -> str:
+        """Returns the attacker link from a parsed_text for Upwell structures only."""
+        if name := self._data.get("allianceName"):
+            return gen_alliance_link(name)
+
+        if name := self._data.get("corpName"):
+            return gen_corporation_link(name)
+
+        return _("(unknown)")
 
     def fuel_expires_target_date(self) -> str:
         """Return calculated target date when fuel expires. Returns '?' when no data."""
@@ -200,6 +210,13 @@ class NotificationBaseEmbed:
             NotificationOrbitalAttacked,
             NotificationOrbitalReinforced,
         )
+        from .skyhook_embeds import (
+            NotificationSkyhookDeployed,
+            NotificationSkyhookDestroyed,
+            NotificationSkyhookLostShield,
+            NotificationSkyhookOnline,
+            NotificationSkyhookUnderAttack,
+        )
         from .sov_embeds import (
             NotificationSovAllAnchoringMsg,
             NotificationSovAllClaimAcquiredMsg,
@@ -216,6 +233,8 @@ class NotificationBaseEmbed:
             NotificationStructureJumpFuelAlert,
             NotificationStructureLostArmor,
             NotificationStructureLostShield,
+            NotificationStructureLowReagentsAlert,
+            NotificationStructureNoReagentsAlert,
             NotificationStructureOnline,
             NotificationStructureOwnershipTransferred,
             NotificationStructureRefueledExtra,
@@ -260,76 +279,84 @@ class NotificationBaseEmbed:
         NT = NotificationType
         notif_type_2_class = {
             # Billing
-            NT.BILLING_CORP_ALL_BILL_MSG: NotificationCorpAllBillMsg,
             NT.BILLING_BILL_OUT_OF_MONEY_MSG: NotificationBillingBillOutOfMoneyMsg,
+            NT.BILLING_CORP_ALL_BILL_MSG: NotificationCorpAllBillMsg,
             NT.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE: NotificationBillingIHubBillAboutToExpire,
             NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
             # character
-            NT.CORP_APP_NEW_MSG: NotificationCorpAppNewMsg,
+            NT.CHAR_APP_ACCEPT_MSG: NotificationCharAppAcceptMsg,
+            NT.CHAR_APP_WITHDRAW_MSG: NotificationCharAppWithdrawMsg,
+            NT.CHAR_LEFT_CORP_MSG: NotificationCharLeftCorpMsg,
             NT.CORP_APP_INVITED_MSG: NotificationCorpAppInvitedMsg,
+            NT.CORP_APP_NEW_MSG: NotificationCorpAppNewMsg,
             NT.CORP_APP_REJECT_CUSTOM_MSG: NotificationCorpAppRejectCustomMsg,
             NT.CORP_APP_REJECT_MSG: NotificationCharAppRejectMsg,
-            NT.CHAR_APP_WITHDRAW_MSG: NotificationCharAppWithdrawMsg,
-            NT.CHAR_APP_ACCEPT_MSG: NotificationCharAppAcceptMsg,
-            NT.CHAR_LEFT_CORP_MSG: NotificationCharLeftCorpMsg,
             # moonmining
-            NT.MOONMINING_EXTRACTION_STARTED: NotificationMoonminningExtractionStarted,
-            NT.MOONMINING_EXTRACTION_FINISHED: NotificationMoonminningExtractionFinished,
             NT.MOONMINING_AUTOMATIC_FRACTURE: NotificationMoonminningAutomaticFracture,
             NT.MOONMINING_EXTRACTION_CANCELLED: NotificationMoonminningExtractionCanceled,
+            NT.MOONMINING_EXTRACTION_FINISHED: NotificationMoonminningExtractionFinished,
+            NT.MOONMINING_EXTRACTION_STARTED: NotificationMoonminningExtractionStarted,
             NT.MOONMINING_LASER_FIRED: NotificationMoonminningLaserFired,
             # Orbitals
             NT.ORBITAL_ATTACKED: NotificationOrbitalAttacked,
             NT.ORBITAL_REINFORCED: NotificationOrbitalReinforced,
             # Sov
-            NT.SOV_ENTOSIS_CAPTURE_STARTED: NotificationSovEntosisCaptureStarted,
-            NT.SOV_COMMAND_NODE_EVENT_STARTED: NotificationSovCommandNodeEventStarted,
+            NT.SOV_ALL_ANCHORING_MSG: NotificationSovAllAnchoringMsg,
             NT.SOV_ALL_CLAIM_ACQUIRED_MSG: NotificationSovAllClaimAcquiredMsg,
             NT.SOV_ALL_CLAIM_LOST_MSG: NotificationSovAllClaimLostMsg,
-            NT.SOV_STRUCTURE_REINFORCED: NotificationSovStructureReinforced,
+            NT.SOV_COMMAND_NODE_EVENT_STARTED: NotificationSovCommandNodeEventStarted,
+            NT.SOV_ENTOSIS_CAPTURE_STARTED: NotificationSovEntosisCaptureStarted,
             NT.SOV_STRUCTURE_DESTROYED: NotificationSovStructureDestroyed,
-            NT.SOV_ALL_ANCHORING_MSG: NotificationSovAllAnchoringMsg,
+            NT.SOV_STRUCTURE_REINFORCED: NotificationSovStructureReinforced,
             # Towers
             NT.TOWER_ALERT_MSG: NotificationTowerAlertMsg,
-            NT.TOWER_RESOURCE_ALERT_MSG: NotificationTowerResourceAlertMsg,
             NT.TOWER_REFUELED_EXTRA: NotificationTowerRefueledExtra,
             NT.TOWER_REINFORCED_EXTRA: NotificationTowerReinforcedExtra,
+            NT.TOWER_RESOURCE_ALERT_MSG: NotificationTowerResourceAlertMsg,
+            # Skyhooks
+            NT.SKYHOOK_DEPLOYED: NotificationSkyhookDeployed,
+            NT.SKYHOOK_DESTROYED: NotificationSkyhookDestroyed,
+            NT.SKYHOOK_LOST_SHIELDS: NotificationSkyhookLostShield,
+            NT.SKYHOOK_ONLINE: NotificationSkyhookOnline,
+            NT.SKYHOOK_UNDER_ATTACK: NotificationSkyhookUnderAttack,
             # Upwell structures
-            NT.STRUCTURE_ONLINE: NotificationStructureOnline,
-            NT.STRUCTURE_FUEL_ALERT: NotificationStructureFuelAlert,
-            NT.STRUCTURE_JUMP_FUEL_ALERT: NotificationStructureJumpFuelAlert,
-            NT.STRUCTURE_REFUELED_EXTRA: NotificationStructureRefueledExtra,
-            NT.STRUCTURE_SERVICES_OFFLINE: NotificationStructureServicesOffline,
-            NT.STRUCTURE_WENT_LOW_POWER: NotificationStructureWentLowPower,
-            NT.STRUCTURE_WENT_HIGH_POWER: NotificationStructureWentHighPower,
-            NT.STRUCTURE_UNANCHORING: NotificationStructureUnanchoring,
-            NT.STRUCTURE_UNDER_ATTACK: NotificationStructureUnderAttack,
-            NT.STRUCTURE_LOST_SHIELD: NotificationStructureLostShield,
-            NT.STRUCTURE_LOST_ARMOR: NotificationStructureLostArmor,
-            NT.STRUCTURE_DESTROYED: NotificationStructureDestroyed,
             NT.OWNERSHIP_TRANSFERRED: NotificationStructureOwnershipTransferred,
             NT.STRUCTURE_ANCHORING: NotificationStructureAnchoring,
+            NT.STRUCTURE_DESTROYED: NotificationStructureDestroyed,
+            NT.STRUCTURE_FUEL_ALERT: NotificationStructureFuelAlert,
+            NT.STRUCTURE_JUMP_FUEL_ALERT: NotificationStructureJumpFuelAlert,
+            NT.STRUCTURE_LOST_ARMOR: NotificationStructureLostArmor,
+            NT.STRUCTURE_LOST_SHIELD: NotificationStructureLostShield,
+            NT.STRUCTURE_LOW_REAGENTS_ALERT: NotificationStructureLowReagentsAlert,
+            NT.STRUCTURE_NO_REAGENTS_ALERT: NotificationStructureNoReagentsAlert,
+            NT.STRUCTURE_ONLINE: NotificationStructureOnline,
+            NT.STRUCTURE_REFUELED_EXTRA: NotificationStructureRefueledExtra,
             NT.STRUCTURE_REINFORCEMENT_CHANGED: NotificationStructureReinforceChange,
+            NT.STRUCTURE_SERVICES_OFFLINE: NotificationStructureServicesOffline,
+            NT.STRUCTURE_UNANCHORING: NotificationStructureUnanchoring,
+            NT.STRUCTURE_UNDER_ATTACK: NotificationStructureUnderAttack,
+            NT.STRUCTURE_WENT_HIGH_POWER: NotificationStructureWentHighPower,
+            NT.STRUCTURE_WENT_LOW_POWER: NotificationStructureWentLowPower,
             # War
             NT.WAR_ACCEPTED_ALLY: NotificationAcceptedAlly,
+            NT.WAR_ALL_WAR_CORP_JOINED_ALLIANCE_MSG: NotificationAllWarCorpJoinedAllianceMsg,
+            NT.WAR_ALL_WAR_SURRENDER_MSG: NotificationAllWarSurrenderMsg,
             NT.WAR_ALLY_JOINED_WAR_AGGRESSOR_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_ALLY_MSG: NotificationAllyJoinedWarMsg,
             NT.WAR_ALLY_JOINED_WAR_DEFENDER_MSG: NotificationAllyJoinedWarMsg,
-            NT.WAR_ALL_WAR_CORP_JOINED_ALLIANCE_MSG: NotificationAllWarCorpJoinedAllianceMsg,
-            NT.WAR_ALL_WAR_SURRENDER_MSG: NotificationAllWarSurrenderMsg,
+            NT.WAR_CORP_WAR_SURRENDER_MSG: NotificationCorpWarSurrenderMsg,
             NT.WAR_CORPORATION_BECAME_ELIGIBLE: NotificationWarCorporationBecameEligible,
             NT.WAR_CORPORATION_NO_LONGER_ELIGIBLE: NotificationWarCorporationNoLongerEligible,
             NT.WAR_DECLARE_WAR: NotificationDeclareWar,
-            NT.WAR_MERC_OFFERED_NEGOTIATION_MSG: NotificationMercOfferedNegotiationMsg,
-            NT.WAR_MERC_OFFER_RETRACTED_MSG: NotificationMercOfferRetractedMsg,
-            NT.WAR_CORP_WAR_SURRENDER_MSG: NotificationCorpWarSurrenderMsg,
             NT.WAR_HQ_REMOVED_FROM_SPACE: NotificationWarHQRemovedFromSpace,
-            NT.WAR_OFFERED_TO_ALLY: NotificationOfferedToAlly,
+            NT.WAR_INVALID: NotificationWarInvalid,
+            NT.WAR_MERC_OFFER_RETRACTED_MSG: NotificationMercOfferRetractedMsg,
+            NT.WAR_MERC_OFFERED_NEGOTIATION_MSG: NotificationMercOfferedNegotiationMsg,
             NT.WAR_OFFERED_SURRENDER: NotificationOfferedSurrender,
+            NT.WAR_OFFERED_TO_ALLY: NotificationOfferedToAlly,
             NT.WAR_WAR_ADOPTED: NotificationWarAdopted,
             NT.WAR_WAR_DECLARED: NotificationWarDeclared,
             NT.WAR_WAR_INHERITED: NotificationWarInherited,
-            NT.WAR_INVALID: NotificationWarInvalid,
             NT.WAR_WAR_RETRACTED_BY_CONCORD: NotificationWarRetractedByConcord,
             NT.WAR_WAR_SURRENDER_OFFER_MSG: NotificationWarSurrenderOfferMsg,
         }

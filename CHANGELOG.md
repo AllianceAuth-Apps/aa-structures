@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.13.0] - 2024-08-19
+
+### Added
+
+- Now also supports notifications related to Skyhook and Metenox. Please note that you have to add those new notification types to your existing webhooks to enable them.
+
 ## [2.12.0] - 2024-07-11
 
 ### Added

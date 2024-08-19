@@ -56,7 +56,7 @@ class NotificationTowerEmbed(NotificationBaseEmbed):
 class NotificationTowerAlertMsg(NotificationTowerEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        aggressor_link = self.get_aggressor_link()
+        aggressor_link = self.gen_aggressor_link()
         damage_text = self.compile_damage_text("Value", 100)
         self._title = _("Starbase under attack")
         self._description += _("is under attack by %(aggressor)s.\n%(damage_text)s") % {

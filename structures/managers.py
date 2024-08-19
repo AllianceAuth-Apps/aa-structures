@@ -237,7 +237,7 @@ class StructureQuerySet(models.QuerySet):
 
     def select_related_defaults(self) -> models.QuerySet:
         """returns a QuerySet with the default select_related"""
-        return self.select_related(
+        return self.select_related(  # pylint: disable=E1102
             "owner",
             "owner__corporation",
             "owner__corporation__alliance",
@@ -383,7 +383,9 @@ class StructureManagerBase(models.Manager):
     def update_or_create_from_dict(self, structure: dict, owner) -> Tuple[Any, bool]:
         """update or create structure from given dict"""
 
-        eve_type, _ = EveType.objects.get_or_create_esi(id=structure["type_id"])
+        eve_type: EveType = EveType.objects.get_or_create_esi(id=structure["type_id"])[
+            0
+        ]
         eve_solar_system, _ = EveSolarSystem.objects.get_or_create_esi(
             id=structure["system_id"]
         )
@@ -423,10 +425,11 @@ class StructureManagerBase(models.Manager):
         if old_obj:
             obj.handle_fuel_notifications(old_obj)
 
-        # Make sure we have dogmas loaded for this type for fittings
-        EveType.objects.get_or_create_esi(
-            id=structure["type_id"], enabled_sections=[EveType.Section.DOGMAS]
-        )
+        # Make sure we have dogmas loaded with all upwell structures for fittings
+        if eve_type.eve_group.eve_category_id == EveCategoryId.STRUCTURE:
+            EveType.objects.get_or_create_esi(
+                id=structure["type_id"], enabled_sections=[EveType.Section.DOGMAS]
+            )
 
         self._save_related_structure_services(structure, obj)
 

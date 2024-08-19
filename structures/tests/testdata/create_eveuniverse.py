@@ -17,6 +17,11 @@ class CreateEveUniverseTestData(TestCase):
                 enabled_sections=[EveType.Section.DOGMAS],
             ),
             ModelSpec(
+                "EveCategory",
+                ids=[EveCategoryId.ORBITAL],
+                include_children=True,
+            ),
+            ModelSpec(
                 "EveGroup",
                 ids=[EveGroupId.CONTROL_TOWER],
                 include_children=True,
@@ -24,7 +29,7 @@ class CreateEveUniverseTestData(TestCase):
             ),
             ModelSpec(
                 "EveType",
-                ids=[EveTypeId.TCU, EveTypeId.IHUB, EveTypeId.CUSTOMS_OFFICE],
+                ids=[EveTypeId.TCU, EveTypeId.IHUB],
                 include_children=True,
                 enabled_sections=[EveType.Section.DOGMAS],
             ),

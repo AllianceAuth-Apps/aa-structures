@@ -14,7 +14,6 @@ from structures.helpers import get_or_create_eve_entity, get_or_create_eve_type
 from structures.models import Notification, Structure, Webhook
 
 from .helpers import (
-    gen_alliance_link,
     gen_corporation_link,
     gen_solar_system_text,
     target_datetime_formatted,
@@ -165,20 +164,10 @@ class NotificationStructureUnderAttack(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Structure under attack")
         self._description += _("is under attack by %(attacker)s.\n%(damage_text)s") % {
-            "attacker": self._get_attacker_link(),
+            "attacker": self.gen_attacker_link(),
             "damage_text": self.compile_damage_text("Percentage"),
         }
         self._color = Webhook.Color.DANGER
-
-    def _get_attacker_link(self) -> str:
-        """Returns the attacker link from a parsed_text for Upwell structures only."""
-        if self._data.get("allianceName"):
-            return gen_alliance_link(self._data["allianceName"])
-
-        if self._data.get("corpName"):
-            return gen_corporation_link(self._data["corpName"])
-
-        return _("(unknown)")
 
 
 class NotificationStructureLostShield(NotificationStructureEmbed):

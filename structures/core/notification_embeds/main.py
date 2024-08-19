@@ -19,7 +19,7 @@ from structures.core.notification_types import NotificationType
 from structures.helpers import get_or_create_eve_entity, is_absolute_url
 from structures.models.notifications import Notification, NotificationBase, Webhook
 
-from .helpers import target_datetime_formatted
+from .helpers import gen_alliance_link, gen_corporation_link, target_datetime_formatted
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -77,9 +77,9 @@ class NotificationBaseEmbed:
         damage_text = " | ".join(damage_parts)
         return damage_text
 
-    def get_aggressor_link(self) -> str:
+    def gen_aggressor_link(self) -> str:
         """Returns the aggressor link from a parsed_text for POS and POCOs only."""
-        if self._data.get("aggressorAllianceID"):
+        if key := self._data.get("aggressorAllianceID"):
             key = "aggressorAllianceID"
         elif self._data.get("aggressorCorpID"):
             key = "aggressorCorpID"
@@ -89,6 +89,16 @@ class NotificationBaseEmbed:
             return "(Unknown aggressor)"
         entity = get_or_create_eve_entity(id=self._data[key])
         return Webhook.create_link(entity.name, entity.profile_url)
+
+    def gen_attacker_link(self) -> str:
+        """Returns the attacker link from a parsed_text for Upwell structures only."""
+        if name := self._data.get("allianceName"):
+            return gen_alliance_link(name)
+
+        if name := self._data.get("corpName"):
+            return gen_corporation_link(name)
+
+        return _("(unknown)")
 
     def fuel_expires_target_date(self) -> str:
         """Return calculated target date when fuel expires. Returns '?' when no data."""
@@ -200,6 +210,13 @@ class NotificationBaseEmbed:
             NotificationOrbitalAttacked,
             NotificationOrbitalReinforced,
         )
+        from .skyhook_embeds import (
+            NotificationSkyhookDeployed,
+            NotificationSkyhookDestroyed,
+            NotificationSkyhookLostShield,
+            NotificationSkyhookOnline,
+            NotificationSkyhookUnderAttack,
+        )
         from .sov_embeds import (
             NotificationSovAllAnchoringMsg,
             NotificationSovAllClaimAcquiredMsg,
@@ -296,6 +313,12 @@ class NotificationBaseEmbed:
             NT.TOWER_REFUELED_EXTRA: NotificationTowerRefueledExtra,
             NT.TOWER_REINFORCED_EXTRA: NotificationTowerReinforcedExtra,
             NT.TOWER_RESOURCE_ALERT_MSG: NotificationTowerResourceAlertMsg,
+            # Skyhooks
+            NT.SKYHOOK_DEPLOYED: NotificationSkyhookDeployed,
+            NT.SKYHOOK_DESTROYED: NotificationSkyhookDestroyed,
+            NT.SKYHOOK_LOST_SHIELDS: NotificationSkyhookLostShield,
+            NT.SKYHOOK_ONLINE: NotificationSkyhookOnline,
+            NT.SKYHOOK_UNDER_ATTACK: NotificationSkyhookUnderAttack,
             # Upwell structures
             NT.OWNERSHIP_TRANSFERRED: NotificationStructureOwnershipTransferred,
             NT.STRUCTURE_ANCHORING: NotificationStructureAnchoring,

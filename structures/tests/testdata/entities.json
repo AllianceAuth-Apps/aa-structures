@@ -448,7 +448,7 @@
         },
         {
             "notification_id": 1000000903,
-            "type": "WarAdopted",
+            "type": "WarAdopted ",
             "sender_id": 2902,
             "sender_type": "corporation",
             "timestamp": "2019-09-11 17:17:00",
@@ -737,7 +737,7 @@
             "is_sent": false
         },
         {
-            "notification_id": 10000012001,
+            "notification_id": 1000001201,
             "type": "SkyhookUnderAttack",
             "sender_id": 2901,
             "sender_type": "corporation",
@@ -747,7 +747,17 @@
             "is_sent": false
         },
         {
-            "notification_id": 10000012003,
+            "notification_id": 1000001202,
+            "type": "SkyhookLostShields",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "itemID: &id001 1000000010001\nplanetID: 40161469\nplanetShowInfoData:\n- showinfo\n- 2016\n- 40161469\nskyhookShowInfoData:\n- showinfo\n- 81080\n- *id001\nsolarsystemID: 30002537\ntimeLeft: 1378460630068\ntimestamp: 133661870440000000\ntypeID: 81080\nvulnerableTime: 9000000000",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001203,
             "type": "SkyhookDestroyed",
             "sender_id": 2901,
             "sender_type": "corporation",
@@ -757,7 +767,7 @@
             "is_sent": false
         },
         {
-            "notification_id": 10000012004,
+            "notification_id": 1000001204,
             "type": "SkyhookDeployed",
             "sender_id": 2901,
             "sender_type": "corporation",
@@ -767,7 +777,7 @@
             "is_sent": false
         },
         {
-            "notification_id": 10000012005,
+            "notification_id": 1000001205,
             "type": "SkyhookOnline",
             "sender_id": 2901,
             "sender_type": "corporation",
@@ -777,7 +787,7 @@
             "is_sent": false
         },
         {
-            "notification_id": 10000013001,
+            "notification_id": 1000001301,
             "type": "StructureLowReagentsAlert",
             "sender_id": 2901,
             "sender_type": "corporation",
@@ -787,7 +797,7 @@
             "is_sent": false
         },
         {
-            "notification_id": 10000013002,
+            "notification_id": 1000001302,
             "type": "StructureNoReagentsAlert",
             "sender_id": 2901,
             "sender_type": "corporation",

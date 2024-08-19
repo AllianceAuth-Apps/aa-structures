@@ -134,7 +134,7 @@ class NotificationType(models.TextChoices):
     )
     WAR_OFFERED_SURRENDER = "OfferedSurrender", _("War offered surrender")
     WAR_OFFERED_TO_ALLY = "OfferedToAlly", _("War offered to become ally")
-    WAR_WAR_ADOPTED = "WarAdopted ", _("War adopted")
+    WAR_WAR_ADOPTED = "WarAdopted", _("War adopted")  # FIXME: Should be "WarAdopted "
     WAR_WAR_DECLARED = "WarDeclared", _("War declared")
     WAR_WAR_INHERITED = "WarInherited", _("War inherited")
     WAR_WAR_RETRACTED_BY_CONCORD = "WarRetractedByConcord", _(

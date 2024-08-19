@@ -266,7 +266,7 @@ class TestNotificationType(TestCase):
             "TowerResourceAlertMsg",
             "TransactionReversalMsg",
             "TutorialMsg",
-            "WarAdopted ",
+            "WarAdopted",
             "WarAllyInherited",
             "WarAllyOfferDeclinedMsg",
             "WarConcordInvalidates",

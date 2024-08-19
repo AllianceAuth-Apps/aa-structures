@@ -23,6 +23,12 @@ class NotificationType(models.TextChoices):
     )
     STRUCTURE_LOST_ARMOR = "StructureLostArmor", _("Upwell structure lost armor")
     STRUCTURE_LOST_SHIELD = "StructureLostShields", _("Upwell structure lost shields")
+    STRUCTURE_LOW_REAGENTS_ALERT = "StructureLowReagentsAlert", _(
+        "Structure low reagents alert"
+    )
+    STRUCTURE_NO_REAGENTS_ALERT = "StructureNoReagentsAlert", _(
+        "Structure no reagents alert"
+    )
     STRUCTURE_ONLINE = "StructureOnline", _("Upwell structure went online")
     STRUCTURE_REFUELED_EXTRA = "StructureRefueledExtra", _("Upwell structure refueled")
     STRUCTURE_REINFORCEMENT_CHANGED = "StructuresReinforcementChanged", _(
@@ -41,12 +47,6 @@ class NotificationType(models.TextChoices):
     STRUCTURE_WENT_LOW_POWER = "StructureWentLowPower", _(
         "Upwell structure went low power"
     )
-    STRUCTURE_LOW_REAGENTS_ALERT = "StructureLowReagentsAlert", _(
-        "Structure low reagents alert"
-    )
-    STRUCTURE_NO_REAGENTS_ALERT = "StructureNoReagentsAlert", _(
-        "Structure no reagents alert"
-    )
 
     # Skyhook structures
     SKYHOOK_DEPLOYED = "SkyhookDeployed", _("Skyhook deployed")
@@ -61,9 +61,9 @@ class NotificationType(models.TextChoices):
 
     # starbases
     TOWER_ALERT_MSG = "TowerAlertMsg", _("Starbase attacked")
-    TOWER_RESOURCE_ALERT_MSG = "TowerResourceAlertMsg", _("Starbase fuel alert")
     TOWER_REFUELED_EXTRA = "TowerRefueledExtra", _("Starbase refueled (BETA)")
     TOWER_REINFORCED_EXTRA = "TowerReinforcedExtra", _("Starbase reinforced (BETA)")
+    TOWER_RESOURCE_ALERT_MSG = "TowerResourceAlertMsg", _("Starbase fuel alert")
 
     # moon mining
     MOONMINING_AUTOMATIC_FRACTURE = "MoonminingAutomaticFracture", _(
@@ -156,8 +156,8 @@ class NotificationType(models.TextChoices):
     CHAR_LEFT_CORP_MSG = "CharLeftCorpMsg", _("Character leaves corporation")
 
     # billing
-    BILLING_CORP_ALL_BILL_MSG = "CorpAllBillMsg", _("Corp alliance billing message")
     BILLING_BILL_OUT_OF_MONEY_MSG = "BillOutOfMoneyMsg", _("Bill out of money")
+    BILLING_CORP_ALL_BILL_MSG = "CorpAllBillMsg", _("Corp alliance billing message")
     BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE = (
         "InfrastructureHubBillAboutToExpire",
         _("I-HUB bill about to expire"),
@@ -186,38 +186,40 @@ class NotificationType(models.TextChoices):
     def webhook_defaults(cls) -> List["NotificationType"]:
         """List of default notifications for new webhooks."""
         return [
+            cls.ORBITAL_ATTACKED,
+            cls.ORBITAL_REINFORCED,
+            cls.SKYHOOK_DESTROYED,
+            cls.SKYHOOK_LOST_SHIELDS,
+            cls.SKYHOOK_ONLINE,
+            cls.SKYHOOK_UNDER_ATTACK,
+            cls.SOV_STRUCTURE_DESTROYED,
+            cls.SOV_STRUCTURE_REINFORCED,
             cls.STRUCTURE_ANCHORING,
             cls.STRUCTURE_DESTROYED,
             cls.STRUCTURE_FUEL_ALERT,
             cls.STRUCTURE_LOST_ARMOR,
             cls.STRUCTURE_LOST_SHIELD,
+            cls.STRUCTURE_LOW_REAGENTS_ALERT,
+            cls.STRUCTURE_NO_REAGENTS_ALERT,
             cls.STRUCTURE_ONLINE,
             cls.STRUCTURE_SERVICES_OFFLINE,
             cls.STRUCTURE_UNDER_ATTACK,
             cls.STRUCTURE_WENT_HIGH_POWER,
             cls.STRUCTURE_WENT_LOW_POWER,
-            cls.ORBITAL_ATTACKED,
-            cls.ORBITAL_REINFORCED,
             cls.TOWER_ALERT_MSG,
             cls.TOWER_RESOURCE_ALERT_MSG,
-            cls.SOV_STRUCTURE_REINFORCED,
-            cls.SOV_STRUCTURE_DESTROYED,
-            cls.SKYHOOK_LOST_SHIELDS,
-            cls.SKYHOOK_UNDER_ATTACK,
-            cls.SKYHOOK_ONLINE,
-            cls.SKYHOOK_DESTROYED,
         ]
 
     @classmethod
     def relevant_for_timerboard(cls) -> Set["NotificationType"]:
         """Notification types that can create timers."""
         return {
-            cls.STRUCTURE_LOST_SHIELD,
-            cls.STRUCTURE_LOST_ARMOR,
-            cls.ORBITAL_REINFORCED,
-            cls.MOONMINING_EXTRACTION_STARTED,
             cls.MOONMINING_EXTRACTION_CANCELLED,
+            cls.MOONMINING_EXTRACTION_STARTED,
+            cls.ORBITAL_REINFORCED,
             cls.SOV_STRUCTURE_REINFORCED,
+            cls.STRUCTURE_LOST_ARMOR,
+            cls.STRUCTURE_LOST_SHIELD,
             cls.TOWER_REINFORCED_EXTRA,
         }
 
@@ -227,15 +229,15 @@ class NotificationType(models.TextChoices):
         return {
             # billing
             cls.BILLING_BILL_OUT_OF_MONEY_MSG,
-            cls.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE,
             cls.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE,
+            cls.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE,
             # sov
-            cls.SOV_ENTOSIS_CAPTURE_STARTED,
-            cls.SOV_COMMAND_NODE_EVENT_STARTED,
             cls.SOV_ALL_CLAIM_ACQUIRED_MSG,
-            cls.SOV_STRUCTURE_REINFORCED,
-            cls.SOV_STRUCTURE_DESTROYED,
             cls.SOV_ALL_CLAIM_LOST_MSG,
+            cls.SOV_COMMAND_NODE_EVENT_STARTED,
+            cls.SOV_ENTOSIS_CAPTURE_STARTED,
+            cls.SOV_STRUCTURE_DESTROYED,
+            cls.SOV_STRUCTURE_REINFORCED,
             # cls.SOV_ALL_ANCHORING_MSG, # This notif is not broadcasted to all corporations
             # wars
             cls.WAR_ALLY_JOINED_WAR_AGGRESSOR_MSG,
@@ -255,43 +257,45 @@ class NotificationType(models.TextChoices):
     def relevant_for_moonmining(cls) -> Set["NotificationType"]:
         """Notification types about moon mining."""
         return {
-            cls.MOONMINING_EXTRACTION_STARTED,
-            cls.MOONMINING_EXTRACTION_CANCELLED,
-            cls.MOONMINING_LASER_FIRED,
-            cls.MOONMINING_EXTRACTION_FINISHED,
             cls.MOONMINING_AUTOMATIC_FRACTURE,
+            cls.MOONMINING_EXTRACTION_CANCELLED,
+            cls.MOONMINING_EXTRACTION_FINISHED,
+            cls.MOONMINING_EXTRACTION_STARTED,
+            cls.MOONMINING_LASER_FIRED,
         }
 
     @classmethod
     def structure_related(cls) -> Set["NotificationType"]:
         """Notification types that are related to a structure."""
         return {
-            cls.STRUCTURE_ONLINE,
-            cls.STRUCTURE_FUEL_ALERT,
-            cls.STRUCTURE_JUMP_FUEL_ALERT,
-            cls.STRUCTURE_REFUELED_EXTRA,
-            cls.STRUCTURE_SERVICES_OFFLINE,
-            cls.STRUCTURE_WENT_LOW_POWER,
-            cls.STRUCTURE_WENT_HIGH_POWER,
-            cls.STRUCTURE_UNANCHORING,
-            cls.STRUCTURE_UNDER_ATTACK,
-            cls.STRUCTURE_LOST_SHIELD,
-            cls.STRUCTURE_LOST_ARMOR,
-            cls.STRUCTURE_DESTROYED,
-            cls.OWNERSHIP_TRANSFERRED,
-            cls.STRUCTURE_ANCHORING,
-            cls.MOONMINING_EXTRACTION_STARTED,
-            cls.MOONMINING_EXTRACTION_FINISHED,
             cls.MOONMINING_AUTOMATIC_FRACTURE,
             cls.MOONMINING_EXTRACTION_CANCELLED,
+            cls.MOONMINING_EXTRACTION_FINISHED,
+            cls.MOONMINING_EXTRACTION_STARTED,
             cls.MOONMINING_LASER_FIRED,
-            cls.STRUCTURE_REINFORCEMENT_CHANGED,
             cls.ORBITAL_ATTACKED,
             cls.ORBITAL_REINFORCED,
+            cls.OWNERSHIP_TRANSFERRED,
+            cls.STRUCTURE_ANCHORING,
+            cls.STRUCTURE_DESTROYED,
+            cls.STRUCTURE_FUEL_ALERT,
+            cls.STRUCTURE_JUMP_FUEL_ALERT,
+            cls.STRUCTURE_LOST_ARMOR,
+            cls.STRUCTURE_LOST_SHIELD,
+            cls.STRUCTURE_LOW_REAGENTS_ALERT,
+            cls.STRUCTURE_NO_REAGENTS_ALERT,
+            cls.STRUCTURE_ONLINE,
+            cls.STRUCTURE_REFUELED_EXTRA,
+            cls.STRUCTURE_REINFORCEMENT_CHANGED,
+            cls.STRUCTURE_SERVICES_OFFLINE,
+            cls.STRUCTURE_UNANCHORING,
+            cls.STRUCTURE_UNDER_ATTACK,
+            cls.STRUCTURE_WENT_HIGH_POWER,
+            cls.STRUCTURE_WENT_LOW_POWER,
             cls.TOWER_ALERT_MSG,
-            cls.TOWER_RESOURCE_ALERT_MSG,
             cls.TOWER_REFUELED_EXTRA,
             cls.TOWER_REINFORCED_EXTRA,
+            cls.TOWER_RESOURCE_ALERT_MSG,
         }
 
     @classmethod

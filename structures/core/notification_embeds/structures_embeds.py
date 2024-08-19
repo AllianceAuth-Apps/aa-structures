@@ -324,3 +324,23 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
             _("\n\nChange becomes effective at %s.")
         ) % target_datetime_formatted(change_effective)
         self._color = Webhook.Color.INFO
+
+
+class NotificationStructureLowReagentsAlert(NotificationStructureEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Structure low on reagents")
+        self._description += _(
+            "has insufficient reagents present to support one full day of moon drill activity."
+        )
+        self._color = Webhook.Color.WARNING
+
+
+class NotificationStructureNoReagentsAlert(NotificationStructureEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Structure out of reagents")
+        self._description += _(
+            "has run out of reagents, which is preventing further moon material production."
+        )
+        self._color = Webhook.Color.WARNING

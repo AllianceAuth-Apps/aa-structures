@@ -816,6 +816,38 @@ class TestOwnerUpdateSkyhooks(NoSocketsTestCase):
         self.assertTrue(obj.is_skyhook)
         self.assertEqual(obj.eve_planet, self.planet)
 
+    def test_should_ignore_os_error_when_resolving_planet(
+        self, mock_esi, mock_nearest_celestial
+    ):
+        # given
+        mock_esi.client = self.esi_client_stub
+        mock_nearest_celestial.side_effect = OSError
+        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+        # when
+        owner.update_asset_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertEqual(owner.structures.count(), 1)
+        obj: Structure = owner.structures.get(pk=1000000010001)
+        self.assertTrue(obj.is_skyhook)
+        self.assertIsNone(obj.eve_planet)
+
+    def test_should_ignore_no_reply_when_resolving_planet(
+        self, mock_esi, mock_nearest_celestial
+    ):
+        # given
+        mock_esi.client = self.esi_client_stub
+        mock_nearest_celestial.return_value = None
+        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+        # when
+        owner.update_asset_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertEqual(owner.structures.count(), 1)
+        obj: Structure = owner.structures.get(pk=1000000010001)
+        self.assertTrue(obj.is_skyhook)
+        self.assertIsNone(obj.eve_planet)
+
 
 class TestOwnerToken(NoSocketsTestCase):
     def test_should_return_valid_token(self):

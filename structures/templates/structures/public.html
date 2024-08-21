@@ -28,7 +28,7 @@
     <ul id="public-tabs" class="nav nav-tabs" role="tablist">
 
         <li role="presentation" class="active">
-            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">
+            <a href="#pocos" aria-controls="orbitals" role="tab" data-toggle="tab">
                 {% translate "Customs Offices" %} <small>({{ pocos_count|default:"-" }})</small>
             </a>
         </li>
@@ -39,7 +39,7 @@
         <div class="panel-body">
             <div class="tab-content">
 
-                <div role="tabpanel" class="tab-pane active" id="pocos">
+                <div role="tabpanel" class="tab-pane active" id="orbitals">
                     {% include "structures/partials/public/poco_list.html" %}
                 </div>
 

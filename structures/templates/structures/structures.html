@@ -48,8 +48,8 @@
         </li>
 
         <li role="presentation">
-            <a href="#pocos" aria-controls="pocos" role="tab" data-toggle="tab">
-                {% trans "Customs Offices" %} <small>({{ pocos_count|default:"-" }})</small>
+            <a href="#orbitals" aria-controls="orbitals" role="tab" data-toggle="tab">
+                {% trans "Orbitals" %} <small>({{ orbitals_count|default:"-" }})</small>
             </a>
         </li>
 
@@ -77,7 +77,7 @@
                     {% include "structures/partials/structures/structure_list.html" %}
                 </div>
 
-                <div role="tabpanel" class="tab-pane" id="pocos">
+                <div role="tabpanel" class="tab-pane" id="orbitals">
                     {% include "structures/partials/structures/poco_list.html" %}
                 </div>
 

@@ -1319,23 +1319,19 @@ class Owner(models.Model):
             and item["position"]
         }
         structures = []
-        if not skyhooks:
-            logger.info("%s: No skyhooks found in assets", self)
+        for item in skyhooks.values():
+            structures.append(
+                {
+                    "corporation_id": self.corporation.corporation_id,
+                    "type_id": item["type_id"],
+                    "position": item["position"],
+                    "structure_id": item["item_id"],
+                    "system_id": item["location_id"],
+                }
+            )
 
-        else:
-            for item in skyhooks.values():
-                structures.append(
-                    {
-                        "corporation_id": self.corporation.corporation_id,
-                        "type_id": item["type_id"],
-                        "position": item["position"],
-                        "structure_id": item["item_id"],
-                        "system_id": item["location_id"],
-                    }
-                )
-
-            for s in structures:
-                Structure.objects.update_or_create_from_dict(s, self)
+        for s in structures:
+            Structure.objects.update_or_create_from_dict(s, self)
 
         self._remove_structures_not_returned_from_esi(
             existing_structures=self.structures.filter_skyhooks(),
@@ -1365,6 +1361,7 @@ class Owner(models.Model):
                 continue
 
             s.eve_planet = celestial.eve_object
+            s.name = celestial.eve_type.name
             s.save()
 
     @staticmethod

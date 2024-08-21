@@ -46,7 +46,7 @@ class TestStructureListView(TestCase):
         # then
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["structures_count"], 2)
-        self.assertEqual(response.context["pocos_count"], 1)
+        self.assertEqual(response.context["orbitals_count"], 1)
         self.assertEqual(response.context["starbases_count"], 1)
         self.assertEqual(response.context["jump_gates_count"], 1)
         self.assertIn("data_export", response.context)

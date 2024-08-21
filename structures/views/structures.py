@@ -58,7 +58,7 @@ class StructureSelection(str, Enum):
     """A pre-defined selection to filter structures data."""
 
     STRUCTURES = "structures"
-    POCOS = "pocos"
+    ORBITALS = "orbitals"
     STARBASES = "starbases"
     JUMP_GATES = "jump_gates"
     ALL = "all"
@@ -118,8 +118,8 @@ def structure_list(request: HttpRequest):
     structures_count = _structures_query(
         request.user, StructureSelection.STRUCTURES, tags
     ).count()
-    pocos_count = _structures_query(
-        request.user, StructureSelection.POCOS, tags
+    orbitals_count = _structures_query(
+        request.user, StructureSelection.ORBITALS, tags
     ).count()
     starbases_count = _structures_query(
         request.user, StructureSelection.STARBASES, tags
@@ -136,7 +136,7 @@ def structure_list(request: HttpRequest):
         "tags_exist": StructureTag.objects.exists(),
         "show_jump_gates_tab": STRUCTURES_SHOW_JUMP_GATES,
         "structures_count": structures_count,
-        "pocos_count": pocos_count,
+        "orbitals_count": orbitals_count,
         "starbases_count": starbases_count,
         "jump_gates_count": jump_gates_count,
         "data_export": data_export,
@@ -146,7 +146,7 @@ def structure_list(request: HttpRequest):
 
 def _construct_data_export(request, tags):
     structures_ajax_url = _construct_ajax_url(StructureSelection.STRUCTURES, tags)
-    pocos_ajax_url = _construct_ajax_url(StructureSelection.POCOS, tags)
+    pocos_ajax_url = _construct_ajax_url(StructureSelection.ORBITALS, tags)
     starbases_ajax_url = _construct_ajax_url(StructureSelection.STARBASES, tags)
     jump_gates_ajax_url = _construct_ajax_url(StructureSelection.JUMP_GATES, tags)
 
@@ -213,7 +213,7 @@ def _structures_query(
             eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
         )
 
-    elif selection == StructureSelection.POCOS:
+    elif selection == StructureSelection.ORBITALS:
         structures_qs = structures_qs.filter(
             eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
         ).annotate_has_poco_details()

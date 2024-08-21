@@ -19,6 +19,7 @@ from structures.tests.testdata.factories import (
     JumpGateFactory,
     OwnerFactory,
     PocoFactory,
+    SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
     StructureTagFactory,
@@ -148,6 +149,7 @@ class TestStructureListDataFilterVariant(TestCase):
         owner = OwnerFactory(user=cls.user)
         cls.structure = StructureFactory(owner=owner)
         cls.poco = PocoFactory(owner=owner)
+        cls.skyhook = SkyhookFactory(owner=owner)
         cls.starbase = StarbaseFactory(owner=owner)
         cls.jump_gate = JumpGateFactory(owner=owner)
 
@@ -163,17 +165,17 @@ class TestStructureListDataFilterVariant(TestCase):
         structure_ids = set(data.keys())
         self.assertSetEqual(structure_ids, {self.structure.id, self.jump_gate.id})
 
-    def test_should_return_pocos_only(self):
+    def test_should_return_orbitals_only(self):
         # given
         request = self.factory.get("/")
         request.user = self.user
         # when
-        response = structures.structure_list_data(request, "pocos")
+        response = structures.structure_list_data(request, "orbitals")
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
         structure_ids = set(data.keys())
-        self.assertSetEqual(structure_ids, {self.poco.id})
+        self.assertSetEqual(structure_ids, {self.poco.id, self.skyhook.id})
 
     def test_should_return_starbases_only(self):
         # given
@@ -211,7 +213,13 @@ class TestStructureListDataFilterVariant(TestCase):
         structure_ids = set(data.keys())
         self.assertSetEqual(
             structure_ids,
-            {self.structure.id, self.poco.id, self.starbase.id, self.jump_gate.id},
+            {
+                self.structure.id,
+                self.poco.id,
+                self.starbase.id,
+                self.jump_gate.id,
+                self.skyhook.id,
+            },
         )
 
     def test_should_raise_error_when_invalid_variant_requested(self):

@@ -4,6 +4,7 @@ import datetime as dt
 import json
 import logging
 import unicodedata
+from collections import namedtuple
 from pathlib import Path
 from random import randrange
 
@@ -192,3 +193,8 @@ def datetime_to_ldap(my_dt: dt.datetime) -> int:
         ((my_dt - dt.datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds())
         + 11644473600
     ) * 10000000
+
+
+NearestCelestial = namedtuple(
+    "NearestCelestial", ["eve_type", "eve_object", "distance"]
+)

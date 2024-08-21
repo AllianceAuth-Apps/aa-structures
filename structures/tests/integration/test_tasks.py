@@ -7,7 +7,7 @@ import yaml
 
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
-from eveuniverse.models import EveSolarSystem
+from eveuniverse.models import EvePlanet, EveSolarSystem
 
 from app_utils.django import app_labels
 from app_utils.esi import EsiStatus
@@ -22,11 +22,13 @@ from structures.tests.testdata.factories import (
     NotificationFactory,
     OwnerFactory,
     RawNotificationFactory,
+    SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
     WebhookFactory,
     datetime_to_esi,
 )
+from structures.tests.testdata.helpers import NearestCelestial
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 if "structuretimers" in app_labels():
@@ -613,3 +615,101 @@ class TestTasks(TestCase):
         self.assertEqual(len(embeds), 1)
         embed = embeds[0]
         self.assertIn("Territorial Claim Unit", embed.title)
+
+    def test_should_fetch_new_skyhooks_from_esi(
+        self, mock_esi_2, mock_esi, mock_execute
+    ):
+        # given
+        owner = OwnerFactory()
+        structure = SkyhookFactory(owner=owner)
+        eve_planet = EvePlanet.objects.get(id=40161469)
+        corporation_id = owner.corporation.corporation_id
+        endpoints = [
+            EsiEndpoint(
+                "Assets",
+                "get_corporations_corporation_id_assets",
+                "corporation_id",
+                needs_token=True,
+                data={
+                    str(corporation_id): [
+                        {
+                            "is_singleton": True,
+                            "item_id": structure.id,
+                            "location_flag": "AutoFit",
+                            "location_id": 30002537,
+                            "location_type": "solar_system",
+                            "quantity": 1,
+                            "type_id": 81080,
+                        },
+                    ]
+                },
+            ),
+            EsiEndpoint(
+                "Assets",
+                "post_corporations_corporation_id_assets_names",
+                "corporation_id",
+                needs_token=True,
+                data={str(corporation_id): []},
+            ),
+            EsiEndpoint(
+                "Assets",
+                "post_corporations_corporation_id_assets_locations",
+                "corporation_id",
+                needs_token=True,
+                data={
+                    str(corporation_id): [
+                        {"item_id": structure.id, "position": {"x": 1, "y": 2, "z": 3}}
+                    ]
+                },
+            ),
+            EsiEndpoint(
+                "Corporation",
+                "get_corporations_corporation_id_starbases",
+                "corporation_id",
+                needs_token=True,
+                data={str(corporation_id): []},
+            ),
+            EsiEndpoint(
+                "Corporation",
+                "get_corporations_corporation_id_structures",
+                "corporation_id",
+                needs_token=True,
+                data={str(corporation_id): []},
+            ),
+            EsiEndpoint(
+                "Planetary_Interaction",
+                "get_corporations_corporation_id_customs_offices",
+                "corporation_id",
+                needs_token=True,
+                data={str(corporation_id): []},
+            ),
+            EsiEndpoint(
+                "Sovereignty",
+                "get_sovereignty_map",
+                needs_token=False,
+                data=[],
+            ),
+            EsiEndpoint(
+                "Universe",
+                "get_universe_structures_structure_id",
+                "structure_id",
+                needs_token=True,
+                data={},
+            ),
+        ]
+        mock_esi.client = mock_esi_2.client = EsiClientStub.create_from_endpoints(
+            endpoints
+        )
+        structure_id = structure.id
+        structure.delete()
+        # when
+
+        with patch(OWNERS_PATH + ".EveSolarSystem.nearest_celestial") as m:
+            m.return_value = NearestCelestial(
+                eve_object=eve_planet,
+                distance=35_000_000,
+                eve_type=eve_planet.eve_type,
+            )
+            tasks.update_all_structures.delay()
+        # then
+        self.assertTrue(owner.structures.filter(id=structure_id).exists())

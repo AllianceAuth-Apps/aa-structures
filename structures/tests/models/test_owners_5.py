@@ -1,5 +1,4 @@
 import datetime as dt
-from collections import namedtuple
 from unittest.mock import patch
 
 from bravado.exception import HTTPBadGateway, HTTPInternalServerError
@@ -30,6 +29,7 @@ from structures.tests.testdata.factories import (
     datetime_to_esi,
 )
 from structures.tests.testdata.helpers import (
+    NearestCelestial,
     load_eve_entities,
     load_notification_entities,
 )
@@ -712,11 +712,6 @@ class TestOwnerUpdateAssetEsi(NoSocketsTestCase):
         owner.update_asset_esi()
         # then
         self.assertTrue(structure.items.filter(id=1300000003001).exists())
-
-
-NearestCelestial = namedtuple(
-    "NearestCelestial", ["eve_type", "eve_object", "distance"]
-)
 
 
 @patch(OWNERS_PATH + ".EveSolarSystem.nearest_celestial")

@@ -2,9 +2,11 @@
 
 # pylint: disable=missing-class-docstring
 
+from __future__ import annotations
+
 import datetime as dt
 import itertools
-from typing import Any, Iterable, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Set, Tuple
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
@@ -23,6 +25,9 @@ from .constants import EveCategoryId, EveTypeId
 from .core.notification_types import NotificationType
 from .providers import esi
 from .webhooks.managers import WebhookBaseManager
+
+if TYPE_CHECKING:
+    from .models import Owner
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -231,6 +236,10 @@ class StructureQuerySet(models.QuerySet):
         """Filter for starbases."""
         return self.filter(eve_type__eve_group__eve_category=EveCategoryId.STARBASE)
 
+    def filter_skyhooks(self) -> models.QuerySet:
+        """Filter for skyhooks."""
+        return self.filter(eve_type=EveTypeId.ORBITAL_SKYHOOK)
+
     def ids(self) -> Set[int]:
         """Return ids as set."""
         return set(self.values_list("id", flat=True))
@@ -380,7 +389,9 @@ class StructureManagerBase(models.Manager):
         obj, created = self.update_or_create_from_dict(structure=structure, owner=owner)
         return obj, created
 
-    def update_or_create_from_dict(self, structure: dict, owner) -> Tuple[Any, bool]:
+    def update_or_create_from_dict(
+        self, structure: dict, owner: Owner
+    ) -> Tuple[Any, bool]:
         """update or create structure from given dict"""
 
         eve_type: EveType = EveType.objects.get_or_create_esi(id=structure["type_id"])[

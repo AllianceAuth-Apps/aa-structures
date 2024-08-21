@@ -476,6 +476,27 @@ class PocoDetailsFactory(
     standing_level = PocoDetails.StandingLevel.BAD
 
 
+class SkyhookFactory(StructureFactory):
+    class Params:
+        eve_planet_name = "Amamake V"
+
+    has_fitting = None
+    has_core = None
+    state = Structure.State.NA
+
+    @factory.lazy_attribute
+    def eve_planet(self):
+        return EvePlanet.objects.get(name=self.eve_planet_name)
+
+    @factory.lazy_attribute
+    def eve_solar_system(self):
+        return self.eve_planet.eve_solar_system
+
+    @factory.lazy_attribute
+    def eve_type(self):
+        return EveType.objects.get(id=EveTypeId.ORBITAL_SKYHOOK)
+
+
 class JumpGateFactory(StructureFactory):
     @factory.lazy_attribute
     def eve_type(self):

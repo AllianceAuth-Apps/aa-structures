@@ -4,6 +4,7 @@ from app_utils.django import app_labels
 from app_utils.testing import NoSocketsTestCase
 
 from structures.core import notification_timers
+from structures.core.notification_types import NotificationType
 from structures.models import Notification
 from structures.tests.testdata.factories import (
     GeneratedNotificationFactory,
@@ -107,7 +108,11 @@ if "timerboard" in app_labels():
         @patch(MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", True)
         def test_run_all(self):
             for obj in Notification.objects.all():
-                obj.add_or_remove_timer()
+                timer_types = NotificationType.relevant_for_timerboard()
+                with self.subTest(notif_type=obj.notif_type):
+                    is_timer = obj.notif_type in timer_types
+                    is_added = obj.add_or_remove_timer()
+                    self.assertEqual(is_timer, is_added)
 
         @patch(MODULE_PATH + ".STRUCTURES_TIMERS_ARE_CORP_RESTRICTED", False)
         def test_corp_restriction_1(self):

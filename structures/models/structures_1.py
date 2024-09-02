@@ -464,6 +464,11 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
         """Return True if this structure is a starbase, else False."""
         return starbases.is_starbase(self.eve_type)
 
+    @property
+    def is_skyhook(self) -> bool:
+        """Return True if this structure is a skyhook, else False."""
+        return self.eve_type_id == EveTypeId.ORBITAL_SKYHOOK
+
     @cached_property
     def is_upwell_structure(self) -> bool:
         """Return True if this structure is an upwell structure, else False."""

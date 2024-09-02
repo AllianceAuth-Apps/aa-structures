@@ -25,6 +25,7 @@ from .testdata.factories import (
     EveSovereigntyMapFactory,
     OwnerFactory,
     PocoFactory,
+    SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
     StructureTagFactory,
@@ -304,12 +305,15 @@ class TestStructureQuerySet(NoSocketsTestCase):
         cls.structure = StructureFactory(owner=cls.owner)
         cls.poco = PocoFactory(owner=cls.owner)
         cls.starbase = StarbaseFactory(owner=cls.owner)
+        cls.skyhook = SkyhookFactory(owner=cls.owner)
 
     def test_should_return_ids_as_set(self):
         # when
         ids = Structure.objects.ids()
         # then
-        self.assertSetEqual(ids, {self.structure.id, self.poco.id, self.starbase.id})
+        self.assertSetEqual(
+            ids, {self.structure.id, self.poco.id, self.starbase.id, self.skyhook.id}
+        )
 
     def test_should_filter_upwell_structures(self):
         # when
@@ -328,6 +332,12 @@ class TestStructureQuerySet(NoSocketsTestCase):
         result_qs = Structure.objects.filter_starbases()
         # then
         self.assertSetEqual(result_qs.ids(), {self.starbase.id})
+
+    def test_should_filter_skyhooks(self):
+        # when
+        result_qs = Structure.objects.filter_skyhooks()
+        # then
+        self.assertSetEqual(result_qs.ids(), {self.skyhook.id})
 
 
 class TestStructureQuerySetVisibleForUser(NoSocketsTestCase):

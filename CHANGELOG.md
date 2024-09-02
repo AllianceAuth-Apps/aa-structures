@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.14.0] - 2024-09-02
+
+### Added
+
+- Skyhook lost shields notification can now generate timers for Auth timer and Structure Timers II (#104).
+
+- Experimental: Skyhooks are shown in the structure list on the "Orbital" tab along Customs offices. Please note that this feature is currently experimental (i.e. may not yet work fully) and therefore hidden behind a feature flag (`STRUCTURES_FEATURE_SKYHOOKS`).
+
+### Fixed
+
+- Processing timer action on the admin site aborts with "set has no format" error
+
 ## [2.13.0] - 2024-08-19
 
 ### Added

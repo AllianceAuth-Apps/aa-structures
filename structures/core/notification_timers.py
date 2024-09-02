@@ -53,7 +53,9 @@ def add_or_remove_timer(notif: Notification) -> bool:
     elif notif.notif_type == NotificationType.SOV_STRUCTURE_REINFORCED:
         timer_processed = _gen_timer_sov_reinforcements(notif)
     elif notif.notif_type == NotificationType.ORBITAL_REINFORCED:
-        timer_processed = _gen_timer_orbital_reinforcements(notif)
+        timer_processed = _gen_timer_customs_office_reinforcements(notif)
+    elif notif.notif_type == NotificationType.SKYHOOK_LOST_SHIELDS:
+        timer_processed = _gen_timer_skyhook_reinforcements(notif)
     elif notif.notif_type in [
         NotificationType.MOONMINING_EXTRACTION_STARTED,
         NotificationType.MOONMINING_EXTRACTION_CANCELLED,
@@ -65,9 +67,7 @@ def add_or_remove_timer(notif: Notification) -> bool:
     elif notif.notif_type == NotificationType.TOWER_REINFORCED_EXTRA:
         timer_processed = _gen_timer_tower_reinforcements(notif)
     else:
-        raise NotImplementedError(
-            f"Unsupported notification type for timers: {notif.notif_type}"
-        )
+        raise NotImplementedError(notif.notif_type)
     if timer_processed:
         logger.info("%s: Created timer for notification", notif.notification_id)
         notif.is_timer_added = True
@@ -181,8 +181,8 @@ def _gen_timer_sov_reinforcements(notif: Notification) -> bool:
     return timer_processed
 
 
-def _gen_timer_orbital_reinforcements(notif: Notification) -> bool:
-    """Generate timer for orbital reinforcements."""
+def _gen_timer_customs_office_reinforcements(notif: Notification) -> bool:
+    """Generate timer for customs office reinforcements."""
 
     solar_system = notif.eve_solar_system()
     planet = notif.eve_planet()
@@ -223,6 +223,53 @@ def _gen_timer_orbital_reinforcements(notif: Notification) -> bool:
             eve_alliance=notif.owner.corporation.alliance,
             visibility=visibility,
             structure_name="Customs Office",
+            owner_name=notif.owner.corporation.corporation_name,
+            details_notes=_timer_details_notes(notif),
+        )
+        timer_processed = True
+
+    return timer_processed
+
+
+def _gen_timer_skyhook_reinforcements(notif: Notification) -> bool:
+    """Generate timer for skyhook reinforcements."""
+
+    solar_system = notif.eve_solar_system("solarsystemID")
+    structure_type = notif.eve_structure_type("typeID")
+    planet = notif.eve_planet()
+    eve_time = ldap_time_2_datetime(notif.parsed_text()["timestamp"])
+    timer_processed = False
+
+    if AuthTimer:
+        AuthTimer.objects.create(
+            details=gettext("Final timer"),
+            system=solar_system.name,
+            planet_moon=planet.name,
+            structure="POCO",  # Auth timer does not support the Skyhook type yet
+            objective="Friendly",
+            eve_time=eve_time,
+            eve_corp=notif.owner.corporation,
+            corp_timer=STRUCTURES_TIMERS_ARE_CORP_RESTRICTED,
+        )
+        timer_processed = True
+
+    if Timer:
+        visibility = (
+            Timer.Visibility.CORPORATION
+            if STRUCTURES_TIMERS_ARE_CORP_RESTRICTED
+            else Timer.Visibility.UNRESTRICTED
+        )
+        Timer.objects.create(
+            eve_solar_system=solar_system,
+            structure_type=structure_type,
+            timer_type=Timer.Type.FINAL,
+            objective=Timer.Objective.FRIENDLY,
+            date=eve_time,
+            location_details=planet.name,
+            eve_corporation=notif.owner.corporation,
+            eve_alliance=notif.owner.corporation.alliance,
+            visibility=visibility,
+            structure_name=structure_type.name,
             owner_name=notif.owner.corporation.corporation_name,
             details_notes=_timer_details_notes(notif),
         )

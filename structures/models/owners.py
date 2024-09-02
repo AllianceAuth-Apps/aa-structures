@@ -37,6 +37,7 @@ from structures.app_settings import (
     STRUCTURES_DEVELOPER_MODE,
     STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES,
     STRUCTURES_FEATURE_CUSTOMS_OFFICES,
+    STRUCTURES_FEATURE_SKYHOOKS,
     STRUCTURES_FEATURE_STARBASES,
     STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION,
     STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES,
@@ -545,14 +546,14 @@ class Owner(models.Model):
                 )
 
     def _remove_structures_not_returned_from_esi(
-        self, structures_qs: models.QuerySet, new_structures: Iterable
+        self, existing_structures: models.QuerySet, new_structures: Iterable[dict]
     ):
         """Remove structures no longer returned from ESI."""
-        ids_local = {x.id for x in structures_qs}
+        ids_local = {x.id for x in existing_structures}
         ids_from_esi = {x["structure_id"] for x in new_structures}
         ids_to_remove = ids_local - ids_from_esi
         if len(ids_to_remove) > 0:
-            structures_qs.filter(id__in=ids_to_remove).delete()
+            existing_structures.filter(id__in=ids_to_remove).delete()
             logger.info(
                 "Removed %d structures which apparently no longer exist.",
                 len(ids_to_remove),
@@ -650,7 +651,7 @@ class Owner(models.Model):
             self._store_raw_data("structures", structures)
 
         self._remove_structures_not_returned_from_esi(
-            structures_qs=self.structures.filter_upwell_structures(),
+            existing_structures=self.structures.filter_upwell_structures(),
             new_structures=structures,
         )
         return is_ok
@@ -701,7 +702,7 @@ class Owner(models.Model):
             return False
 
         self._remove_structures_not_returned_from_esi(
-            structures_qs=self.structures.filter_customs_offices(),
+            existing_structures=self.structures.filter_customs_offices(),
             new_structures=structures.values(),
         )
         return True
@@ -868,7 +869,7 @@ class Owner(models.Model):
             return False
 
         self._remove_structures_not_returned_from_esi(
-            structures_qs=self.structures.filter_starbases(),
+            existing_structures=self.structures.filter_starbases(),
             new_structures=structures,
         )
         character.reset_error_counter()
@@ -1214,15 +1215,18 @@ class Owner(models.Model):
     def update_asset_esi(self, user: Optional[User] = None):
         """Update assets from ESI."""
         token = self.fetch_token()
-        assets_data = self._fetch_structure_assets_from_esi(token)
+        assets_data = self._fetch_owner_assets_from_esi(token)
         self._store_items_for_upwell_structures(assets_data)
         self._store_items_for_starbases(assets_data)
+        if STRUCTURES_FEATURE_SKYHOOKS:
+            self._update_skyhooks_from_assets(assets_data)
+            self._resolve_skyhook_planets()
         if user:
             self._send_report_to_user(
                 topic="assets", topic_count=self.structures.count(), user=user
             )
 
-    def _fetch_structure_assets_from_esi(self, token: Token) -> dict:
+    def _fetch_owner_assets_from_esi(self, token: Token) -> dict:
         assets_raw = esi.client.Assets.get_corporations_corporation_id_assets(
             corporation_id=self.corporation.corporation_id,
             token=token.valid_access_token(),
@@ -1305,6 +1309,62 @@ class Owner(models.Model):
                         StructureItem.from_esi_asset(item, structure)
                     )
             structure.update_items(structure_items)
+
+    def _update_skyhooks_from_assets(self, assets_data: dict):
+        skyhooks = {
+            item_id: item
+            for item_id, item in assets_data.items()
+            if item["type_id"] == EveTypeId.ORBITAL_SKYHOOK
+            and item["location_type"] == "solar_system"
+            and item["location_flag"] == "AutoFit"
+            and item["is_singleton"]
+            and item["position"]
+        }
+        structures = []
+        for item in skyhooks.values():
+            structures.append(
+                {
+                    "corporation_id": self.corporation.corporation_id,
+                    "type_id": item["type_id"],
+                    "position": item["position"],
+                    "structure_id": item["item_id"],
+                    "system_id": item["location_id"],
+                }
+            )
+
+        for s in structures:
+            Structure.objects.update_or_create_from_dict(s, self)
+
+        self._remove_structures_not_returned_from_esi(
+            existing_structures=self.structures.filter_skyhooks(),
+            new_structures=structures,
+        )
+
+    def _resolve_skyhook_planets(self):
+        """Add planets to all unresolved Skyhooks."""
+        s: Structure
+        for s in self.structures.filter_skyhooks().filter(
+            eve_planet__isnull=True,
+            position_x__isnull=False,
+            position_y__isnull=False,
+            position_z__isnull=False,
+        ):
+            try:
+                celestial = s.eve_solar_system.nearest_celestial(
+                    x=s.position_x,
+                    y=s.position_y,
+                    z=s.position_z,
+                    group_id=EveGroupId.PLANET,
+                )
+            except OSError:
+                continue
+
+            if not celestial or not isinstance(celestial.eve_object, EvePlanet):
+                continue
+
+            s.eve_planet = celestial.eve_object
+            s.name = celestial.eve_type.name
+            s.save()
 
     @staticmethod
     def get_esi_scopes() -> List[str]:

@@ -7,18 +7,20 @@ from pytz import utc
 from django.test import override_settings
 from django.utils.timezone import now
 from esi.models import Token
+from eveuniverse.models import EvePlanet
 
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from app_utils.testing import BravadoResponseStub, NoSocketsTestCase, queryset_pks
 
 from structures.core.notification_types import NotificationType
-from structures.models import Notification, StructureItem
+from structures.models import Notification, Structure, StructureItem
 from structures.tests.testdata.factories import (
     EveCharacterFactory,
     EveCorporationInfoFactory,
     EveEntityCorporationFactory,
     JumpFuelAlertConfigFactory,
     OwnerFactory,
+    SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
     StructureItemFactory,
@@ -27,6 +29,7 @@ from structures.tests.testdata.factories import (
     datetime_to_esi,
 )
 from structures.tests.testdata.helpers import (
+    NearestCelestial,
     load_eve_entities,
     load_notification_entities,
 )
@@ -709,6 +712,137 @@ class TestOwnerUpdateAssetEsi(NoSocketsTestCase):
         owner.update_asset_esi()
         # then
         self.assertTrue(structure.items.filter(id=1300000003001).exists())
+
+
+@patch(OWNERS_PATH + ".STRUCTURES_FEATURE_SKYHOOKS", True)
+@patch(OWNERS_PATH + ".EveSolarSystem.nearest_celestial")
+@patch(OWNERS_PATH + ".esi")
+class TestOwnerUpdateSkyhooks(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        load_eveuniverse()
+        cls.corporation = EveCharacterFactory()
+        character = EveCharacterFactory(corporation=cls.corporation)
+        cls.user = UserMainDefaultOwnerFactory(main_character__character=character)
+        cls.planet = EvePlanet.objects.get(id=40161469)
+        endpoints = [
+            EsiEndpoint(
+                "Assets",
+                "get_corporations_corporation_id_assets",
+                "corporation_id",
+                needs_token=True,
+                data={
+                    f"{cls.corporation.corporation_id}": [
+                        {
+                            "is_singleton": True,
+                            "item_id": 1000000010001,
+                            "location_flag": "AutoFit",
+                            "location_id": 30002537,
+                            "location_type": "solar_system",
+                            "quantity": 1,
+                            "type_id": 81080,
+                        },
+                    ],
+                },
+            ),
+            EsiEndpoint(
+                "Assets",
+                "post_corporations_corporation_id_assets_locations",
+                "corporation_id",
+                needs_token=True,
+                data={
+                    f"{cls.corporation.corporation_id}": [
+                        {"item_id": 1000000010001, "position": {"x": 1, "y": 2, "z": 3}}
+                    ]
+                },
+            ),
+        ]
+        cls.esi_client_stub = EsiClientStub.create_from_endpoints(endpoints)
+
+    def test_should_create_new_skyhooks_from_scratch(
+        self, mock_esi, mock_nearest_celestial
+    ):
+        # given
+        mock_esi.client = self.esi_client_stub
+        mock_nearest_celestial.return_value = NearestCelestial(
+            eve_object=self.planet, distance=35_000_000, eve_type=self.planet.eve_type
+        )
+        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+        # when
+        owner.update_asset_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertEqual(owner.structures.count(), 1)
+        obj: Structure = owner.structures.get(pk=1000000010001)
+        self.assertTrue(obj.is_skyhook)
+        self.assertEqual(obj.eve_planet, self.planet)
+
+    def test_should_remove_obsolete_skyhooks(self, mock_esi, mock_nearest_celestial):
+        # given
+        mock_esi.client = self.esi_client_stub
+        mock_nearest_celestial.return_value = NearestCelestial(
+            eve_object=self.planet, distance=35_000_000, eve_type=self.planet.eve_type
+        )
+        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+        SkyhookFactory.create(owner=owner)
+        # when
+        owner.update_asset_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertEqual(owner.structures.count(), 1)
+        obj: Structure = owner.structures.get(pk=1000000010001)
+        self.assertTrue(obj.is_skyhook)
+        self.assertEqual(obj.eve_planet, self.planet)
+
+    def test_should_update_existing_skyhook(self, mock_esi, mock_nearest_celestial):
+        # given
+        mock_esi.client = self.esi_client_stub
+        mock_nearest_celestial.return_value = NearestCelestial(
+            eve_object=self.planet, distance=35_000_000, eve_type=self.planet.eve_type
+        )
+        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+        SkyhookFactory.create(owner=owner, id=1000000010001, eve_planet_name="Thera I")
+        # when
+        owner.update_asset_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertEqual(owner.structures.count(), 1)
+        obj: Structure = owner.structures.get(pk=1000000010001)
+        self.assertTrue(obj.is_skyhook)
+        self.assertEqual(obj.eve_planet, self.planet)
+
+    def test_should_ignore_os_error_when_resolving_planet(
+        self, mock_esi, mock_nearest_celestial
+    ):
+        # given
+        mock_esi.client = self.esi_client_stub
+        mock_nearest_celestial.side_effect = OSError
+        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+        # when
+        owner.update_asset_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertEqual(owner.structures.count(), 1)
+        obj: Structure = owner.structures.get(pk=1000000010001)
+        self.assertTrue(obj.is_skyhook)
+        self.assertIsNone(obj.eve_planet)
+
+    def test_should_ignore_no_reply_when_resolving_planet(
+        self, mock_esi, mock_nearest_celestial
+    ):
+        # given
+        mock_esi.client = self.esi_client_stub
+        mock_nearest_celestial.return_value = None
+        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+        # when
+        owner.update_asset_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertEqual(owner.structures.count(), 1)
+        obj: Structure = owner.structures.get(pk=1000000010001)
+        self.assertTrue(obj.is_skyhook)
+        self.assertIsNone(obj.eve_planet)
 
 
 class TestOwnerToken(NoSocketsTestCase):

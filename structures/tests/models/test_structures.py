@@ -29,6 +29,7 @@ from structures.tests.testdata.factories import (
     OwnerFactory,
     PocoDetailsFactory,
     PocoFactory,
+    SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
     StructureItemFactory,
@@ -367,48 +368,6 @@ class TestStructure(NoSocketsTestCase):
         # when/then
         self.assertEqual(obj.location_name, "?")
 
-    def test_is_poco(self):
-        # given
-        structure = StructureFactory.build(owner=self.owner)
-        poco = PocoFactory.build(owner=self.owner)
-        starbase = StarbaseFactory.build(owner=self.owner)
-        # then
-        self.assertFalse(structure.is_poco)
-        self.assertTrue(poco.is_poco)
-        self.assertFalse(starbase.is_poco)
-
-    def test_is_starbase(self):
-        # given
-        structure = StructureFactory.build(owner=self.owner)
-        poco = PocoFactory.build(owner=self.owner)
-        starbase = StarbaseFactory.build(owner=self.owner)
-        # then
-        self.assertFalse(structure.is_starbase)
-        self.assertFalse(poco.is_starbase)
-        self.assertTrue(starbase.is_starbase)
-
-    def test_is_upwell_structure(self):
-        # given
-        structure = StructureFactory.build(owner=self.owner)
-        poco = PocoFactory.build(owner=self.owner)
-        starbase = StarbaseFactory.build(owner=self.owner)
-        # then
-        self.assertTrue(structure.is_upwell_structure)
-        self.assertFalse(poco.is_upwell_structure)
-        self.assertFalse(starbase.is_upwell_structure)
-
-    def test_is_jump_gate(self):
-        # given
-        normal_structure = StructureFactory.build(owner=self.owner)
-        poco = PocoFactory.build(owner=self.owner)
-        starbase = StarbaseFactory.build(owner=self.owner)
-        jump_gate = JumpGateFactory.build(owner=self.owner)
-        # then
-        self.assertFalse(normal_structure.is_jump_gate)
-        self.assertFalse(poco.is_jump_gate)
-        self.assertFalse(starbase.is_jump_gate)
-        self.assertTrue(jump_gate.is_jump_gate)
-
     # TODO: activate
     # def test_is_upwell_structure_data_error(self):
     #     # group without a category
@@ -488,6 +447,54 @@ class TestStructure(NoSocketsTestCase):
     def test_owner_has_no_sov_in_low_sec_system(self):
         obj = StructureFactory(owner=self.owner, eve_solar_system_name="Amamake")
         self.assertFalse(obj.owner_has_sov())
+
+
+class TestStructureIsX(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        load_eveuniverse()
+        cls.owner = OwnerFactory()
+        cls.jump_gate = JumpGateFactory.build(owner=cls.owner)
+        cls.poco = PocoFactory.build(owner=cls.owner)
+        cls.skyhook = SkyhookFactory.build(owner=cls.owner)
+        cls.starbase = StarbaseFactory.build(owner=cls.owner)
+        cls.upwell_structure = StructureFactory.build(owner=cls.owner)
+
+    def test_is_jump_gate(self):
+        self.assertFalse(self.upwell_structure.is_jump_gate)
+        self.assertFalse(self.poco.is_jump_gate)
+        self.assertFalse(self.starbase.is_jump_gate)
+        self.assertTrue(self.jump_gate.is_jump_gate)
+        self.assertFalse(self.skyhook.is_jump_gate)
+
+    def test_is_poco(self):
+        self.assertFalse(self.upwell_structure.is_poco)
+        self.assertTrue(self.poco.is_poco)
+        self.assertFalse(self.starbase.is_poco)
+        self.assertFalse(self.jump_gate.is_poco)
+        self.assertFalse(self.skyhook.is_poco)
+
+    def test_is_starbase(self):
+        self.assertFalse(self.upwell_structure.is_starbase)
+        self.assertFalse(self.poco.is_starbase)
+        self.assertTrue(self.starbase.is_starbase)
+        self.assertFalse(self.jump_gate.is_starbase)
+        self.assertFalse(self.skyhook.is_starbase)
+
+    def test_is_skyhook(self):
+        self.assertFalse(self.upwell_structure.is_skyhook)
+        self.assertFalse(self.poco.is_skyhook)
+        self.assertFalse(self.starbase.is_skyhook)
+        self.assertFalse(self.jump_gate.is_skyhook)
+        self.assertTrue(self.skyhook.is_skyhook)
+
+    def test_is_upwell_structure(self):
+        self.assertTrue(self.upwell_structure.is_upwell_structure)
+        self.assertFalse(self.poco.is_upwell_structure)
+        self.assertFalse(self.starbase.is_upwell_structure)
+        self.assertTrue(self.jump_gate.is_upwell_structure)
+        self.assertFalse(self.skyhook.is_upwell_structure)
 
 
 class TestStructureFuel(NoSocketsTestCase):

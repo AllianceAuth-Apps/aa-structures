@@ -37,6 +37,7 @@ from structures.app_settings import (
     STRUCTURES_DEVELOPER_MODE,
     STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES,
     STRUCTURES_FEATURE_CUSTOMS_OFFICES,
+    STRUCTURES_FEATURE_SKYHOOKS,
     STRUCTURES_FEATURE_STARBASES,
     STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION,
     STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES,
@@ -1217,8 +1218,9 @@ class Owner(models.Model):
         assets_data = self._fetch_owner_assets_from_esi(token)
         self._store_items_for_upwell_structures(assets_data)
         self._store_items_for_starbases(assets_data)
-        self._update_skyhooks_from_assets(assets_data)
-        self._resolve_skyhook_planets()
+        if STRUCTURES_FEATURE_SKYHOOKS:
+            self._update_skyhooks_from_assets(assets_data)
+            self._resolve_skyhook_planets()
         if user:
             self._send_report_to_user(
                 topic="assets", topic_count=self.structures.count(), user=user

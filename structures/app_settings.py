@@ -49,6 +49,10 @@ STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS = clean_setting(
 )
 """Enable / disable refueled notifications feature."""
 
+STRUCTURES_FEATURE_SKYHOOKS = clean_setting("STRUCTURES_FEATURE_SKYHOOKS", False)
+"""Show skyhooks in structures list."""
+
+
 STRUCTURES_FEATURE_STARBASES = clean_setting("STRUCTURES_FEATURE_STARBASES", True)
 """Enable / disable starbases feature."""
 

@@ -714,6 +714,7 @@ class TestOwnerUpdateAssetEsi(NoSocketsTestCase):
         self.assertTrue(structure.items.filter(id=1300000003001).exists())
 
 
+@patch(OWNERS_PATH + ".STRUCTURES_FEATURE_SKYHOOKS", True)
 @patch(OWNERS_PATH + ".EveSolarSystem.nearest_celestial")
 @patch(OWNERS_PATH + ".esi")
 class TestOwnerUpdateSkyhooks(NoSocketsTestCase):

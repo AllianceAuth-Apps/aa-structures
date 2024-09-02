@@ -324,7 +324,7 @@ class NotificationBaseAdmin(admin.ModelAdmin):
             message = format_lazy("{first} {second}", first=first, second=second)
         else:
             message = first
-        message = format_lazy({first})
+        message = format_lazy(first)
         self.message_user(request, message)
 
 

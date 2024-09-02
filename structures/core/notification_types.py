@@ -221,6 +221,7 @@ class NotificationType(models.TextChoices):
             cls.STRUCTURE_LOST_ARMOR,
             cls.STRUCTURE_LOST_SHIELD,
             cls.TOWER_REINFORCED_EXTRA,
+            cls.SKYHOOK_LOST_SHIELDS,
         }
 
     @classmethod

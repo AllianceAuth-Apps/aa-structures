@@ -616,6 +616,7 @@ class TestTasks(TestCase):
         embed = embeds[0]
         self.assertIn("Territorial Claim Unit", embed.title)
 
+    @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_SKYHOOKS", True)
     def test_should_fetch_new_skyhooks_from_esi(
         self, mock_esi_2, mock_esi, mock_execute
     ):

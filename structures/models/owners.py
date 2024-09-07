@@ -592,7 +592,7 @@ class Owner(models.Model):
         is_ok = True
         # fetch main list of structure for this corporation
         try:
-            structures = (
+            structures: List[dict] = (
                 esi.client.Corporation.get_corporations_corporation_id_structures(
                     corporation_id=self.corporation.corporation_id,
                     token=token.valid_access_token(),
@@ -620,9 +620,19 @@ class Owner(models.Model):
                         )
                     ).results()
                 except OSError as ex:
-                    self._report_esi_issue(
-                        f"fetch structure #{structure['structure_id']}", ex, token
-                    )
+                    if isinstance(ex, HTTPForbidden):
+                        logger.error(
+                            "Failed to fetch structure with ID #%d belonging to %s, "
+                            "because the character '%s' is missing "
+                            "docking rights for it.",
+                            structure["structure_id"],
+                            self,
+                            token.character_name,
+                        )
+                    else:
+                        self._report_esi_issue(
+                            f"fetch structure #{structure['structure_id']}", ex, token
+                        )
                     structure["name"] = "(no data)"
                     is_ok = False
                 else:

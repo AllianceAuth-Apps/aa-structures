@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.14.1] - 2024-09-07
+
+### Changed
+
+- Generate error when a structure owner does not have docking access (#96).
+
+### Fixed
+
+- Fixed wrong title on orbitals page.
+
 ## [2.14.0] - 2024-09-02
 
 ### Added

@@ -376,6 +376,20 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         structure = Structure.objects.get(id=1000000000002)
         self.assertEqual(structure.name, "(no data)")
 
+    def test_update_will_not_break_on_403_error_from_structure_info(self, mock_esi):
+        # given
+        new_endpoint = EsiEndpoint(
+            "Universe", "get_universe_structures_structure_id", http_error_code=403
+        )
+        mock_esi.client = self.esi_client_stub.replace_endpoints([new_endpoint])
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        # when
+        owner.update_structures_esi()
+        # then
+        self.assertFalse(owner.is_structure_sync_fresh)
+        structure = Structure.objects.get(id=1000000000002)
+        self.assertEqual(structure.name, "(no data)")
+
     @patch(MODULE_PATH + ".Structure.objects.update_or_create_from_dict")
     def test_update_will_not_break_on_http_error_when_creating_structures(
         self, mock_create_structure, mock_esi

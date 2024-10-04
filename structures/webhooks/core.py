@@ -61,7 +61,7 @@ class DiscordWebhookMixin:
 
         return counter
 
-    # pylint: disable = too-many-arguments
+    # pylint: disable = too-many-positional-arguments, too-many-arguments
     def send_message(
         self,
         content: Optional[str] = None,

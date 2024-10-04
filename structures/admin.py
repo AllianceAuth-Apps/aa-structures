@@ -1,10 +1,13 @@
 """Admin site for Structures."""
 
+import functools
 import statistics
 from typing import Optional
 
+from django import forms
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.db import models
 from django.db.models import Prefetch
 from django.db.models.functions import Lower
@@ -1028,8 +1031,44 @@ class StructureAdmin(admin.ModelAdmin):
         )
 
 
+class WebhookAdminForm(forms.ModelForm):
+    owners = forms.ModelMultipleChoiceField(
+        queryset=Owner.objects.order_by(Lower("corporation__corporation_name")),
+        required=False,
+        widget=FilteredSelectMultiple(verbose_name=_("Users"), is_stacked=False),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            self.fields["owners"].initial = self.instance.owners.all()
+
+    def save(self, commit=True):
+        webhook: Webhook = super().save(commit=False)
+
+        if commit:
+            webhook.save()
+
+        owners = self.cleaned_data["owners"]
+        if webhook.pk:
+            self._save_m2m_and_users(webhook, owners)
+        else:
+            self.save_m2m = functools.partial(
+                self._save_m2m_and_users, webhook=webhook, owners=owners
+            )
+
+        return webhook
+
+    def _save_m2m_and_users(self, webhook, owners):
+        """Save m2m relations incl. users."""
+        webhook.owners.set(owners)
+        self._save_m2m()
+
+
 @admin.register(Webhook)
 class WebhookAdmin(admin.ModelAdmin):
+    form = WebhookAdminForm
     list_display = (
         "name",
         "_ping_groups",
@@ -1057,6 +1096,7 @@ class WebhookAdmin(admin.ModelAdmin):
                     "name",
                     "url",
                     "notes",
+                    "owners",
                     "notification_types",
                     "ping_groups",
                     "is_active",

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.15.0] - 2024-10-04
+
+### Added
+
+- Ability to assign owners to webhooks on the webhooks admin page (#105). Big thanks to @weeeeems for the suggestion.
+
 ## [2.14.1] - 2024-09-07
 
 ### Changed

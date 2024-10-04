@@ -719,3 +719,22 @@ class TestWebhookAdmin(TestCase):
         webhook.refresh_from_db()
         self.assertFalse(webhook.is_active)
         self.assertTrue(mock_message_user.called)
+
+    def test_can_assign_owner(self):
+        # given
+        owner = OwnerFactory()
+        webhook = WebhookFactory()
+        self.client.force_login(self.user)
+        data = {
+            "name": webhook.name,
+            "notification_types": NotificationType.webhook_defaults(),
+            "owners": [owner.pk],
+            "url": webhook.url,
+            "webhook_type": webhook.webhook_type,
+        }
+        r = self.client.post(
+            f"/admin/structures/webhook/{webhook.pk}/change/", data=data
+        )
+        self.assertEqual(r.status_code, 302)
+        webhook.refresh_from_db()
+        self.assertIn(owner, webhook.owners.all())

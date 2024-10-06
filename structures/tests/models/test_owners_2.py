@@ -2,6 +2,7 @@ import datetime as dt
 from unittest.mock import patch
 
 from django.utils.timezone import now, utc
+from eveuniverse.models import EveMoon
 
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from app_utils.testing import NoSocketsTestCase
@@ -10,7 +11,7 @@ from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import Structure, StructureService
 from structures.tests import to_json
-from structures.tests.testdata.constants import EveSolarSystemId, EveTypeId
+from structures.tests.testdata.constants import EveMoonId, EveSolarSystemId, EveTypeId
 from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     FuelAlertConfigFactory,
@@ -21,6 +22,7 @@ from structures.tests.testdata.factories import (
     UserMainDefaultOwnerFactory,
     WebhookFactory,
 )
+from structures.tests.testdata.helpers import NearestCelestial
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.models.owners"
@@ -522,6 +524,8 @@ class TestUpdateSpecificUpwellStructuresEsi(NoSocketsTestCase):
 
     def test_can_update_metenox(self, mock_esi):
         structure_id = 1000000000111
+        type_id = EveTypeId.METENOX
+        solar_system_id = EveSolarSystemId.AMAMAKE
         endpoints = [
             EsiEndpoint(
                 "Corporation",
@@ -546,8 +550,8 @@ class TestUpdateSpecificUpwellStructuresEsi(NoSocketsTestCase):
                                 2020, 4, 5, 6, 30, tzinfo=utc
                             ),
                             "structure_id": structure_id,
-                            "system_id": EveSolarSystemId.AMAMAKE,
-                            "type_id": EveTypeId.ASTRAHUS,
+                            "system_id": solar_system_id,
+                            "type_id": type_id,
                             "unanchors_at": dt.datetime(2020, 5, 5, 6, 30, tzinfo=utc),
                         },
                     ],
@@ -567,8 +571,8 @@ class TestUpdateSpecificUpwellStructuresEsi(NoSocketsTestCase):
                             "y": 7310316270.0,
                             "z": -163686684205.0,
                         },
-                        "solar_system_id": EveSolarSystemId.AMAMAKE,
-                        "type_id": EveTypeId.METENOX,
+                        "solar_system_id": solar_system_id,
+                        "type_id": type_id,
                     },
                 },
             ),
@@ -576,8 +580,11 @@ class TestUpdateSpecificUpwellStructuresEsi(NoSocketsTestCase):
         # given
         mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
         owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        moon = EveMoon.objects.get(id=EveMoonId.AMAMAKE_P2_M1)
         # when
-        owner.update_structures_esi()
+        with patch(MODULE_PATH + ".EveSolarSystem.nearest_celestial") as m:
+            m.return_value = NearestCelestial(None, moon, 100)
+            owner.update_structures_esi()
         # then
         owner.refresh_from_db()
         self.assertTrue(owner.is_structure_sync_fresh)
@@ -586,3 +593,4 @@ class TestUpdateSpecificUpwellStructuresEsi(NoSocketsTestCase):
         self.assertEqual(s.eve_solar_system.id, EveSolarSystemId.AMAMAKE)
         services = set(s.services.values_list("name", flat=True))
         self.assertSetEqual({"Moon Drill"}, services)
+        self.assertEqual(s.eve_moon, moon)

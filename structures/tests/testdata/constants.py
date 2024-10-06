@@ -14,5 +14,9 @@ class EveTypeId(IntEnum):
     INTEGRATED_MOON_DRILL_ARMATURE = 81920
 
 
+class EveMoonId(IntEnum):
+    AMAMAKE_P2_M1 = 40161465
+
+
 class EveSolarSystemId(IntEnum):
     AMAMAKE = 30002537

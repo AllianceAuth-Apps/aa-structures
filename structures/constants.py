@@ -27,6 +27,7 @@ class EveGroupId(IntEnum):
     ENGINEERING_COMPLEX = 1404
     FUEL_BLOCK = 1136
     ICE_PRODUCT = 423
+    MOON = 8
     PLANET = 7
     QUANTUM_CORES = 4086
     REFINERY = 1406

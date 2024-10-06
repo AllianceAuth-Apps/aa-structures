@@ -605,6 +605,7 @@ class Owner(models.Model):
         else:
             is_ok = self._fetch_universe_infos_for_structures(token, structures)
             is_ok &= self._store_structure_updates(structures)
+            self._resolve_metenox_moons()
 
         if STRUCTURES_DEVELOPER_MODE:
             self._store_raw_data("structures", structures)
@@ -676,6 +677,33 @@ class Owner(models.Model):
             len(structures),
         )
         return count == len(structures)
+
+    def _resolve_metenox_moons(self):
+        """Add moons to all unresolved metenox structures."""
+        s: Structure
+        for s in self.structures.filter(
+            eve_type__eve_group=EveGroupId.UPWELL_MOON_DRILL,
+            eve_moon__isnull=True,
+            position_x__isnull=False,
+            position_y__isnull=False,
+            position_z__isnull=False,
+        ):
+            try:
+                celestial = s.eve_solar_system.nearest_celestial(
+                    x=s.position_x,
+                    y=s.position_y,
+                    z=s.position_z,
+                    group_id=EveGroupId.MOON,
+                )
+            except OSError:
+                continue
+
+            if not celestial or not isinstance(celestial.eve_object, EveMoon):
+                continue
+
+            s.eve_moon = celestial.eve_object
+            s.save()
+            logger.info("%s: Resolved moon for Metenox: %d", self, s.name)
 
     def _fetch_custom_offices(self, token: Token) -> bool:
         """Fetch custom offices from ESI for this owner.
@@ -1386,6 +1414,7 @@ class Owner(models.Model):
             s.eve_planet = celestial.eve_object
             s.name = celestial.eve_type.name
             s.save()
+            logger.info("%s: Resolved moon for Skyhook at: %s", self, s.eve_planet.name)
 
     @staticmethod
     def get_esi_scopes() -> List[str]:

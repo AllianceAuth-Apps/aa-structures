@@ -169,26 +169,30 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         self.assertSetEqual(owner.structures.ids(), expected)
 
         # verify attributes for structure
-        s = Structure.objects.get(id=1000000000001)
-        self.assertEqual(s.name, "Test Structure Alpha")
-        self.assertEqual(s.position_x, 55028384780.0)
-        self.assertEqual(s.position_y, 7310316270.0)
-        self.assertEqual(s.position_z, -163686684205.0)
-        self.assertEqual(s.eve_solar_system_id, EveSolarSystemId.AMAMAKE)
-        self.assertEqual(s.eve_type_id, 35832)
-        self.assertEqual(int(s.owner.corporation.corporation_id), self.corporation_id)
-        self.assertEqual(s.state, Structure.State.SHIELD_VULNERABLE)
-        self.assertEqual(s.reinforce_hour, 18)
+        structure = Structure.objects.get(id=1000000000001)
+        self.assertEqual(structure.name, "Test Structure Alpha")
+        self.assertEqual(structure.position_x, 55028384780.0)
+        self.assertEqual(structure.position_y, 7310316270.0)
+        self.assertEqual(structure.position_z, -163686684205.0)
+        self.assertEqual(structure.eve_solar_system_id, EveSolarSystemId.AMAMAKE)
+        self.assertEqual(structure.eve_type_id, 35832)
         self.assertEqual(
-            s.fuel_expires_at, dt.datetime(2020, 3, 5, 5, 0, 0, tzinfo=utc)
+            int(structure.owner.corporation.corporation_id), self.corporation_id
+        )
+        self.assertEqual(structure.state, Structure.State.SHIELD_VULNERABLE)
+        self.assertEqual(structure.reinforce_hour, 18)
+        self.assertEqual(
+            structure.fuel_expires_at, dt.datetime(2020, 3, 5, 5, 0, 0, tzinfo=utc)
         )
         self.assertEqual(
-            s.state_timer_start, dt.datetime(2020, 4, 5, 6, 30, 0, tzinfo=utc)
+            structure.state_timer_start, dt.datetime(2020, 4, 5, 6, 30, 0, tzinfo=utc)
         )
         self.assertEqual(
-            s.state_timer_end, dt.datetime(2020, 4, 5, 7, 0, 0, tzinfo=utc)
+            structure.state_timer_end, dt.datetime(2020, 4, 5, 7, 0, 0, tzinfo=utc)
         )
-        self.assertEqual(s.unanchors_at, dt.datetime(2020, 5, 5, 6, 30, 0, tzinfo=utc))
+        self.assertEqual(
+            structure.unanchors_at, dt.datetime(2020, 5, 5, 6, 30, 0, tzinfo=utc)
+        )
 
         # must have created services with localizations
         # structure 1000000000001
@@ -214,7 +218,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                 }
             ),
         }
-        s = Structure.objects.get(id=1000000000001)
+        structure = Structure.objects.get(id=1000000000001)
         services = {
             to_json(
                 {
@@ -226,7 +230,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                     "state": x.state,
                 }
             )
-            for x in s.services.all()
+            for x in structure.services.all()
         }
         self.assertEqual(services, expected)
 
@@ -254,7 +258,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                 }
             ),
         }
-        s = Structure.objects.get(id=1000000000002)
+        structure = Structure.objects.get(id=1000000000002)
         services = {
             to_json(
                 {
@@ -266,7 +270,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                     "state": x.state,
                 }
             )
-            for x in s.services.all()
+            for x in structure.services.all()
         }
         self.assertEqual(services, expected)
 
@@ -580,3 +584,5 @@ class TestUpdateSpecificUpwellStructuresEsi(NoSocketsTestCase):
         s = Structure.objects.get(id=structure_id)
         self.assertEqual(s.name, "Mining")
         self.assertEqual(s.eve_solar_system.id, EveSolarSystemId.AMAMAKE)
+        services = set(s.services.values_list("name", flat=True))
+        self.assertSetEqual({"Moon Drill"}, services)

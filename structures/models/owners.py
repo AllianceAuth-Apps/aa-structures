@@ -585,14 +585,10 @@ class Owner(models.Model):
         return positions
 
     def _fetch_upwell_structures(self, token: Token) -> bool:
-        """Fetch Upwell structures from ESI for self.
-
-        Return True if successful, else False.
-        """
-        is_ok = True
+        """Fetches Upwell structures from ESI an reports whether it was successful."""
         # fetch main list of structure for this corporation
         try:
-            structures: List[dict] = (
+            structures = (
                 esi.client.Corporation.get_corporations_corporation_id_structures(
                     corporation_id=self.corporation.corporation_id,
                     token=token.valid_access_token(),
@@ -604,58 +600,11 @@ class Owner(models.Model):
 
         # fetch additional information for structures
         if not structures:
+            is_ok = True
             logger.info("%s: No Upwell structures retrieved from ESI", self)
         else:
-            logger.info(
-                "%s: Fetching additional infos for %d Upwell structures from ESI",
-                self,
-                len(structures),
-            )
-            for structure in structures:
-                try:
-                    structure_info = (
-                        esi.client.Universe.get_universe_structures_structure_id(
-                            structure_id=structure["structure_id"],
-                            token=token.valid_access_token(),
-                        )
-                    ).results()
-                except OSError as ex:
-                    if isinstance(ex, HTTPForbidden):
-                        logger.error(
-                            "Failed to fetch structure with ID #%d belonging to %s, "
-                            "because the character '%s' is missing "
-                            "docking rights for it.",
-                            structure["structure_id"],
-                            self,
-                            token.character_name,
-                        )
-                    else:
-                        self._report_esi_issue(
-                            f"fetch structure #{structure['structure_id']}", ex, token
-                        )
-                    structure["name"] = "(no data)"
-                    is_ok = False
-                else:
-                    structure["name"] = Structure.extract_name_from_esi_response(
-                        structure_info["name"]
-                    )
-                    structure["position"] = structure_info["position"]
-
-            logger.info(
-                "%s: Storing updates for %d upwell structures",
-                self,
-                len(structures),
-            )
-            for structure in structures:
-                try:
-                    Structure.objects.update_or_create_from_dict(structure, self)
-                except OSError:
-                    logger.warning(
-                        "%s: Failed to store update for structure with ID %s",
-                        self,
-                        structure["structure_id"],
-                    )
-                    is_ok = False
+            is_ok = self._fetch_universe_infos_for_structures(token, structures)
+            is_ok &= self._store_structure_updates(structures)
 
         if STRUCTURES_DEVELOPER_MODE:
             self._store_raw_data("structures", structures)
@@ -665,6 +614,68 @@ class Owner(models.Model):
             new_structures=structures,
         )
         return is_ok
+
+    def _fetch_universe_infos_for_structures(
+        self, token, structures: List[dict]
+    ) -> bool:
+        count = 0
+        for s in structures:
+            try:
+                structure_info = (
+                    esi.client.Universe.get_universe_structures_structure_id(
+                        structure_id=s["structure_id"],
+                        token=token.valid_access_token(),
+                    )
+                ).results()
+            except OSError as ex:
+                if isinstance(ex, HTTPForbidden):
+                    logger.error(
+                        "Failed to fetch structure with ID #%d belonging to %s, "
+                        "because the character '%s' is missing docking rights.",
+                        s["structure_id"],
+                        self,
+                        token.character_name,
+                    )
+                else:
+                    self._report_esi_issue(
+                        f"fetch structure #{s['structure_id']}", ex, token
+                    )
+                s["name"] = "(no data)"
+            else:
+                count += 1
+                s["name"] = Structure.extract_name_from_esi_response(
+                    structure_info["name"]
+                )
+                s["position"] = structure_info["position"]
+
+        logger.info(
+            "%s: Fetched universe infos for %d / %d Upwell structures from ESI",
+            self,
+            count,
+            len(structures),
+        )
+        return count == len(structures)
+
+    def _store_structure_updates(self, structures: List[dict]) -> bool:
+        count = 0
+        for s in structures:
+            try:
+                Structure.objects.update_or_create_from_dict(s, self)
+            except OSError:
+                logger.warning(
+                    "%s: Failed to store update for structure with ID %s",
+                    self,
+                    s["structure_id"],
+                )
+            else:
+                count += 1
+        logger.info(
+            "%s: Stored updates for %d/%d upwell structures",
+            self,
+            count,
+            len(structures),
+        )
+        return count == len(structures)
 
     def _fetch_custom_offices(self, token: Token) -> bool:
         """Fetch custom offices from ESI for this owner.

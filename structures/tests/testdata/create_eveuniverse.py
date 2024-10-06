@@ -18,7 +18,7 @@ class CreateEveUniverseTestData(TestCase):
             ),
             ModelSpec(
                 "EveCategory",
-                ids=[EveCategoryId.ORBITAL],
+                ids=[EveCategoryId.ORBITAL, EveCategoryId.STRUCTURE_MODULE],
                 include_children=True,
             ),
             ModelSpec(
@@ -40,12 +40,10 @@ class CreateEveUniverseTestData(TestCase):
                     EveGroupId.FUEL_BLOCK,
                     EveGroupId.ICE_PRODUCT,
                     EveGroupId.QUANTUM_CORES,
-                    EveGroupId.STRUCTURE_CITADEL_SERVICE_MODULE,
                     EveGroupId.UNCOMMON_MOON_ASTEROIDS,
                 ],
                 include_children=True,
             ),
-            ModelSpec("EveType", ids=[], include_children=False),
             ModelSpec(
                 "EveSolarSystem",
                 ids=[30002506, 31000005, 30002537, 30000474, 30000476],

@@ -1,0 +1,22 @@
+from enum import IntEnum
+
+
+class EveTypeId(IntEnum):
+    """An EVE type ID."""
+
+    ASTRAHUS = 35832
+    ASTRAHUS_UPWELL_QUANTUM_CORE = 56201
+    ATHANOR = 35835
+    LIQUID_OZONE = 16273
+    METENOX = 81826
+    STANDUP_CLONING_CENTER_I = 35894
+    STANDUP_METENOX_MOON_DRILL = 82941
+    INTEGRATED_MOON_DRILL_ARMATURE = 81920
+
+
+class EveMoonId(IntEnum):
+    AMAMAKE_P2_M1 = 40161465
+
+
+class EveSolarSystemId(IntEnum):
+    AMAMAKE = 30002537

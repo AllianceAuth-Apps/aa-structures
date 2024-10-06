@@ -392,7 +392,7 @@ class StructureManagerBase(models.Manager):
     def update_or_create_from_dict(
         self, structure: dict, owner: Owner
     ) -> Tuple[Any, bool]:
-        """update or create structure from given dict"""
+        """Update or create a structure from a dict."""
 
         eve_type: EveType = EveType.objects.get_or_create_esi(id=structure["type_id"])[
             0

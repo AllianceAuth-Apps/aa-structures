@@ -2,6 +2,7 @@ import datetime as dt
 from unittest.mock import patch
 
 from django.utils.timezone import now, utc
+from eveuniverse.models import EveMoon
 
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
 from app_utils.testing import NoSocketsTestCase
@@ -10,6 +11,7 @@ from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import Structure, StructureService
 from structures.tests import to_json
+from structures.tests.testdata.constants import EveMoonId, EveSolarSystemId, EveTypeId
 from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     FuelAlertConfigFactory,
@@ -20,6 +22,7 @@ from structures.tests.testdata.factories import (
     UserMainDefaultOwnerFactory,
     WebhookFactory,
 )
+from structures.tests.testdata.helpers import NearestCelestial
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.models.owners"
@@ -40,54 +43,6 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             id=EveCorporationId.DED, name="DED"
         )  # for notifications
         cls.endpoints = [
-            EsiEndpoint(
-                "Assets",
-                "get_corporations_corporation_id_assets",
-                "corporation_id",
-                needs_token=True,
-                data={
-                    str(cls.corporation_id): [
-                        {
-                            "is_singleton": False,
-                            "item_id": 1300000001001,
-                            "location_flag": "QuantumCoreRoom",
-                            "location_id": 1000000000001,
-                            "location_type": "item",
-                            "quantity": 1,
-                            "type_id": 56201,  # Astrahus Upwell Quantum Core
-                        },
-                        {
-                            "is_singleton": True,
-                            "item_id": 1300000001002,
-                            "location_flag": "ServiceSlot0",
-                            "location_id": 1000000000001,
-                            "location_type": "item",
-                            "quantity": 1,
-                            "type_id": 35894,  # Standup Cloning Center I
-                        },
-                        {
-                            "is_singleton": True,
-                            "item_id": 1300000002001,
-                            "location_flag": "ServiceSlot0",
-                            "location_id": 1000000000002,
-                            "location_type": "item",
-                            "quantity": 1,
-                            "type_id": 35894,  # Standup Cloning Center I
-                        },
-                    ],
-                    "2102": [
-                        {
-                            "is_singleton": False,
-                            "item_id": 1300000003001,
-                            "location_flag": "StructureFuel",
-                            "location_id": 1000000000004,
-                            "location_type": "item",
-                            "quantity": 5000,
-                            "type_id": 16273,  # Liquid Ozone
-                        }
-                    ],
-                },
-            ),
             EsiEndpoint(
                 "Corporation",
                 "get_corporations_corporation_id_structures",
@@ -110,8 +65,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                             "state_timer_end": None,
                             "state_timer_start": None,
                             "structure_id": 1000000000002,
-                            "system_id": 30002537,
-                            "type_id": 35835,  # Athanor
+                            "system_id": EveSolarSystemId.AMAMAKE,
+                            "type_id": EveTypeId.ATHANOR,
                             "unanchors_at": None,
                         },
                         {
@@ -131,8 +86,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                                 2020, 4, 5, 6, 30, tzinfo=utc
                             ),
                             "structure_id": 1000000000001,
-                            "system_id": 30002537,
-                            "type_id": 35832,  # Astrahus
+                            "system_id": EveSolarSystemId.AMAMAKE,
+                            "type_id": EveTypeId.ASTRAHUS,
                             "unanchors_at": dt.datetime(2020, 5, 5, 6, 30, tzinfo=utc),
                         },
                         {
@@ -148,7 +103,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                             "state_timer_start": None,
                             "structure_id": 1000000000003,
                             "system_id": 30000476,
-                            "type_id": 35832,  # Astrahus
+                            "type_id": EveTypeId.ASTRAHUS,
                             "unanchors_at": None,
                         },
                     ],
@@ -168,8 +123,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                             "y": 7310316270.0,
                             "z": -163686684205.0,
                         },
-                        "solar_system_id": 30002537,
-                        "type_id": 35832,  # Astrahus
+                        "solar_system_id": EveSolarSystemId.AMAMAKE,
+                        "type_id": EveTypeId.ASTRAHUS,
                     },
                     "1000000000002": {
                         "corporation_id": cls.corporation_id,
@@ -179,8 +134,8 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                             "y": -130157937025.56424,
                             "z": -442026427345.6355,
                         },
-                        "solar_system_id": 30002537,
-                        "type_id": 35835,  # Athanor
+                        "solar_system_id": EveSolarSystemId.AMAMAKE,
+                        "type_id": EveTypeId.ATHANOR,
                     },
                     "1000000000003": {
                         "corporation_id": cls.corporation_id,
@@ -191,7 +146,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
                             "z": -442026427345.6355,
                         },
                         "solar_system_id": 30000476,
-                        "type_id": 35832,  # Astrahus
+                        "type_id": EveTypeId.ASTRAHUS,
                     },
                 },
             ),
@@ -221,7 +176,7 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
         self.assertEqual(structure.position_x, 55028384780.0)
         self.assertEqual(structure.position_y, 7310316270.0)
         self.assertEqual(structure.position_z, -163686684205.0)
-        self.assertEqual(structure.eve_solar_system_id, 30002537)
+        self.assertEqual(structure.eve_solar_system_id, EveSolarSystemId.AMAMAKE)
         self.assertEqual(structure.eve_type_id, 35832)
         self.assertEqual(
             int(structure.owner.corporation.corporation_id), self.corporation_id
@@ -550,3 +505,92 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
             owner.update_structures_esi()
         # then
         self.assertEqual(structure.structure_fuel_alerts.count(), 0)
+
+
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
+@patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
+@patch(MODULE_PATH + ".esi")
+class TestUpdateSpecificUpwellStructuresEsi(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        load_eveuniverse()
+        cls.user = UserMainDefaultOwnerFactory()
+        cls.owner = OwnerFactory(user=cls.user, structures_last_update_at=None)
+        cls.corporation_id = cls.owner.corporation.corporation_id
+        EveEntityCorporationFactory(
+            id=EveCorporationId.DED, name="DED"
+        )  # for notifications
+
+    def test_can_update_metenox(self, mock_esi):
+        structure_id = 1000000000111
+        type_id = EveTypeId.METENOX
+        solar_system_id = EveSolarSystemId.AMAMAKE
+        endpoints = [
+            EsiEndpoint(
+                "Corporation",
+                "get_corporations_corporation_id_structures",
+                "corporation_id",
+                needs_token=True,
+                data={
+                    str(self.corporation_id): [
+                        {
+                            "corporation_id": self.corporation_id,
+                            "fuel_expires": dt.datetime(2020, 3, 5, 5, tzinfo=utc),
+                            "next_reinforce_apply": None,
+                            "next_reinforce_hour": None,
+                            "profile_id": 101853,
+                            "reinforce_hour": 18,
+                            "services": [
+                                {"name": "Moon Drill", "state": "online"},
+                            ],
+                            "state": "shield_vulnerable",
+                            "state_timer_end": dt.datetime(2020, 4, 5, 7, tzinfo=utc),
+                            "state_timer_start": dt.datetime(
+                                2020, 4, 5, 6, 30, tzinfo=utc
+                            ),
+                            "structure_id": structure_id,
+                            "system_id": solar_system_id,
+                            "type_id": type_id,
+                            "unanchors_at": dt.datetime(2020, 5, 5, 6, 30, tzinfo=utc),
+                        },
+                    ],
+                },
+            ),
+            EsiEndpoint(
+                "Universe",
+                "get_universe_structures_structure_id",
+                "structure_id",
+                needs_token=True,
+                data={
+                    str(structure_id): {
+                        "corporation_id": self.corporation_id,
+                        "name": "Amamake - Mining",
+                        "position": {
+                            "x": 55028384780.0,
+                            "y": 7310316270.0,
+                            "z": -163686684205.0,
+                        },
+                        "solar_system_id": solar_system_id,
+                        "type_id": type_id,
+                    },
+                },
+            ),
+        ]
+        # given
+        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        moon = EveMoon.objects.get(id=EveMoonId.AMAMAKE_P2_M1)
+        # when
+        with patch(MODULE_PATH + ".EveSolarSystem.nearest_celestial") as m:
+            m.return_value = NearestCelestial(None, moon, 100)
+            owner.update_structures_esi()
+        # then
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_structure_sync_fresh)
+        s = Structure.objects.get(id=structure_id)
+        self.assertEqual(s.name, "Mining")
+        self.assertEqual(s.eve_solar_system.id, EveSolarSystemId.AMAMAKE)
+        services = set(s.services.values_list("name", flat=True))
+        self.assertSetEqual({"Moon Drill"}, services)
+        self.assertEqual(s.eve_moon, moon)

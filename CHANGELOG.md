@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.17.0] - 2024-11-05
+
+### Added
+
+- Notification types for corporation projects / goals (#109).
+
 ## [2.16.0] - 2024-10-06
 
 ### Added

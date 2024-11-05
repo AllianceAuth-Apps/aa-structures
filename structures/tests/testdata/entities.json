@@ -807,6 +807,36 @@
             "is_sent": false
         },
         {
+            "notification_id": 1000001401,
+            "type": "CorporationGoalClosed",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "closer_id: 1011\ncorporation_id: 2001\ncreator_id: 1001\ngoal_id: 287804106856621566338600488094573709306\ngoal_name: Strawberry Jam",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001402,
+            "type": "CorporationGoalCompleted",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "corporation_id: 2001\ncreator_id: 1001\ngoal_id: 287804106856621566338600488094573709306\ngoal_name: Strawberry Jam",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
+            "notification_id": 1000001403,
+            "type": "CorporationGoalCreated",
+            "sender_id": 2901,
+            "sender_type": "corporation",
+            "timestamp": "2019-11-18 20:00:00",
+            "text": "corporation_id: 2001\ncreator_id: 1001\ngoal_id: 287804106856621566338600488094573709306\ngoal_name: Strawberry Jam",
+            "is_read": false,
+            "is_sent": false
+        },
+        {
             "notification_id": 1999999999,
             "type": "UnknownNotificationType",
             "sender_id": 2001,

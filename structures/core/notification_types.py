@@ -11,7 +11,95 @@ from structures.app_settings import STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS
 class NotificationType(models.TextChoices):
     """Definition of all supported notification types."""
 
-    # upwell structures
+    # billing
+    BILLING_BILL_OUT_OF_MONEY_MSG = "BillOutOfMoneyMsg", _("Bill out of money")
+    BILLING_CORP_ALL_BILL_MSG = "CorpAllBillMsg", _("Corp alliance billing message")
+    BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE = (
+        "InfrastructureHubBillAboutToExpire",
+        _("I-HUB bill about to expire"),
+    )
+    BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE = (
+        "IHubDestroyedByBillFailure",
+        _("I_HUB destroyed by bill failure"),
+    )
+
+    # Corporation Membership
+    CHAR_APP_ACCEPT_MSG = "CharAppAcceptMsg", _("Character joins corporation")
+    CORP_APP_INVITED_MSG = "CorpAppInvitedMsg", _(
+        "Character invited to join corporation"
+    )
+    CORP_APP_NEW_MSG = "CorpAppNewMsg", _("Character submitted application")
+    CORP_APP_REJECT_MSG = "CharAppRejectMsg", _("Corp application rejected message")
+    CORP_APP_REJECT_CUSTOM_MSG = "CorpAppRejectCustomMsg", _(
+        "Corp application rejected custom message"
+    )
+    CHAR_APP_WITHDRAW_MSG = "CharAppWithdrawMsg", _("Character withdrew application")
+    CHAR_LEFT_CORP_MSG = "CharLeftCorpMsg", _("Character leaves corporation")
+
+    # Corporation Goals
+    CORPORATION_GOAL_CLOSED = "CorporationGoalClosed", _("Corporation goal closed")
+    CORPORATION_GOAL_COMPLETED = "CorporationGoalCompleted", _(
+        "Corporation goal completed"
+    )
+    CORPORATION_GOAL_CREATED = "CorporationGoalCreated", _("Corporation goal created")
+    # CORPORATION_GOAL_NAME_CHANGE = "CorporationGoalNameChange", _(
+    #     "Corporation goal name change"
+    # )
+
+    # Moon Mining
+    MOONMINING_AUTOMATIC_FRACTURE = "MoonminingAutomaticFracture", _(
+        "Moon mining automatic fracture triggered"
+    )
+    MOONMINING_EXTRACTION_CANCELLED = "MoonminingExtractionCancelled", _(
+        "Moon mining extraction cancelled"
+    )
+    MOONMINING_EXTRACTION_FINISHED = "MoonminingExtractionFinished", _(
+        "Moon mining extraction finished"
+    )
+    MOONMINING_EXTRACTION_STARTED = "MoonminingExtractionStarted", _(
+        "Moon mining extraction started"
+    )
+    MOONMINING_LASER_FIRED = "MoonminingLaserFired", _("Moonmining laser fired")
+
+    # Skyhook structures
+    SKYHOOK_DEPLOYED = "SkyhookDeployed", _("Skyhook deployed")
+    SKYHOOK_DESTROYED = "SkyhookDestroyed", _("Skyhook destroyed")
+    SKYHOOK_LOST_SHIELDS = "SkyhookLostShields", _("Skyhook lost shields")
+    SKYHOOK_ONLINE = "SkyhookOnline", _("Skyhook online")
+    SKYHOOK_UNDER_ATTACK = "SkyhookUnderAttack", _("Skyhook under attack")
+
+    # Orbitals
+    ORBITAL_ATTACKED = "OrbitalAttacked", _("Customs office attacked")
+    ORBITAL_REINFORCED = "OrbitalReinforced", _("Customs office reinforced")
+
+    # Sov
+    SOV_ALL_CLAIM_ACQUIRED_MSG = "SovAllClaimAquiredMsg", _(
+        "Sovereignty claim acknowledgment"  # SovAllClaimAquiredMsg [sic!]
+    )
+    SOV_ALL_CLAIM_LOST_MSG = "SovAllClaimLostMsg", _("Sovereignty lost")
+    SOV_ALL_ANCHORING_MSG = "AllAnchoringMsg", _(
+        "Structure anchoring in alliance space"
+    )
+    SOV_ENTOSIS_CAPTURE_STARTED = "EntosisCaptureStarted", _(
+        "Sovereignty entosis capture started"
+    )
+    SOV_STRUCTURE_DESTROYED = "SovStructureDestroyed", _(
+        "Sovereignty structure destroyed"
+    )
+    SOV_STRUCTURE_REINFORCED = "SovStructureReinforced", _(
+        "Sovereignty structure reinforced"
+    )
+    SOV_COMMAND_NODE_EVENT_STARTED = "SovCommandNodeEventStarted", _(
+        "Sovereignty command node event started"
+    )
+
+    # Starbases
+    TOWER_ALERT_MSG = "TowerAlertMsg", _("Starbase attacked")
+    TOWER_REFUELED_EXTRA = "TowerRefueledExtra", _("Starbase refueled (BETA)")
+    TOWER_REINFORCED_EXTRA = "TowerReinforcedExtra", _("Starbase reinforced (BETA)")
+    TOWER_RESOURCE_ALERT_MSG = "TowerResourceAlertMsg", _("Starbase fuel alert")
+
+    # Upwell Structures
     OWNERSHIP_TRANSFERRED = "OwnershipTransferred", _(
         "Upwell structure ownership transferred"
     )
@@ -48,60 +136,7 @@ class NotificationType(models.TextChoices):
         "Upwell structure went low power"
     )
 
-    # Skyhook structures
-    SKYHOOK_DEPLOYED = "SkyhookDeployed", _("Skyhook deployed")
-    SKYHOOK_DESTROYED = "SkyhookDestroyed", _("Skyhook destroyed")
-    SKYHOOK_LOST_SHIELDS = "SkyhookLostShields", _("Skyhook lost shields")
-    SKYHOOK_ONLINE = "SkyhookOnline", _("Skyhook online")
-    SKYHOOK_UNDER_ATTACK = "SkyhookUnderAttack", _("Skyhook under attack")
-
-    # customs offices
-    ORBITAL_ATTACKED = "OrbitalAttacked", _("Customs office attacked")
-    ORBITAL_REINFORCED = "OrbitalReinforced", _("Customs office reinforced")
-
-    # starbases
-    TOWER_ALERT_MSG = "TowerAlertMsg", _("Starbase attacked")
-    TOWER_REFUELED_EXTRA = "TowerRefueledExtra", _("Starbase refueled (BETA)")
-    TOWER_REINFORCED_EXTRA = "TowerReinforcedExtra", _("Starbase reinforced (BETA)")
-    TOWER_RESOURCE_ALERT_MSG = "TowerResourceAlertMsg", _("Starbase fuel alert")
-
-    # moon mining
-    MOONMINING_AUTOMATIC_FRACTURE = "MoonminingAutomaticFracture", _(
-        "Moon mining automatic fracture triggered"
-    )
-    MOONMINING_EXTRACTION_CANCELLED = "MoonminingExtractionCancelled", _(
-        "Moon mining extraction cancelled"
-    )
-    MOONMINING_EXTRACTION_FINISHED = "MoonminingExtractionFinished", _(
-        "Moon mining extraction finished"
-    )
-    MOONMINING_EXTRACTION_STARTED = "MoonminingExtractionStarted", _(
-        "Moon mining extraction started"
-    )
-    MOONMINING_LASER_FIRED = "MoonminingLaserFired", _("Moonmining laser fired")
-
-    # sov
-    SOV_ALL_CLAIM_ACQUIRED_MSG = "SovAllClaimAquiredMsg", _(
-        "Sovereignty claim acknowledgment"  # SovAllClaimAquiredMsg [sic!]
-    )
-    SOV_ALL_CLAIM_LOST_MSG = "SovAllClaimLostMsg", _("Sovereignty lost")
-    SOV_ALL_ANCHORING_MSG = "AllAnchoringMsg", _(
-        "Structure anchoring in alliance space"
-    )
-    SOV_ENTOSIS_CAPTURE_STARTED = "EntosisCaptureStarted", _(
-        "Sovereignty entosis capture started"
-    )
-    SOV_STRUCTURE_DESTROYED = "SovStructureDestroyed", _(
-        "Sovereignty structure destroyed"
-    )
-    SOV_STRUCTURE_REINFORCED = "SovStructureReinforced", _(
-        "Sovereignty structure reinforced"
-    )
-    SOV_COMMAND_NODE_EVENT_STARTED = "SovCommandNodeEventStarted", _(
-        "Sovereignty command node event started"
-    )
-
-    # wars
+    # Wars
     WAR_ACCEPTED_ALLY = "AcceptedAlly", _("War accepted ally")
     WAR_ALL_WAR_CORP_JOINED_ALLIANCE_MSG = "AllWarCorpJoinedAllianceMsg", _(
         "Alliance war corporation joined alliance message"
@@ -141,31 +176,6 @@ class NotificationType(models.TextChoices):
         "War retracted by Concord"
     )
     WAR_WAR_SURRENDER_OFFER_MSG = "WarSurrenderOfferMsg", _("War surrender offered")
-
-    # corporation membership
-    CHAR_APP_ACCEPT_MSG = "CharAppAcceptMsg", _("Character joins corporation")
-    CORP_APP_INVITED_MSG = "CorpAppInvitedMsg", _(
-        "Character invited to join corporation"
-    )
-    CORP_APP_NEW_MSG = "CorpAppNewMsg", _("Character submitted application")
-    CORP_APP_REJECT_MSG = "CharAppRejectMsg", _("Corp application rejected message")
-    CORP_APP_REJECT_CUSTOM_MSG = "CorpAppRejectCustomMsg", _(
-        "Corp application rejected custom message"
-    )
-    CHAR_APP_WITHDRAW_MSG = "CharAppWithdrawMsg", _("Character withdrew application")
-    CHAR_LEFT_CORP_MSG = "CharLeftCorpMsg", _("Character leaves corporation")
-
-    # billing
-    BILLING_BILL_OUT_OF_MONEY_MSG = "BillOutOfMoneyMsg", _("Bill out of money")
-    BILLING_CORP_ALL_BILL_MSG = "CorpAllBillMsg", _("Corp alliance billing message")
-    BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE = (
-        "InfrastructureHubBillAboutToExpire",
-        _("I-HUB bill about to expire"),
-    )
-    BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE = (
-        "IHubDestroyedByBillFailure",
-        _("I_HUB destroyed by bill failure"),
-    )
 
     @classmethod
     def esi_notifications(cls) -> Set["NotificationType"]:

@@ -80,7 +80,7 @@ def main():
     }
     structure, _ = Structure.objects.update_or_create_from_dict(structure, owner)
 
-    p = Path(__file__).parent / "/entities.json"
+    p = Path(__file__).parent / "entities.json"
     with p.open(mode="r", encoding="utf-8") as fp:
         data = json.load(fp)
 

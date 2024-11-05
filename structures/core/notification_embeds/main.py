@@ -1,4 +1,4 @@
-"""Billing embeds."""
+"""Dispatcher for all embeds."""
 
 # pylint: disable=missing-class-docstring
 
@@ -198,6 +198,9 @@ class NotificationBaseEmbed:
             NotificationCorpAppInvitedMsg,
             NotificationCorpAppNewMsg,
             NotificationCorpAppRejectCustomMsg,
+            NotificationCorpGoalClosed,
+            NotificationCorpGoalCompleted,
+            NotificationCorpGoalCreated,
         )
         from .moonmining_embeds import (
             NotificationMoonminningAutomaticFracture,
@@ -283,7 +286,7 @@ class NotificationBaseEmbed:
             NT.BILLING_CORP_ALL_BILL_MSG: NotificationCorpAllBillMsg,
             NT.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE: NotificationBillingIHubBillAboutToExpire,
             NT.BILLING_I_HUB_DESTROYED_BY_BILL_FAILURE: NotificationBillingIHubDestroyedByBillFailure,
-            # character
+            # Corporate
             NT.CHAR_APP_ACCEPT_MSG: NotificationCharAppAcceptMsg,
             NT.CHAR_APP_WITHDRAW_MSG: NotificationCharAppWithdrawMsg,
             NT.CHAR_LEFT_CORP_MSG: NotificationCharLeftCorpMsg,
@@ -291,6 +294,9 @@ class NotificationBaseEmbed:
             NT.CORP_APP_NEW_MSG: NotificationCorpAppNewMsg,
             NT.CORP_APP_REJECT_CUSTOM_MSG: NotificationCorpAppRejectCustomMsg,
             NT.CORP_APP_REJECT_MSG: NotificationCharAppRejectMsg,
+            NT.CORPORATION_GOAL_CLOSED: NotificationCorpGoalClosed,
+            NT.CORPORATION_GOAL_COMPLETED: NotificationCorpGoalCompleted,
+            NT.CORPORATION_GOAL_CREATED: NotificationCorpGoalCreated,
             # moonmining
             NT.MOONMINING_AUTOMATIC_FRACTURE: NotificationMoonminningAutomaticFracture,
             NT.MOONMINING_EXTRACTION_CANCELLED: NotificationMoonminningExtractionCanceled,

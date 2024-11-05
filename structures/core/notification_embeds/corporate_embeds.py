@@ -157,3 +157,61 @@ class NotificationCharLeftCorpMsg(NotificationCorpCharEmbed):
             "corporation_name": self._corporation_link,
         }
         self._color = Webhook.Color.INFO
+
+
+class NotificationCorpGoalEmbed(NotificationBaseEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._creator = get_or_create_eve_entity(id=self._data["creator_id"])
+        self._creator_link = gen_eve_entity_link(self._creator)
+        self._corporation = get_or_create_eve_entity(id=self._data["corporation_id"])
+        self._goal_name = self._data["goal_name"]
+        self._thumbnail = dhooks_lite.Thumbnail(
+            self._corporation.icon_url(size=self.ICON_DEFAULT_SIZE)
+        )
+
+
+class NotificationCorpGoalClosed(NotificationCorpGoalEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Project canceled")
+        closer = get_or_create_eve_entity(id=self._data["closer_id"])
+        self._description = _(
+            "Project **%(goal_name)s** has ben closed by %(closer)s "
+            "and will not accept further contributions."
+            % {
+                "goal_name": self._goal_name,
+                "closer": gen_eve_entity_link(closer),
+            }
+        )
+        self._color = Webhook.Color.INFO
+
+
+class NotificationCorpGoalCompleted(NotificationCorpGoalEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("Project completed")
+        self._description = _(
+            "Project **%(goal_name)s** created by %(creator)s "
+            "has been successfully completed after reaching it's target."
+            % {
+                "goal_name": self._goal_name,
+                "creator": self._creator_link,
+            }
+        )
+        self._color = Webhook.Color.SUCCESS
+
+
+class NotificationCorpGoalCreated(NotificationCorpGoalEmbed):
+    def __init__(self, notification: Notification) -> None:
+        super().__init__(notification)
+        self._title = _("New Project Available")
+        self._description = _(
+            "Project **%(goal_name)s** has been created by %(creator)s "
+            "and is open for contributions."
+            % {
+                "goal_name": self._goal_name,
+                "creator": self._creator_link,
+            }
+        )
+        self._color = Webhook.Color.INFO

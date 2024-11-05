@@ -703,7 +703,7 @@ class Owner(models.Model):
 
             s.eve_moon = celestial.eve_object
             s.save()
-            logger.info("%s: Resolved moon for Metenox: %d", self, s.name)
+            logger.info("%s: Resolved moon for Metenox: %s", self, s.name)
 
     def _fetch_custom_offices(self, token: Token) -> bool:
         """Fetch custom offices from ESI for this owner.

@@ -5,16 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [3.0.0] - TBD
+## [3.0.0] - 2025-04-05
 
 ### Update notes
 
-BREAKING CHANGE: This release drops support for AA3
+This release requires Alliance Auth 4.0 or greater.
 
 ### Changed
 
-- Templates migrated to Bootstrap 5 / AA4 syntax and style
-- Dropped support for Django 4.x / AA3
+- BREAKING CHANGE: Support dropped for AA3
+- Templates migrated to AA4 / Bootstrap 5
 
 ## [2.17.0] - 2024-11-05
 

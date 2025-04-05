@@ -30,15 +30,16 @@
 
 {% endblock header_nav_collapse_left %}
 
-{% block header_nav_collapse_right %}
+{% block header_nav_user_character_control %}
     {% if perms.structures.add_structure_owner %}
         <li class="nav-item">
-            <a class="btn btn-success navbar-btn" href="{% url 'structures:add_structure_owner' %}" title="{% translate 'Add new structure owner or add new sync character to an existing structure owner' %}">
-                {% translate "Add Owner / Sync Character" %}
+            <a class="nav-link text-success" href="{% url 'structures:add_structure_owner' %}" title="{% translate 'Add new structure owner or add new sync character to an existing structure owner' %}">
+                <i class="fa-solid fa-plus"></i>
             </a>
         </li>
     {% endif %}
-{% endblock header_nav_collapse_right %}
+    <div class="vr"></div>
+{% endblock header_nav_user_character_control %}
 
 {% block content %}
         {% block details %}{% endblock %}

@@ -30,7 +30,7 @@
 
 {% endblock header_nav_collapse_left %}
 
-{% block header_nav_user_character_control %}
+{% block header_nav_collapse_right %}
     {% if perms.structures.add_structure_owner %}
         <li class="nav-item">
             <a class="nav-link text-success" href="{% url 'structures:add_structure_owner' %}" title="{% translate 'Add new structure owner or add new sync character to an existing structure owner' %}">
@@ -38,9 +38,14 @@
             </a>
         </li>
     {% endif %}
-    <div class="vr"></div>
-{% endblock header_nav_user_character_control %}
+{% endblock header_nav_collapse_right %}
+
+{% block header_nav_user_character_control %}
+    {% comment %}
+        Leave empty to remove user control nav items for this app
+    {% endcomment %}
+{% endblock %}
 
 {% block content %}
-        {% block details %}{% endblock %}
+    {% block details %}{% endblock %}
 {% endblock %}

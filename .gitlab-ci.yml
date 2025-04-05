@@ -5,7 +5,7 @@ stages:
 
 pre-commit:
     stage: checks
-    image: python:3.12-bookworm
+    image: python:3.11-bookworm
     variables:
         PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
     cache:
@@ -26,7 +26,7 @@ pre-commit:
 pylint:
     stage: checks
     extends: .tox_setup
-    image: python:3.12-bookworm
+    image: python:3.11-bookworm
     script:
         - tox -e pylint
 
@@ -80,7 +80,7 @@ test-core:
 
 test-docs:
     stage: test
-    image: python:3.12-bookworm
+    image: python:3.11-bookworm
     before_script:
         - pip install tox
     script:
@@ -88,7 +88,7 @@ test-docs:
 
 deploy-pypi:
     stage: deploy
-    image: python:3.12-bookworm
+    image: python:3.11-bookworm
 
     before_script:
         - pip install build twine

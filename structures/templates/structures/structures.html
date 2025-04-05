@@ -27,9 +27,9 @@
 
         {% if show_jump_gates_tab %}
             <li role="presentation" class="nav-item">
-                <a class="nav-link" aria-controls="jump-gates" role="tab" data-bs-toggle="tab" data-bs-target="#jump-gates">
+                <button class="nav-link" aria-controls="jump-gates" role="tab" data-bs-toggle="tab" data-bs-target="#jump-gates">
                     {% trans "Jump Gates" %} <small>({{ jump_gates_count|default:"-" }})</small>
-                </a>
+                </button>
             </li>
         {% endif %}
 

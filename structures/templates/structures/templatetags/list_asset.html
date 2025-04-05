@@ -1,9 +1,11 @@
 <li class="list-group-item">
-     <p class="list-group-item-text">
-        <img src="{{ icon_url }}" style="height: 32px; width: 32px;">&nbsp;
-        <a href="{{ profile_url }}" target="_blank">{{ name }}</a>
+    <div class="d-flex w-100 justify-content-between">
+        <span>
+            <img src="{{ icon_url }}" style="height: 32px; width: 32px;">&nbsp;
+            <a href="{{ profile_url }}" target="_blank">{{ name }}</a>
+        </span>
         {% if not is_singleton %}
-            <span class="pull-right">{{ quantity|default_if_none:"?"|floatformat:"0g" }}</span>
+            <span>{{ quantity|default_if_none:"?"|floatformat:"0g" }}</span>
         {% endif %}
-    </p>
+    </div>
 </li>

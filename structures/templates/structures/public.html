@@ -5,44 +5,41 @@
 
 {% block details %}
 
-    <span class="pull-right">
-        <form class="form-inline">
-            <select
-                class="form-control"
-                name="character_id"
-                style="height: auto;"
-                onchange="this.form.submit()"
-                title="Character for calculating access and tax">
-                    {% for character in characters %}
-                        <option
-                            value="{{ character.character_id }}"
-                            {% if character.character_id == selected_character.character_id %} selected{% endif %}>
-                                {{ character.character_name }}
-                        </option>
-                    {% endfor %}
-            </select>
-        </form>
-    </span>
 
     <!-- Nav tabs -->
-    <ul id="public-tabs" class="nav nav-tabs" role="tablist">
+    <ul class="nav nav-tabs" role="tablist">
 
-        <li role="presentation" class="active">
-            <a href="#pocos" aria-controls="orbitals" role="tab" data-toggle="tab">
+        <li role="presentation" class="nav-item me-auto">
+            <button class="nav-link active" aria-controls="orbitals" role="tab" data-bs-toggle="tab" data-bs-target="#pocos">
                 {% translate "Customs Offices" %} <small>({{ pocos_count|default:"-" }})</small>
-            </a>
+            </button>
         </li>
 
+        <li role="presentation" class="nav-item">
+            <form class="form-inline">
+                <select
+                    class="form-control"
+                    name="character_id"
+                    style="height: auto;"
+                    onchange="this.form.submit()"
+                    title="Character for calculating access and tax">
+                        {% for character in characters %}
+                            <option
+                                value="{{ character.character_id }}"
+                                {% if character.character_id == selected_character.character_id %} selected{% endif %}>
+                                    {{ character.character_name }}
+                            </option>
+                        {% endfor %}
+                </select>
+            </form>
+        </li>
     </ul>
 
-    <div class="panel panel-default panel-tabs">
-        <div class="panel-body">
-            <div class="tab-content">
+    <div class="card card-default card-tabs border-0">
+        <div class="card-body tab-content">
 
-                <div role="tabpanel" class="tab-pane active" id="orbitals">
-                    {% include "structures/partials/public/poco_list.html" %}
-                </div>
-
+            <div role="tabpanel" class="tab-pane show active" id="orbitals">
+                {% include "structures/partials/public/poco_list.html" %}
             </div>
 
             <p class="text-muted">
@@ -65,16 +62,13 @@
         type="application/javascript"
         src="{% static 'structures/vendor/datatables/plugins/dataTables.rowGroup.min.js' %}">
     </script>
-    <script
-        type="application/javascript"
-        src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
-    </script>
+    {% include "bundles/filterdropdown-js.html" %}
     <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
     <script type="application/javascript" src="{% static 'structures/js/public.js' %}"></script>
 {% endblock %}
 
 {% block extra_css %}
-    {% include 'bundles/datatables-css.html' %}
+    {% include 'bundles/datatables-css-bs5.html' %}
 
     <link
         rel="stylesheet"

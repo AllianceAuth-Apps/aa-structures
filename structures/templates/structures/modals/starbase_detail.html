@@ -4,8 +4,8 @@
 {% load structures %}
 
 <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-    <h4 class="modal-title">{{structure}}</h4>
+    <h5 class="modal-title">{{structure}}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
 <div class="modal-body">
@@ -14,36 +14,36 @@
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active">
-            <a href="#tab-starbase-general" aria-controls="modules" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-target="#tab-starbase-general" aria-controls="modules" role="tab" data-bs-toggle="tab">
                 {% translate "General" %}
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#tab-starbase-fuel" aria-controls="fuels" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#tab-starbase-fuel" aria-controls="fuels" role="tab" data-bs-toggle="tab">
                 {% translate "Fuel" %} <small>({{ fuel_blocks_count|default:"-"|intcomma }})</small>
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#tab-starbase-modules" aria-controls="modules" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#tab-starbase-modules" aria-controls="modules" role="tab" data-bs-toggle="tab">
                 {% translate "Modules" %} <small>({{ modules_count }})</small>
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#tab-starbase-settings" aria-controls="settings" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#tab-starbase-settings" aria-controls="settings" role="tab" data-bs-toggle="tab">
                 {% translate "Settings" %}
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#tab-starbase-access" aria-controls="access" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#tab-starbase-access" aria-controls="access" role="tab" data-bs-toggle="tab">
                 {% translate "Access" %}
-            </a>
+            </button>
         </li>
     </ul>
 
     <!-- Tab panes -->
     <div class="tab-content">
-        <div role="tabpanel" class="tab-pane active" id="tab-starbase-general">
+        <div role="tabpanel" class="tab-pane show active" id="tab-starbase-general">
             {% include "structures/modals/tab_general_detail.html" %}
         </div>
 

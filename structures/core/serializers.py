@@ -330,8 +330,8 @@ class _AbstractStructureListSerializer(ABC):
         ):
             ajax_url = reverse("structures:structure_details", args=[structure.id])
             row["details"] = format_html(
-                '<button type="button" class="btn btn-default" '
-                'data-toggle="modal" data-target="#modalUpwellDetails" '
+                '<button type="button" class="btn btn-secondary" '
+                'data-bs-toggle="modal" data-bs-target="#modalUpwellDetails" '
                 f"data-ajax_url={ajax_url} "
                 f'title="{_("Show fitting")}">'
                 '<i class="fas fa-search"></i></button>'
@@ -340,8 +340,8 @@ class _AbstractStructureListSerializer(ABC):
         elif structure.is_poco:
             ajax_url = reverse("structures:poco_details", args=[structure.id])
             row["details"] = format_html(
-                '<button type="button" class="btn btn-default" '
-                'data-toggle="modal" data-target="#modalPocoDetails" '
+                '<button type="button" class="btn btn-secondary" '
+                'data-bs-toggle="modal" data-bs-target="#modalPocoDetails" '
                 f"data-ajax_url={ajax_url} "
                 f'title="{_("Show details")}">'
                 '<i class="fas fa-search"></i></button>'
@@ -350,8 +350,8 @@ class _AbstractStructureListSerializer(ABC):
         elif structure.is_starbase:
             ajax_url = reverse("structures:starbase_detail", args=[structure.id])
             row["details"] = format_html(
-                '<button type="button" class="btn btn-default" '
-                'data-toggle="modal" data-target="#modalStarbaseDetail" '
+                '<button type="button" class="btn btn-secondary" '
+                'data-bs-toggle="modal" data-bs-target="#modalStarbaseDetail" '
                 f"data-ajax_url={ajax_url} "
                 f'title="{_("Show details")}">'
                 '<i class="fas fa-search"></i></button>'

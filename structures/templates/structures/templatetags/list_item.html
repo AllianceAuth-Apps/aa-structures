@@ -1,13 +1,13 @@
 {% load humanize %}
 
 <li class="list-group-item">
-     <p class="list-group-item-text">
+    <div class="d-flex w-100 justify-content-between">
         {% if is_muted %}
             <span class="text-muted">{{ title }}</span>
         {% else %}
             {{ title }}
         {% endif %}
-        <span class="pull-right">
+        <span>
             {% if value is False or value is None %}
                 <i class="fas fa-times text-danger" title="Disabled"></i>
             {% elif value is True %}
@@ -18,5 +18,5 @@
                 {{ value }}
             {% endif %}
         </span>
-    </p>
+    </div>
 </li>

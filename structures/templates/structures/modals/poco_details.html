@@ -4,8 +4,8 @@
 {% load structures %}
 
 <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-    <h4 class="modal-title">{{ structure }}</h4>
+    <h5 class="modal-title">{{ structure }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
 <div class="modal-body">
@@ -14,26 +14,26 @@
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active">
-            <a href="#tab-poco-general" aria-controls="modules" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-target="#tab-poco-general" aria-controls="modules" role="tab" data-bs-toggle="tab">
                 {% translate "General" %}
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#tab-poco-reinforcement" aria-controls="access" role="tab" data-toggle="tab">
+            <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#tab-poco-reinforcement" aria-controls="access" role="tab" data-bs-toggle="tab">
                 {% translate "Reinforcement Time" %}
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#tab-poco-settings" aria-controls="settings" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#tab-poco-settings" aria-controls="settings" role="tab" data-bs-toggle="tab">
                 {% translate "Tax Rates & Access" %}
-            </a>
+            </button>
         </li>
     </ul>
 
     <!-- Tab panes -->
     <div class="tab-content">
-        <div role="tabpanel" class="tab-pane active" id="tab-poco-general">
+        <div role="tabpanel" class="tab-pane show active" id="tab-poco-general">
             {% include "structures/modals/tab_general_detail.html" %}
         </div>
 

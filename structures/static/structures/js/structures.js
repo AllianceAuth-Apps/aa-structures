@@ -22,7 +22,7 @@ $(document).ready(function () {
     $('a[href="#' + tabId + '"]').tab("show");
 
     /* remember last selected tab */
-    $('a[data-toggle="tab"]').on("shown.bs.tab", function (e) {
+    $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (e) {
         const selectedTabId = $(e.target).attr("href").substr(1);
         setCookie(COOKIE_LAST_TAB_ID, selectedTabId, COOKIE_LAST_TAB_HOURS);
     });

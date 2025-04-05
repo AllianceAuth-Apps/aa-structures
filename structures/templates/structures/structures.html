@@ -26,14 +26,14 @@
         </li>
 
         {% if show_jump_gates_tab %}
-            <li role="presentation" class="nav-item me-auto">
+            <li role="presentation" class="nav-item">
                 <a class="nav-link" aria-controls="jump-gates" role="tab" data-bs-toggle="tab" data-bs-target="#jump-gates">
                     {% trans "Jump Gates" %} <small>({{ jump_gates_count|default:"-" }})</small>
                 </a>
             </li>
         {% endif %}
 
-        <li role="presentation" class="nav-item">
+        <li role="presentation" class="nav-item ms-auto">
             {% if tags_exist %}
                 {% if active_tags %}
                     <button
@@ -133,8 +133,8 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content" id="modalUpwellDetailsContent">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Loading...</h4>
+                    <h5 class="modal-title">Loading...</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                 </div>
@@ -143,12 +143,12 @@
     </div>
 
     <!-- Poco details modal -->
-    <div class="modal" id="modalPocoDetails" tabindex="-1" role="dialog" aria-labelledby="modalPocoDetails">
-        <div class="modal-dialog" role="document">
+    <div class="modal" id="modalPocoDetails" tabindex="-1" aria-labelledby="modalPocoDetails">
+        <div class="modal-dialog">
             <div class="modal-content" id="modalPocoDetailsContent">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Loading...</h4>
+                    <h5 class="modal-title">Loading...</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                 </div>
@@ -161,8 +161,8 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content" id="modalStarbaseDetailContent">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Loading...</h4>
+                    <h5 class="modal-title">Loading...</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                 </div>

@@ -51,13 +51,6 @@ test-310-django42:
         - tox -e py310-django42
         - bash <(curl -s https://codecov.io/bash)
 
-test-311-django40:
-    extends: .tox_setup
-    image: python:3.11-bookworm
-    script:
-        - tox -e py311-django42
-        - bash <(curl -s https://codecov.io/bash)
-
 test-311-django42:
     extends: .tox_setup
     image: python:3.11-bookworm

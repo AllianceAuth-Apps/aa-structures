@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.0] - TBD
+
+### Update notes
+
+BREAKING CHANGE: This release drops support for AA3
+
+### Changed
+
+- Templates migrated to Bootstrap 5 / AA4 syntax and style
+- Dropped support for Django 4.x / AA3
+
 ## [2.17.0] - 2024-11-05
 
 ### Added

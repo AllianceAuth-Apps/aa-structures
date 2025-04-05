@@ -92,41 +92,47 @@ $(document).ready(function () {
                 {
                     idx: pocos_idx_start,
                     title: filterTitles.constellation,
-                    maxWidth: "11em",
+                    maxWidth: "10em",
                 },
                 {
                     idx: pocos_idx_start + 1,
                     title: filterTitles.planet_type,
+                    maxWidth: "10em",
                 },
                 {
                     idx: pocos_idx_start + 2,
                     title: filterTitles.space_type,
+                    maxWidth: "10em",
                 },
                 {
                     idx: pocos_idx_start + 3,
                     title: filterTitles.region,
+                    maxWidth: "10em",
                 },
                 {
                     idx: pocos_idx_start + 4,
                     title: filterTitles.solar_system,
+                    maxWidth: "10em",
                 },
                 {
                     idx: pocos_idx_start + 5,
                     title: filterTitles.corporation,
-                    maxWidth: "11em",
+                    maxWidth: "10em",
                 },
                 {
                     idx: pocos_idx_start + 6,
                     title: filterTitles.alliance,
-                    maxWidth: "11em",
+                    maxWidth: "10em",
                 },
                 {
                     idx: pocos_idx_start + 7,
                     title: filterTitles.access,
+                    maxWidth: "10em",
                 },
             ],
             autoSize: false,
             bootstrap: true,
+            bootstrap_version: 5,
         },
     });
 });

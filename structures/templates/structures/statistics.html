@@ -6,22 +6,18 @@
 {% block details %}
 
     <!-- Nav tabs -->
-    <ul id="statistics-tabs" class="nav nav-tabs" role="tablist">
-
-        <li role="presentation" class="active">
-            <a href="#summary" aria-controls="summary" role="tab" data-toggle="tab">{% trans "Summary" %}</a>
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="nav-item">
+            <button class="nav-link active" aria-controls="summary" role="tab" data-bs-toggle="tab" data-bs-toggle="#summary">
+                {% trans "Summary" %}
+            </button>
         </li>
-
     </ul>
 
-    <div class="panel panel-default panel-tabs">
-        <div class="panel-body">
-            <div class="tab-content">
-
-                <div role="tabpanel" class="tab-pane active" id="summary">
-                    {% include "structures/partials/statistics/structure_summary.html" %}
-                </div>
-
+    <div class="card card-default card-tabs border-0">
+        <div class="card-body tab-content">
+            <div role="tabpanel" class="tab-pane active" id="summary">
+                {% include "structures/partials/statistics/structure_summary.html" %}
             </div>
         </div>
     </div>
@@ -33,18 +29,14 @@
 
 {% block extra_javascript %}
     {% include 'bundles/datatables-js.html' %}
-    <script
-        type="application/javascript"
-        src="{% static 'structures/vendor/datatables/plugins/filterDropDown.min.js' %}">
-    </script>
+    {% include "bundles/filterdropdown-js.html" %}
     <script type="application/javascript" src="{% static 'structures/js/global.js' %}"></script>
     <script type="application/javascript" src="{% static 'structures/js/statistics.js' %}"></script>
 
 {% endblock %}
 
 {% block extra_css %}
-    {% include 'bundles/datatables-css.html' %}
-
+    {% include 'bundles/datatables-css-bs5.html' %}
     <link rel="stylesheet" href="{% static 'structures/css/global.css' %}" type="text/css" media="screen">
     <link rel="stylesheet" href="{% static 'structures/css/main.css' %}" type="text/css" media="screen">
     <link rel="stylesheet" href="{% static 'structures/css/statistics.css' %}" type="text/css" media="screen">

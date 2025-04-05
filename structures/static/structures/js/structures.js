@@ -155,6 +155,7 @@ $(document).ready(function () {
                 ],
                 autoSize: false,
                 bootstrap: true,
+                bootstrap_version: 5,
             },
         },
     });
@@ -242,6 +243,7 @@ $(document).ready(function () {
                 ],
                 autoSize: false,
                 bootstrap: true,
+                bootstrap_version: 5,
             },
         },
     });
@@ -328,6 +330,7 @@ $(document).ready(function () {
                 ],
                 autoSize: false,
                 bootstrap: true,
+                bootstrap_version: 5,
             },
         },
     });
@@ -455,6 +458,7 @@ $(document).ready(function () {
             ],
             autoSize: false,
             bootstrap: true,
+            bootstrap_version: 5,
         },
         createdRow: function (row, data, dataIndex) {
             if (data["is_reinforced"]) {

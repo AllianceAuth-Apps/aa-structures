@@ -20,7 +20,7 @@ from eveuniverse.models import EvePlanet
 from allianceauth.eveonline.models import EveCharacter
 from app_utils.datetime import DATETIME_FORMAT, timeuntil_str
 from app_utils.views import (
-    BootstrapStyle,
+    BootstrapStyleBS5,
     bootstrap_label_html,
     format_html_lazy,
     link_html,
@@ -177,7 +177,7 @@ class _AbstractStructureListSerializer(ABC):
         elif structure.is_low_power:
             fuel_expires_display = format_html_lazy(
                 bootstrap_label_html(
-                    structure.get_power_mode_display(), BootstrapStyle.WARNING
+                    structure.get_power_mode_display(), BootstrapStyleBS5.WARNING
                 )
             )
             fuel_expires_timestamp = None
@@ -185,7 +185,7 @@ class _AbstractStructureListSerializer(ABC):
         elif structure.is_abandoned:
             fuel_expires_display = format_html_lazy(
                 bootstrap_label_html(
-                    structure.get_power_mode_display(), BootstrapStyle.DANGER
+                    structure.get_power_mode_display(), BootstrapStyleBS5.DANGER
                 )
             )
             fuel_expires_timestamp = None
@@ -193,7 +193,7 @@ class _AbstractStructureListSerializer(ABC):
         elif structure.is_maybe_abandoned:
             fuel_expires_display = format_html_lazy(
                 bootstrap_label_html(
-                    structure.get_power_mode_display(), BootstrapStyle.WARNING
+                    structure.get_power_mode_display(), BootstrapStyleBS5.WARNING
                 )
             )
             fuel_expires_timestamp = None
@@ -227,20 +227,20 @@ class _AbstractStructureListSerializer(ABC):
         if structure.is_full_power:
             last_online_at_display = format_html_lazy(
                 bootstrap_label_html(
-                    structure.get_power_mode_display(), BootstrapStyle.SUCCESS
+                    structure.get_power_mode_display(), BootstrapStyleBS5.SUCCESS
                 )
             )
         elif structure.is_maybe_abandoned:
             last_online_at_display = format_html_lazy(
                 bootstrap_label_html(
-                    structure.get_power_mode_display(), BootstrapStyle.WARNING
+                    structure.get_power_mode_display(), BootstrapStyleBS5.WARNING
                 )
             )
 
         elif structure.is_abandoned:
             last_online_at_display = format_html_lazy(
                 bootstrap_label_html(
-                    structure.get_power_mode_display(), BootstrapStyle.DANGER
+                    structure.get_power_mode_display(), BootstrapStyleBS5.DANGER
                 )
             )
 
@@ -307,11 +307,13 @@ class _AbstractStructureListSerializer(ABC):
 
         elif structure.has_core is False:
             has_core = False
-            core_status = bootstrap_label_html("Core missing", BootstrapStyle.DANGER)
+            core_status = bootstrap_label_html("Core missing", BootstrapStyleBS5.DANGER)
 
         else:
             has_core = None
-            core_status = bootstrap_label_html("No core status", BootstrapStyle.WARNING)
+            core_status = bootstrap_label_html(
+                "No core status", BootstrapStyleBS5.WARNING
+            )
 
         return core_status, has_core
 

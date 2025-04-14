@@ -21,7 +21,6 @@
         </li>
     {% endif %}
 
-
     <li class="nav-item me-auto">
         <a class="nav-link {% navactive request 'structures:public' %}" href="{% url 'structures:public' %}">
             {% translate 'Public' %}
@@ -33,14 +32,11 @@
 {% block header_nav_collapse_right %}
     {% if perms.structures.add_structure_owner %}
         <li class="nav-item">
-            <a class="nav-link text-success" href="{% url 'structures:add_structure_owner' %}" title="{% translate 'Add new structure owner or add new sync character to an existing structure owner' %}">
-                <i class="fa-solid fa-plus"></i>
+            <a class="btn btn-success me-2" href="{% url 'structures:add_structure_owner' %}" title="{% translate 'Add new structure owner or add new sync character to an existing structure owner' %}">
+                <i class="fa-solid fa-plus"></i>&nbsp;Add owner
             </a>
         </li>
     {% endif %}
-    <li class="nav-item py-2 py-lg-1">
-        <div class="vr d-none d-lg-flex h-100 mx-2"></div>
-    </li>
 {% endblock header_nav_collapse_right %}
 
 {% block header_nav_user_character_control %}

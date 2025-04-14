@@ -17,13 +17,16 @@ from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
 
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
-from app_utils.views import bootstrap_label_html
 
 from structures import __title__
 from structures.app_settings import STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS
 from structures.constants import EveCategoryId, EveGroupId, EveTypeId
 from structures.core import starbases
-from structures.helpers import datetime_almost_equal, hours_until_deadline
+from structures.helpers import (
+    bootstrap5_label_html,
+    datetime_almost_equal,
+    hours_until_deadline,
+)
 from structures.managers import StructureManager, StructureTagManager
 
 from .eveuniverse import EveSpaceType
@@ -125,7 +128,9 @@ class StructureTag(models.Model):
             name = escape(self.name)
         else:
             name = _(self.name)
-        return bootstrap_label_html(name, self.style)
+        # Convert BS3 style names
+        style = "secondary" if self.style == StructureTag.Style.GREY else self.style
+        return bootstrap5_label_html(name, style)
 
     @classmethod
     def sorted(cls, tags: list, reverse: bool = False) -> list:

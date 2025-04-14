@@ -67,3 +67,8 @@ def floating_icon_with_text_html(
     text_html = format_html_join(mark_safe("<br>"), "{}", ((line,) for line in lines))
     result_html = format_html("<p>{}{}</p>", icon_html, text_html)
     return result_html
+
+
+def bootstrap5_label_html(text: str, label: str = "default") -> str:
+    """Return HTML for a Bootstrap 5 label."""
+    return format_html('<span class="badge text-bg-{}">{}</span>', label, text)

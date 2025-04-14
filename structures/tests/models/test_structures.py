@@ -1042,13 +1042,13 @@ class TestStructureTag(NoSocketsTestCase):
     def test_html_default(self):
         x = StructureTag(name="Super cool tag")
         self.assertEqual(
-            x.html, '<span class="label label-default">Super cool tag</span>'
+            x.html, '<span class="badge text-bg-secondary">Super cool tag</span>'
         )
 
     def test_html_primary(self):
         x = StructureTag(name="Super cool tag", style="primary")
         self.assertEqual(
-            x.html, '<span class="label label-primary">Super cool tag</span>'
+            x.html, '<span class="badge text-bg-primary">Super cool tag</span>'
         )
 
 

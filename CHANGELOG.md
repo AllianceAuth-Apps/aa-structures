@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Replace add icon with button to better differeniate from the add icon for adding characters
 
+### Fixed
+
+- Labels (e.g. structure tags) no longer rendering correctly
+
 ## [3.0.0] - 2025-04-05
 
 ### Update notes

@@ -21,7 +21,6 @@ from allianceauth.eveonline.models import EveCharacter
 from app_utils.datetime import DATETIME_FORMAT, timeuntil_str
 from app_utils.views import (
     BootstrapStyleBS5,
-    bootstrap_label_html,
     format_html_lazy,
     link_html,
     no_wrap_html,
@@ -31,7 +30,7 @@ from app_utils.views import (
 
 from structures.app_settings import STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE
 from structures.constants import EveGroupId
-from structures.helpers import floating_icon_with_text_html
+from structures.helpers import bootstrap5_label_html, floating_icon_with_text_html
 from structures.models import EveSpaceType, PocoDetails, Structure
 
 
@@ -176,7 +175,7 @@ class _AbstractStructureListSerializer(ABC):
 
         elif structure.is_low_power:
             fuel_expires_display = format_html_lazy(
-                bootstrap_label_html(
+                bootstrap5_label_html(
                     structure.get_power_mode_display(), BootstrapStyleBS5.WARNING
                 )
             )
@@ -184,7 +183,7 @@ class _AbstractStructureListSerializer(ABC):
 
         elif structure.is_abandoned:
             fuel_expires_display = format_html_lazy(
-                bootstrap_label_html(
+                bootstrap5_label_html(
                     structure.get_power_mode_display(), BootstrapStyleBS5.DANGER
                 )
             )
@@ -192,7 +191,7 @@ class _AbstractStructureListSerializer(ABC):
 
         elif structure.is_maybe_abandoned:
             fuel_expires_display = format_html_lazy(
-                bootstrap_label_html(
+                bootstrap5_label_html(
                     structure.get_power_mode_display(), BootstrapStyleBS5.WARNING
                 )
             )
@@ -226,20 +225,20 @@ class _AbstractStructureListSerializer(ABC):
 
         if structure.is_full_power:
             last_online_at_display = format_html_lazy(
-                bootstrap_label_html(
+                bootstrap5_label_html(
                     structure.get_power_mode_display(), BootstrapStyleBS5.SUCCESS
                 )
             )
         elif structure.is_maybe_abandoned:
             last_online_at_display = format_html_lazy(
-                bootstrap_label_html(
+                bootstrap5_label_html(
                     structure.get_power_mode_display(), BootstrapStyleBS5.WARNING
                 )
             )
 
         elif structure.is_abandoned:
             last_online_at_display = format_html_lazy(
-                bootstrap_label_html(
+                bootstrap5_label_html(
                     structure.get_power_mode_display(), BootstrapStyleBS5.DANGER
                 )
             )
@@ -307,11 +306,13 @@ class _AbstractStructureListSerializer(ABC):
 
         elif structure.has_core is False:
             has_core = False
-            core_status = bootstrap_label_html("Core missing", BootstrapStyleBS5.DANGER)
+            core_status = bootstrap5_label_html(
+                "Core missing", BootstrapStyleBS5.DANGER
+            )
 
         else:
             has_core = None
-            core_status = bootstrap_label_html(
+            core_status = bootstrap5_label_html(
                 "No core status", BootstrapStyleBS5.WARNING
             )
 
@@ -433,7 +434,7 @@ class PocoListSerializer(_AbstractStructureListSerializer):
         solar_system_html = format_html(
             "{}<br>{}",
             link_html(dotlan.solar_system_url(solar_system_name), solar_system_name),
-            bootstrap_label_html(text=space_type.label, label=space_badge_type),
+            bootstrap5_label_html(text=space_type.label, label=space_badge_type),
         )
 
         constellation_name = structure.eve_solar_system.eve_constellation.name

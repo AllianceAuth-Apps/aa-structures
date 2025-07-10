@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.2] - 2025-07-10
+
+### Fixed
+
+- Internal error when trying to show fitting for a Metonox Drill (#116) Big thanks to @Geuthur for the fix!
+
 ## [3.0.1] - 2025-04-14
 
 ### Changed

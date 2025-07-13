@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.0] - 2025-07-13
+
+### Update notes
+
+**TL~DR**: Please update the configuration of Structures' periodic tasks in your local settings as described below.
+
+#### Context
+
+Structures is making periodic requests to ESI to keep it's structures and notifications up-to-date with the game server. These requests are performed with via periodic tasks in Django.
+
+Previously these tasks have been scheduled to run at specific times each hour,
+e.g. all structures where updated at the full hour and again at the half hour.
+
+With Structures being quite popular this results in many Alliance Auth instances
+making similar ESI requests at the same time leading to significant request spikes on ESI servers.
+
+CCP has asked us for help to reduce these request spike. To mitigate this issue we are making changes to the scheduling of Structures' periodic tasks.
+
+#### Settings changes
+
+Please update the values for `'schedule'` of Structures' periodic tasks in your local settings.
+The new default configuration looks like this:
+
+```python
+CELERYBEAT_SCHEDULE['structures_update_all_structures'] = {
+    'task': 'structures.tasks.update_all_structures',
+    'schedule': 1800,
+}
+CELERYBEAT_SCHEDULE['structures_fetch_all_notifications'] = {
+    'task': 'structures.tasks.fetch_all_notifications',
+    'schedule': 300,
+}
+```
+
+Please make sure to restart your AA instance so the changes can take effect.
+
+>**Note**:<br>Structures will generate a Django warning until this important configuration change has been completed.
+
+### Changed
+
+- The previous cron based schedule for periodic tasks has been deprecated and replaces with a basic schedule.
+
 ## [3.0.2] - 2025-07-10
 
 ### Fixed
@@ -15,7 +57,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Replace add icon with button to better differeniate from the add icon for adding characters
+- Replace add icon with button to better differentiate from the add icon for adding characters
 
 ### Fixed
 
@@ -558,7 +600,7 @@ Thanks @ppfeufer for your contribution
 ### Added
 
 - Ability to also define webhooks for a structure, which will then be used **instead** of the owner's webhooks for notifications related to that structure (#64)
-- Show structures a notificaiton is related to (if any) on admin page
+- Show structures a notification is related to (if any) on admin page
 
 ### Changed
 
@@ -676,19 +718,19 @@ Thanks @ppfeufer for your contribution
 
 - Fuel alert notifications from ESI will now always be forwarded as temporary workaround for issue #59
 
-- A service is now only regarded as down when the last succesful update from ESI is older than the allowed grace period, e.g. temporary ESI issues will be ignored
+- A service is now only regarded as down when the last successful update from ESI is older than the allowed grace period, e.g. temporary ESI issues will be ignored
 
 ## [1.16.0] - 2021-09-29
 
 ### Changed
 
-- Removed feature to send ESI errors as auth notifications. Turns out that many ESI errors are just temporary and do not result in a permanent degradion of ESI functionality. Reporting those errors as auth notifications has therefore little real value. Note that all occuring ESI errors will continue to be reported in the usual errors logs (e.g. extensions.log)
+- Removed feature to send ESI errors as auth notifications. Turns out that many ESI errors are just temporary and do not result in a permanent degrading of ESI functionality. Reporting those errors as auth notifications has therefore little real value. Note that all occurring ESI errors will continue to be reported in the usual errors logs (e.g. extensions.log)
 
 - Removed feature to send Discord webhook errors as aut notifications. Note that those errors will continue continue to be reported in the usual errors logs (e.g. extensions.log)
 
 - Removed setting: STRUCTURES_NOTIFY_THROTTLED_TIMEOUT
 
-- Structure refuled notifications for Upwell structures (but not POSes) have shown to work perfectly and are no longer considered experimental.
+- Structure refueled notifications for Upwell structures (but not POSes) have shown to work perfectly and are no longer considered experimental.
 
 ## [1.15.0] - 2021-08-17
 
@@ -728,14 +770,14 @@ Thanks @ppfeufer for your contribution
 ### Added
 
 - Improved response time for new notifications when using multiple sync characters per owner (#53)
-- Improved resilence of structure and notification sync when using multiple characters per owner
+- Improved resilience of structure and notification sync when using multiple characters per owner
 
 > Hint:<br>For more details on how to setup multiple sync characters please check out: [Multiple Sync Characters](https://gitlab.com/ErikKalkoken/aa-structures#multiple-sync-characters)
 
 ### Change
 
 - New setting STRUCTURES_NOTIFY_THROTTLED_TIMEOUT to configure how often issue related auth notifications are sent
-- Default for repearting issue related auth notifications to users and admins reduced to 1 hour
+- Default for repeating issue related auth notifications to users and admins reduced to 1 hour
 
 ### Fixed
 
@@ -776,7 +818,7 @@ Thanks @ppfeufer for your contribution
 
 ### Changed
 
-- Will now check if ESI is available before updating structures or fetching notifications. This should signifanctly reduce the amount of ESI exception during the daily downtime.
+- Will now check if ESI is available before updating structures or fetching notifications. This should significantly reduce the amount of ESI exception during the daily downtime.
 
 ## [1.12.0] - 2021-05-22
 

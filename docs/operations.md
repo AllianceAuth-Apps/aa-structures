@@ -39,11 +39,11 @@ Configure your AA settings (`local.py`) as follows:
 ```python
 CELERYBEAT_SCHEDULE['structures_update_all_structures'] = {
     'task': 'structures.tasks.update_all_structures',
-    'schedule': crontab(minute='*/30'),
+    'schedule': 1800,
 }
 CELERYBEAT_SCHEDULE['structures_fetch_all_notifications'] = {
     'task': 'structures.tasks.fetch_all_notifications',
-    'schedule': crontab(minute='*/5'),
+    'schedule': 300,
 }
 ```
 

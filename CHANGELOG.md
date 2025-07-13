@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Update notes
 
-TL~DR: Please update the configuration of Structures' periodic tasks in your local settings as described below.
+**TL~DR**: Please update the configuration of Structures' periodic tasks in your local settings as described below.
 
 #### Context
 
@@ -38,6 +38,8 @@ CELERYBEAT_SCHEDULE['structures_fetch_all_notifications'] = {
     'schedule': 300,
 }
 ```
+
+Please make sure to restart your AA instance so the changes can take effect.
 
 >**Note**:<br>Structures will generate a Django warning until this important configuration change has been completed.
 

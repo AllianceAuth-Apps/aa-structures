@@ -11,7 +11,7 @@ def structures_config_check(app_configs, **kwargs):  # pylint: disable=W0613
     """structures_config_check is a Django check that verifies that all periodic tasks
     have been configured correctly in settings.
     """
-    if not settings.CELERYBEAT_SCHEDULE:
+    if not hasattr(settings, "CELERYBEAT_SCHEDULE"):
         return []
 
     warnings = []
@@ -36,7 +36,7 @@ def _verify_task_config(warnings: list, name: str, obj: dict, task_name: str):
     warnings.append(
         Warning(
             (
-                "periodic task has deprecated schedule: "
+                "Periodic task has deprecated schedule: "
                 f'CELERYBEAT_SCHEDULE["{name}"]'
             ),
             hint=(

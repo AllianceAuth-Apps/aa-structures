@@ -44,6 +44,9 @@ def update_all_structures():
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def update_sov_map():
     """Update sovereignty map from ESI."""
+    if not fetch_esi_status().is_ok:
+        logger.warning("ESI currently not available. Aborting.")
+        return
     EveSovereigntyMap.objects.update_or_create_all_from_esi()
 
 

@@ -3,6 +3,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
+from app_utils.esi import EsiStatus
 from app_utils.testdata_factories import UserFactory
 from app_utils.testing import NoSocketsTestCase, generate_invalid_pk
 
@@ -316,6 +317,7 @@ class TestUpdateNotificationsStructureRelations(NoSocketsTestCase):
         self.assertEqual(result, 0)
 
 
+@patch(MODULE_PATH + ".fetch_esi_status", lambda: EsiStatus(True))
 class TestOtherTasks(NoSocketsTestCase):
     @patch(
         MODULE_PATH + ".EveSovereigntyMap.objects.update_or_create_all_from_esi",

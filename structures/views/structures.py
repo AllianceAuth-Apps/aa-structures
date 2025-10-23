@@ -286,9 +286,11 @@ class Slot(IntEnum):
         try:
             slot_num = type_attributes[self.value]
             my_id = id_map[Slot(self.value)]
-            return static(f"structures/img/panel/{slot_num}{my_id}.png")
         except KeyError:
             return ""
+        if slot_num > 5 and self.value == self.SERVICE:
+            slot_num = 0
+        return static(f"structures/img/panel/{slot_num}{my_id}.png")
 
 
 @login_required

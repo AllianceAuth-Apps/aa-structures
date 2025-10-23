@@ -3,5 +3,5 @@
 # pylint: disable = invalid-name
 default_app_config = "structures.apps.StructuresConfig"
 
-__version__ = "3.2.1a1"
+__version__ = "3.2.1"
 __title__ = "Structures"

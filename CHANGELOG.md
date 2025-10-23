@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.2.1] - 2025-10-23
+
+### Fixed
+
+- Missing static file when showing fitting for Sotiyo (#118)
+
 ## [3.2.0] - 2025-10-12
 
 ### Changed

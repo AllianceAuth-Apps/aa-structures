@@ -9,6 +9,8 @@ from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 from eveuniverse.models import EveEntity, EveType
 
+from app_utils.django import app_labels
+
 
 def hours_until_deadline(
     deadline: dt.datetime, start: Optional[dt.datetime] = None
@@ -72,3 +74,13 @@ def floating_icon_with_text_html(
 def bootstrap5_label_html(text: str, label: str = "default") -> str:
     """Return HTML for a Bootstrap 5 label."""
     return format_html('<span class="badge text-bg-{}">{}</span>', label, text)
+
+
+def is_moonmining_installed() -> bool:
+    """Checks if the aa-moonmining app is installed"""
+    return "moonmining" in app_labels()
+
+
+def is_metenox_installed() -> bool:
+    """Checks if the aa-metenox app is installed"""
+    return "metenox" in app_labels()

@@ -22,6 +22,7 @@ from app_utils.logging import LoggerAddTag
 
 from . import __title__, app_settings, tasks
 from .core.notification_types import NotificationType
+from .helpers import is_metenox_installed, is_moonmining_installed
 from .models import (
     FuelAlert,
     FuelAlertConfig,
@@ -1092,7 +1093,7 @@ class WebhookAdmin(admin.ModelAdmin):
         (
             None,
             {
-                "fields": (
+                "fields": [
                     "name",
                     "url",
                     "notes",
@@ -1101,7 +1102,8 @@ class WebhookAdmin(admin.ModelAdmin):
                     "ping_groups",
                     "is_active",
                     "is_default",
-                ),
+                    "show_moons_values",
+                ],
             },
         ),
         (
@@ -1141,6 +1143,18 @@ class WebhookAdmin(admin.ModelAdmin):
                 ),
             ),
         )
+
+    def get_fieldsets(self, request, obj=...):
+        """
+        Artificially hides the `show_moons_values` parameter from the admin if none of the applications that could
+        populate the field are installed.
+
+        Note: due to python's reference system the remove call will remove "show_moons_values" from the attribute directly.
+        """
+        fieldsets = super().get_fieldsets(request, obj)
+        if not (is_moonmining_installed() or is_metenox_installed()):
+            fieldsets[0][1]["fields"].remove("show_moons_values")
+        return fieldsets
 
     @admin.display(description=_("ping groups"))
     def _ping_groups(self, obj: Webhook):

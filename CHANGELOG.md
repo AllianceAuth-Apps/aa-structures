@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [4.0.0] - TBD
+
+This new release adds support for ESI rate limits and contains breaking changes.
+
+### Changed
+
+- BREAKING CHANGE: Dropped support for Python 3.8, 3.9
+- Added support for ESI rate limits
+- Added support for Python 3.13
+
 ## [3.2.2] - 2025-10-29
 
 ### Fixed

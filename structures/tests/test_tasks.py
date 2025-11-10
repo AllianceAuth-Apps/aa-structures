@@ -3,9 +3,12 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from app_utils.esi import EsiStatus
 from app_utils.testdata_factories import UserFactory
-from app_utils.testing import NoSocketsTestCase, generate_invalid_pk
+from app_utils.testing import (
+    NoSocketsTestCase,
+    generate_invalid_pk,
+    reset_celery_once_locks,
+)
 
 from structures import tasks
 from structures.core.notification_types import NotificationType
@@ -49,12 +52,13 @@ class TestSendMessagesForWebhook(TestCase):
 
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 @patch(MODULE_PATH + ".Owner.update_structures_esi", spec=True)
-class TestUpdateStructuresEsi(NoSocketsTestCase):
+class TestUpdateStructuresEsi(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
+        reset_celery_once_locks("structures")
 
     def test_call_structure_update_with_owner_only(self, mock_update_structures_esi):
         """TODO: Investigate how to call the top level method that contains the chains()"""
@@ -85,12 +89,13 @@ class TestUpdateStructuresEsi(NoSocketsTestCase):
 
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 @patch(MODULE_PATH + ".update_structures_for_owner", spec=True)
-class TestUpdateStructuresForOwner(NoSocketsTestCase):
+class TestUpdateStructuresForOwner(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
+        reset_celery_once_locks("structures")
 
     def test_can_update_structures_for_all_owners(
         self, mock_update_structures_for_owner
@@ -117,19 +122,22 @@ class TestUpdateStructuresForOwner(NoSocketsTestCase):
         self.assertSetEqual(owner_pks, {self.owner.pk})
 
 
+# TODO: Investigate how to call the top level method that contains the chains()
+
+
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
-class TestUpdateOwnerAsset(NoSocketsTestCase):
+class TestUpdateOwnerAsset(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user, is_alliance_main=True)
+        reset_celery_once_locks("structures")
 
     @patch(MODULE_PATH + ".Owner.update_asset_esi")
     def test_call_structure_asset_update_with_owner_and_user(
         self, mock_update_asset_esi
     ):
-        """TODO: Investigate how to call the top level method that contains the chains()"""
         tasks.update_structures_assets_for_owner(self.owner.pk, self.user.pk)
         first, _ = mock_update_asset_esi.call_args
         self.assertEqual(first[0], self.user)
@@ -138,19 +146,14 @@ class TestUpdateOwnerAsset(NoSocketsTestCase):
     def test_call_structure_asset_update_with_owner_and_ignores_invalid_user(
         self, mock_update_asset_esi
     ):
-        """TODO: Investigate how to call the top level method that contains the chains()"""
         tasks.update_structures_assets_for_owner(
             self.owner.pk, generate_invalid_pk(User)
         )
         first, _ = mock_update_asset_esi.call_args
         self.assertIsNone(first[0])
 
-    @override_settings(
-        CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
-    )
     def test_raises_exception_if_owner_is_unknown(self):
         with self.assertRaises(Owner.DoesNotExist):
-            """TODO: Investigate how to call the top level method that contains the chains()"""
             tasks.update_structures_assets_for_owner(
                 owner_pk=generate_invalid_pk(Owner)
             )
@@ -317,7 +320,6 @@ class TestUpdateNotificationsStructureRelations(NoSocketsTestCase):
         self.assertEqual(result, 0)
 
 
-@patch(MODULE_PATH + ".fetch_esi_status", lambda: EsiStatus(True))
 class TestOtherTasks(NoSocketsTestCase):
     @patch(
         MODULE_PATH + ".EveSovereigntyMap.objects.update_or_create_all_from_esi",

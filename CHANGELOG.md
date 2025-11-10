@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [4.0.0] - TBD
 
-This new release adds support for ESI rate limits and contains breaking changes.
+This release adds basic support for ESI rate limits and contains breaking changes.
 
 ### Changed
 

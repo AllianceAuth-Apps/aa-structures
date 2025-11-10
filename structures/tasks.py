@@ -85,7 +85,7 @@ def update_structures_for_owner(owner_pk: int, user_pk: Optional[int] = None):
 @shared_task(
     bind=True,
     base=QueueOnce,
-    once={"keys": ["owner_pk"]},
+    once={"keys": ["owner_pk"], "graceful": True},
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
 def update_structures_esi_for_owner(
@@ -103,7 +103,7 @@ def update_structures_esi_for_owner(
 @shared_task(
     bind=True,
     base=QueueOnce,
-    once={"keys": ["owner_pk"]},
+    once={"keys": ["owner_pk"], "graceful": True},
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
 def update_structures_assets_for_owner(
@@ -160,7 +160,7 @@ def process_notifications_for_owner(owner_pk: int, user_pk: Optional[int] = None
 @shared_task(
     bind=True,
     base=QueueOnce,
-    once={"keys": ["owner_pk"]},
+    once={"keys": ["owner_pk"], "graceful": True},
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
 def fetch_notification_for_owner(
@@ -238,7 +238,7 @@ def send_queued_messages_for_webhooks(webhooks: Iterable[Webhook]):
             )
 
 
-@shared_task(base=QueueOnce)
+@shared_task(base=QueueOnce, once={"keys": ["owner_pk"], "webhook_pk": True})
 def send_messages_for_webhook(webhook_pk: int) -> None:
     """Send all currently queued messages for given webhook to Discord."""
     Webhook.objects.send_queued_messages_for_webhook(webhook_pk)

@@ -10,7 +10,7 @@ from django.db.models import QuerySet
 from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
-from app_utils.esi import retry_task_on_esi_issue
+from app_utils.esi import retry_task_on_esi_error_and_offline
 from app_utils.logging import LoggerAddTag
 
 from . import __title__
@@ -43,7 +43,7 @@ def update_all_structures():
 @shared_task(bind=True, base=QueueOnce, time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def update_sov_map(self: Task):
     """Update sovereignty map from ESI."""
-    with retry_task_on_esi_issue(self):
+    with retry_task_on_esi_error_and_offline(self):
         EveSovereigntyMap.objects.update_or_create_all_from_esi()
 
 
@@ -96,7 +96,7 @@ def update_structures_esi_for_owner(
     Optionally notify user_pk about the result.
     """
     owner = Owner.objects.get(pk=owner_pk)
-    with retry_task_on_esi_issue(self):
+    with retry_task_on_esi_error_and_offline(self):
         owner.update_structures_esi(_get_user(user_pk))
 
 
@@ -114,7 +114,7 @@ def update_structures_assets_for_owner(
     Optionally notify user_pk about the result.
     """
     owner = Owner.objects.get(pk=owner_pk)
-    with retry_task_on_esi_issue(self):
+    with retry_task_on_esi_error_and_offline(self):
         owner.update_asset_esi(_get_user(user_pk))
 
 
@@ -171,7 +171,7 @@ def fetch_notification_for_owner(
     Optionally notify user_pk about the result.
     """
     owner = Owner.objects.get(pk=owner_pk)
-    with retry_task_on_esi_issue(self):
+    with retry_task_on_esi_error_and_offline(self):
         owner.fetch_notifications_esi(_get_user(user_pk))
 
 

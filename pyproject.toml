@@ -26,14 +26,14 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
 dependencies = [
-    "allianceauth-app-utils>=1.27",
+    "allianceauth-app-utils>=1.29.1",
     "allianceauth>=4,<5",
     "dhooks-lite>=1.0",
-    "django-eveuniverse>=1.5.2",
+    "django-eveuniverse>=1.6",
     "django-multiselectfield",
     "django-navhelper",
     "pytz!=2022.2",
-    "redis-simple-mq>=1.0",
+    "redis-simple-mq>=1.1",
     "humanize>=4.7",
 ]
 

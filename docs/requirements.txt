@@ -1,5 +1,5 @@
 sphinx
-sphinx>=5
-sphinx_rtd_theme>=1.2
-myst_parser>=0.18
-sphinx-copybutton>=0.5.2
+myst_parser
+sphinx_rtd_theme
+sphinx-copybutton
+docutils>=0.17

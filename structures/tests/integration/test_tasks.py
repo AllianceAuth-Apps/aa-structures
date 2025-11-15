@@ -10,8 +10,8 @@ from django.utils.timezone import now
 from eveuniverse.models import EvePlanet, EveSolarSystem
 
 from app_utils.django import app_labels
-from app_utils.esi import EsiStatus
 from app_utils.esi_testing import EsiClientStub, EsiEndpoint
+from app_utils.testing import reset_celery_once_locks
 
 from structures import tasks
 from structures.core.notification_types import NotificationType
@@ -54,7 +54,6 @@ TASKS_PATH = "structures.tasks"
 @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
 @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
 @patch("structures.webhooks.core.dhooks_lite.Webhook.execute", spec=True)
-@patch(TASKS_PATH + ".fetch_esi_status", lambda: EsiStatus(True, 99, 60))
 @patch(MANAGERS_PATH + ".esi")
 @patch(OWNERS_PATH + ".esi")
 class TestTasks(TestCase):
@@ -62,6 +61,7 @@ class TestTasks(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         load_eveuniverse()
+        reset_celery_once_locks("structures")
 
     def test_should_fetch_new_upwell_structure_from_esi(
         self, mock_esi_2, mock_esi, mock_execute

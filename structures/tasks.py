@@ -2,14 +2,15 @@
 
 from typing import Iterable, Optional
 
-from celery import chain, shared_task
+from celery import Task, chain, shared_task
 
 from django.contrib.auth.models import User
+from django.db.models import QuerySet
 
 from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
-from app_utils.esi import fetch_esi_status
+from app_utils.esi import retry_task_on_esi_error_and_offline
 from app_utils.logging import LoggerAddTag
 
 from . import __title__
@@ -19,6 +20,7 @@ from .models import (
     EveSovereigntyMap,
     FuelAlertConfig,
     JumpFuelAlertConfig,
+    Notification,
     Owner,
     Webhook,
 )
@@ -35,19 +37,14 @@ def update_all_structures():
     Main task for starting regular update of all structures
     and related data from ESI.
     """
-    if not fetch_esi_status().is_ok:
-        logger.warning("ESI currently not available. Aborting.")
-        return
     chain(update_sov_map.si(), update_structures.si()).delay()
 
 
-@shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def update_sov_map():
+@shared_task(bind=True, base=QueueOnce, time_limit=STRUCTURES_TASKS_TIME_LIMIT)
+def update_sov_map(self: Task):
     """Update sovereignty map from ESI."""
-    if not fetch_esi_status().is_ok:
-        logger.warning("ESI currently not available. Aborting.")
-        return
-    EveSovereigntyMap.objects.update_or_create_all_from_esi()
+    with retry_task_on_esi_error_and_offline(self):
+        EveSovereigntyMap.objects.update_or_create_all_from_esi()
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
@@ -68,7 +65,7 @@ def update_structures():
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def update_all_for_owner(owner_pk, user_pk: Optional[int] = None):
+def update_all_for_owner(owner_pk: int, user_pk: Optional[int] = None):
     """Update structures and notifications for owner from ESI."""
     chain(
         update_structures_for_owner.si(owner_pk, user_pk),
@@ -77,44 +74,64 @@ def update_all_for_owner(owner_pk, user_pk: Optional[int] = None):
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def update_structures_for_owner(owner_pk, user_pk: Optional[int] = None):
+def update_structures_for_owner(owner_pk: int, user_pk: Optional[int] = None):
     """Fetch all structures for owner and update related corp assets from ESI."""
-    if not fetch_esi_status().is_ok:
-        logger.warning("ESI currently not available. Aborting.")
-    else:
-        chain(
-            update_structures_esi_for_owner.si(owner_pk, user_pk),
-            update_structures_assets_for_owner.si(owner_pk, user_pk),
-        ).delay()
+    chain(
+        update_structures_esi_for_owner.si(owner_pk, user_pk),
+        update_structures_assets_for_owner.si(owner_pk, user_pk),
+    ).delay()
 
 
-@shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def update_structures_esi_for_owner(owner_pk, user_pk: Optional[int] = None):
-    """Update all structures for owner for ESI."""
+@shared_task(
+    bind=True,
+    base=QueueOnce,
+    once={"keys": ["owner_pk"], "graceful": True},
+    time_limit=STRUCTURES_TASKS_TIME_LIMIT,
+)
+def update_structures_esi_for_owner(
+    self: Task, owner_pk: int, user_pk: Optional[int] = None
+):
+    """Update all structures for an owner from ESI.
+
+    Optionally notify user_pk about the result.
+    """
     owner = Owner.objects.get(pk=owner_pk)
-    owner.update_structures_esi(_get_user(user_pk))
+    with retry_task_on_esi_error_and_offline(self):
+        owner.update_structures_esi(_get_user(user_pk))
 
 
-@shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def update_structures_assets_for_owner(owner_pk, user_pk: Optional[int] = None):
-    """Update all related assets for owner."""
+@shared_task(
+    bind=True,
+    base=QueueOnce,
+    once={"keys": ["owner_pk"], "graceful": True},
+    time_limit=STRUCTURES_TASKS_TIME_LIMIT,
+)
+def update_structures_assets_for_owner(
+    self: Task, owner_pk: int, user_pk: Optional[int] = None
+):
+    """Update all related assets for an owner from ESI.
+
+    Optionally notify user_pk about the result.
+    """
     owner = Owner.objects.get(pk=owner_pk)
-    owner.update_asset_esi(_get_user(user_pk))
+    with retry_task_on_esi_error_and_offline(self):
+        owner.update_asset_esi(_get_user(user_pk))
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def fetch_all_notifications():
     """Fetch notifications for all owners and send new fuel notifications."""
-    for owner in Owner.objects.all():
-        if owner.is_active:
-            owner.update_is_up()
-            process_notifications_for_owner.apply_async(
-                kwargs={"owner_pk": owner.pk}, priority=TASK_PRIORITY_HIGH
-            )
+    for owner in Owner.objects.filter(is_active=True):
+        owner.update_is_up()
+        process_notifications_for_owner.apply_async(
+            kwargs={"owner_pk": owner.pk}, priority=TASK_PRIORITY_HIGH
+        )
+
     for config_pk in FuelAlertConfig.objects.filter(is_enabled=True).values_list(
         "pk", flat=True
     ):
         send_structure_fuel_notifications_for_config.delay(config_pk)
+
     for config_pk in JumpFuelAlertConfig.objects.filter(is_enabled=True).values_list(
         "pk", flat=True
     ):
@@ -124,9 +141,6 @@ def fetch_all_notifications():
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def process_notifications_for_owner(owner_pk: int, user_pk: Optional[int] = None):
     """Fetch all notification for owner from ESI and processes them."""
-    if not fetch_esi_status().is_ok:
-        logger.warning("ESI currently not available. Aborting.")
-        return
     chain(
         fetch_notification_for_owner.si(owner_pk=owner_pk, user_pk=user_pk).set(
             priority=TASK_PRIORITY_HIGH
@@ -143,11 +157,22 @@ def process_notifications_for_owner(owner_pk: int, user_pk: Optional[int] = None
     ).delay()
 
 
-@shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def fetch_notification_for_owner(owner_pk: int, user_pk: Optional[int] = None):
-    """Fetch notifications from ESI."""
+@shared_task(
+    bind=True,
+    base=QueueOnce,
+    once={"keys": ["owner_pk"], "graceful": True},
+    time_limit=STRUCTURES_TASKS_TIME_LIMIT,
+)
+def fetch_notification_for_owner(
+    self: Task, owner_pk: int, user_pk: Optional[int] = None
+):
+    """Fetch notifications from ESI.
+
+    Optionally notify user_pk about the result.
+    """
     owner = Owner.objects.get(pk=owner_pk)
-    owner.fetch_notifications_esi(_get_user(user_pk))
+    with retry_task_on_esi_error_and_offline(self):
+        owner.fetch_notifications_esi(_get_user(user_pk))
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
@@ -157,7 +182,7 @@ def update_notifications_structure_relations(owner_pk: int) -> int:
     Returns number of updated notifications.
     """
     owner = Owner.objects.get(pk=owner_pk)
-    notif_need_update_qs = owner.notification_set.filter(
+    notif_need_update_qs: QuerySet[Notification] = owner.notification_set.filter(
         notif_type__in=NotificationType.structure_related(), structures__isnull=True
     )
     notif_need_update_count = notif_need_update_qs.count()
@@ -213,7 +238,7 @@ def send_queued_messages_for_webhooks(webhooks: Iterable[Webhook]):
             )
 
 
-@shared_task(base=QueueOnce)
+@shared_task(base=QueueOnce, once={"keys": ["owner_pk"], "webhook_pk": True})
 def send_messages_for_webhook(webhook_pk: int) -> None:
     """Send all currently queued messages for given webhook to Discord."""
     Webhook.objects.send_queued_messages_for_webhook(webhook_pk)

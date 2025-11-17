@@ -27,26 +27,28 @@ MODULE_PATH = "structures.tasks"
 MODULE_PATH_MODELS_OWNERS = "structures.models.owners"
 
 
+@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 @patch(MODULE_PATH + ".Webhook.send_queued_messages", spec=True)
 class TestSendMessagesForWebhook(TestCase):
     @classmethod
-    def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
+    def setUpClass(cls):
         super().setUpClass()
         cls.webhook = WebhookFactory()
+        reset_celery_once_locks("structures")
 
     def test_normal(self, mock_send_queued_messages):
-        tasks.send_messages_for_webhook(self.webhook.pk)
+        tasks.send_messages_for_webhook.delay(self.webhook.pk)
         self.assertEqual(mock_send_queued_messages.call_count, 1)
 
     def test_invalid_pk(self, mock_send_queued_messages):
-        tasks.send_messages_for_webhook(generate_invalid_pk(Webhook))
+        tasks.send_messages_for_webhook.delay(generate_invalid_pk(Webhook))
         self.assertEqual(mock_send_queued_messages.call_count, 0)
 
     def test_disabled_webhook(self, mock_send_queued_messages):
         self.webhook.is_active = False
         self.webhook.save()
 
-        tasks.send_messages_for_webhook(self.webhook.pk)
+        tasks.send_messages_for_webhook.delay(self.webhook.pk)
         self.assertEqual(mock_send_queued_messages.call_count, 0)
 
 
@@ -320,14 +322,15 @@ class TestUpdateNotificationsStructureRelations(NoSocketsTestCase):
         self.assertEqual(result, 0)
 
 
-class TestOtherTasks(NoSocketsTestCase):
+@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
+class TestOtherTasks(TestCase):
     @patch(
         MODULE_PATH + ".EveSovereigntyMap.objects.update_or_create_all_from_esi",
         spec=True,
     )
     def test_should_call_update_sov_map_from_esi(self, mock_update_from_esi):
         # when
-        tasks.update_sov_map()
+        tasks.update_sov_map.delay()
         # then
         self.assertTrue(mock_update_from_esi.called)
 
@@ -336,7 +339,7 @@ class TestOtherTasks(NoSocketsTestCase):
         # given
         owner = OwnerFactory()
         # when
-        tasks.fetch_notification_for_owner(owner.pk)
+        tasks.fetch_notification_for_owner.delay(owner.pk)
         # then
         self.assertTrue(mock_fetch_notifications_esi.called)
 
@@ -348,7 +351,7 @@ class TestOtherTasks(NoSocketsTestCase):
         # given
         owner = OwnerFactory()
         # when
-        tasks.send_new_notifications_for_owner(owner.pk)
+        tasks.send_new_notifications_for_owner.delay(owner.pk)
         # then
         self.assertTrue(mock_send_new_notifications.called)
         self.assertTrue(mock_send_queued_messages_for_webhooks.called)
@@ -361,7 +364,7 @@ class TestOtherTasks(NoSocketsTestCase):
         # given
         config = FuelAlertConfigFactory()
         # when
-        tasks.send_structure_fuel_notifications_for_config(config.pk)
+        tasks.send_structure_fuel_notifications_for_config.delay(config.pk)
         # then
         self.assertTrue(mock_send_new_notifications.called)
         self.assertTrue(mock_send_queued_messages_for_webhooks.called)
@@ -374,7 +377,7 @@ class TestOtherTasks(NoSocketsTestCase):
         # given
         config = JumpFuelAlertConfigFactory()
         # when
-        tasks.send_jump_fuel_notifications_for_config(config.pk)
+        tasks.send_jump_fuel_notifications_for_config.delay(config.pk)
         # then
         self.assertTrue(mock_send_new_notifications.called)
         self.assertTrue(mock_send_queued_messages_for_webhooks.called)

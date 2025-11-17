@@ -238,7 +238,7 @@ def send_queued_messages_for_webhooks(webhooks: Iterable[Webhook]):
             )
 
 
-@shared_task(base=QueueOnce, once={"keys": ["owner_pk"], "webhook_pk": True})
+@shared_task(base=QueueOnce, time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def send_messages_for_webhook(webhook_pk: int) -> None:
     """Send all currently queued messages for given webhook to Discord."""
     Webhook.objects.send_queued_messages_for_webhook(webhook_pk)

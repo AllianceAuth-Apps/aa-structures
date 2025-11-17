@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [3.3.1] - 2025-11-17
+
+### Fixed
+
+- Forwarding messages to Discord not working (#125)
+
 ## [3.3.0] - 2025-11-15
 
 ### Changed

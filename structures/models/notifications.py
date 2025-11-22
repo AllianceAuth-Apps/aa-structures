@@ -107,6 +107,14 @@ class Webhook(WebhookBase):
         verbose_name=_("ping groups"),
         help_text=_("Groups to be pinged for each notification - "),
     )
+    show_moons_values = models.BooleanField(
+        default=False,
+        verbose_name=_("Show moons values on pings"),
+        help_text=_(
+            "Displays on the pings the monthly value of the athanor/metenox. "
+            "Data is populated from the moonmining/metenox applications."
+        ),
+    )
     objects = WebhookManager()
 
     class Meta:

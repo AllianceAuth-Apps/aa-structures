@@ -1,4 +1,5 @@
 import datetime as dt
+from copy import deepcopy
 from unittest.mock import patch
 
 from django.contrib import admin
@@ -683,6 +684,11 @@ class TestWebhookAdmin(TestCase):
         super().setUpClass()
         cls.modeladmin = WebhookAdmin(model=Webhook, admin_site=AdminSite())
         cls.user = SuperuserFactory()
+        cls.default_fieldset = deepcopy(WebhookAdmin.fieldsets)
+
+    def setUp(self):
+        # Avoid having to deepcopy the fieldsets everytime `get_fieldsets` is called
+        WebhookAdmin.fieldsets = deepcopy(self.default_fieldset)
 
     @patch(MODULE_PATH + ".WebhookAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".tasks.send_test_notifications_to_webhook")
@@ -738,3 +744,29 @@ class TestWebhookAdmin(TestCase):
         self.assertEqual(r.status_code, 302)
         webhook.refresh_from_db()
         self.assertIn(owner, webhook.owners.all())
+
+    @patch(MODULE_PATH + ".is_metenox_installed")
+    @patch(MODULE_PATH + ".is_moonmining_installed")
+    def test_show_moons_values_visible(
+        self, mock_is_moonmining_installed, mock_is_metenox_installed
+    ):
+        # given
+        mock_is_moonmining_installed.return_value = True
+        mock_is_metenox_installed.return_value = True
+        # when
+        fieldsets = self.modeladmin.get_fieldsets(MockRequest(self.user), None)
+        # then
+        self.assertIn("show_moons_values", str(fieldsets))
+
+    @patch(MODULE_PATH + ".is_metenox_installed")
+    @patch(MODULE_PATH + ".is_moonmining_installed")
+    def test_show_moons_values_not_visible(
+        self, mock_is_moonmining_installed, mock_is_metenox_installed
+    ):
+        # given
+        mock_is_moonmining_installed.return_value = False
+        mock_is_metenox_installed.return_value = False
+        # when
+        fieldsets = self.modeladmin.get_fieldsets(MockRequest(self.user), None)
+        # then
+        self.assertNotIn("show_moons_values", str(fieldsets))

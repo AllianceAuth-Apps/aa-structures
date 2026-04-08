@@ -143,7 +143,7 @@ for corporation_id in tqdm(corporation_ids, desc="Creating owners"):
     try:
         corporation = client.Corporation.get_corporations_corporation_id(
             corporation_id=corporation_id
-        ).result()
+        ).results(use_etag=False)
         try:
             EveAllianceInfo.objects.get(alliance_id=corporation["alliance_id"])
         except EveAllianceInfo.DoesNotExist:

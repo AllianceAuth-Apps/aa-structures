@@ -35,7 +35,7 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 class EveSovereigntyMapManager(models.Manager):
     def update_or_create_all_from_esi(self):
         """Update or create complete sovereignty map from ESI."""
-        sov_map = esi.client.Sovereignty.get_sovereignty_map().results()
+        sov_map = esi.client.Sovereignty.GetSovereigntyMap().results(use_etag=False)
         logger.info("Retrieved sovereignty map from ESI")
         last_updated = now()
         obj_list = []
@@ -373,9 +373,9 @@ class StructureManagerBase(models.Manager):
         if token is None:
             raise ValueError("Can not fetch structure without token")
 
-        structure_info = esi.client.Universe.get_universe_structures_structure_id(
-            structure_id=id, token=token.valid_access_token()
-        ).results()
+        structure_info = esi.client.Universe.GetUniverseStructuresStructureId(
+            structure_id=id, token=token
+        ).results(use_etag=False)
         structure = {
             "structure_id": id,
             "name": self.model.extract_name_from_esi_response(structure_info["name"]),

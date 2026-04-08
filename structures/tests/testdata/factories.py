@@ -8,7 +8,13 @@ import yaml
 
 from django.utils.text import slugify
 from django.utils.timezone import now
-from eveuniverse.models import EveEntity, EveMoon, EvePlanet, EveSolarSystem, EveType
+from eveuniverse.models import EveEntity, EvePlanet, EveSolarSystem, EveType
+from eveuniverse.tests.testdata.factories_2 import (
+    EveGroupFactory,
+    EveMoonFactory,
+    EveSolarSystemFactory,
+    EveTypeFactory,
+)
 
 from allianceauth.eveonline.models import EveCharacter
 from app_utils.testdata_factories import (
@@ -19,7 +25,7 @@ from app_utils.testdata_factories import (
     UserMainFactory,
 )
 
-from structures.constants import EveGroupId, EveTypeId
+from structures.constants import EveCategoryId, EveGroupId
 from structures.core.notification_types import NotificationType
 from structures.models import (
     EveSovereigntyMap,
@@ -39,6 +45,7 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
+from structures.tests.testdata.constants import EveTypeId
 
 # from .helpers import datetime_to_ldap  # TODO: Use for notifications
 
@@ -170,7 +177,7 @@ class WebhookFactory(
         model = Webhook
         django_get_or_create = ("name",)
 
-    name = factory.Sequence(lambda n: f"Generated webhook #{n+1}")
+    name = factory.Sequence(lambda n: f"Generated webhook #{n + 1}")
     url = factory.LazyAttribute(lambda o: f"http://www.example.com/{slugify(o.name)}")
     notes = factory.Faker("sentence")
 
@@ -254,6 +261,34 @@ class OwnerCharacterFactory(
         return user.profile.main_character.character_ownership
 
 
+class CitadelTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.STRUCTURE,
+        eve_category__name="Structure",
+        id=EveGroupId.CITADEL,
+        name="Citadel",
+    )
+
+
+class RefineryTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.STRUCTURE,
+        eve_category__name="Structure",
+        id=EveGroupId.REFINERY,
+        name="Refinery",
+    )
+
+
+class QuantumCoreTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        id=EveGroupId.QUANTUM_CORES,
+        name="Quantum Cores",
+    )
+
+
 class StructureFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Structure]
 ):
@@ -261,11 +296,9 @@ class StructureFactory(
         model = Structure
         django_get_or_create = ("id",)
 
-    class Params:
-        eve_type_name = "Astrahus"
-        eve_solar_system_name = "Amamake"
-
     id = factory.Sequence(lambda n: 1_500_000_000_000 + n)
+    eve_type = factory.SubFactory(CitadelTypeFactory)
+    eve_solar_system = factory.SubFactory(EveSolarSystemFactory)
     fuel_expires_at = factory.LazyAttribute(lambda obj: now() + dt.timedelta(days=3))
     has_fitting = False
     has_core = True
@@ -276,14 +309,6 @@ class StructureFactory(
     position_y = factory.fuzzy.FuzzyFloat(-10_000_000_000_000, 10_000_000_000_000)
     position_z = factory.fuzzy.FuzzyFloat(-10_000_000_000_000, 10_000_000_000_000)
     state = Structure.State.SHIELD_VULNERABLE
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name=self.eve_type_name)
-
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return EveSolarSystem.objects.get(name=self.eve_solar_system_name)
 
     @factory.post_generation
     def webhooks(obj, create, extracted, **kwargs):
@@ -318,48 +343,31 @@ class StructureFactory(
         StructureItemFactory(
             structure=obj,
             location_flag=StructureItem.LocationFlag.QUANTUM_CORE_ROOM,
-            eve_type=EveType.objects.get(
-                name=f"{obj.eve_type.name} Upwell Quantum Core"
-            ),
+            eve_type=QuantumCoreTypeFactory(),
         )
 
 
 class RefineryFactory(StructureFactory):
-    class Params:
-        eve_moon_name = "Amamake IV - Moon 1"
+    eve_moon = factory.SubFactory(EveMoonFactory)
+    eve_type = factory.SubFactory(RefineryTypeFactory)
 
-    @factory.lazy_attribute
-    def eve_moon(self):
-        return EveMoon.objects.get(name=self.eve_moon_name)
 
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return self.eve_moon.eve_planet.eve_solar_system
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name="Athanor")
+class StarbaseTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.STARBASE,
+        eve_category__name="Starbase",
+        id=EveGroupId.CONTROL_TOWER,
+        name="Control Tower",
+    )
 
 
 class StarbaseFactory(StructureFactory):
-    class Params:
-        eve_moon_name = "Amamake II - Moon 1"
-
-    has_fitting = None
+    eve_moon = factory.SubFactory(EveMoonFactory)
+    eve_type = factory.SubFactory(StarbaseTypeFactory)
     has_core = None
+    has_fitting = None
     state = Structure.State.POS_ONLINE
-
-    @factory.lazy_attribute
-    def eve_moon(self):
-        return EveMoon.objects.get(name=self.eve_moon_name)
-
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return self.eve_moon.eve_planet.eve_solar_system
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name="Caldari Control Tower")
 
     @factory.post_generation
     def starbase_detail(obj, create, extracted, **kwargs):
@@ -417,11 +425,10 @@ class StarbaseDetailFuelFactory(
     class Params:
         eve_type_name = "Nitrogen Fuel Block"
 
+    eve_type = factory.SubFactory(
+        EveTypeFactory, name=factory.SelfAttribute("..eve_type_name")
+    )
     quantity = 1000
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name=self.eve_type_name)
 
 
 class PocoFactory(StructureFactory):
@@ -836,4 +843,9 @@ class RawNotificationFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict
     def text(self):
         if not self.data:
             return ""
+        return yaml.dump(self.data)
+        return yaml.dump(self.data)
+        if not self.data:
+            return ""
+        return yaml.dump(self.data)
         return yaml.dump(self.data)

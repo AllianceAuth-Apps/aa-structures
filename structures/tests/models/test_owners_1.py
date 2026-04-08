@@ -617,7 +617,9 @@ class TestOwnerDisableCharacters(NoSocketsTestCase):
         user = character.character_ownership.user
 
         # when
-        self.owner.disable_character(character=character, reason="dummy error")
+        self.owner.disable_character_with_error_threshold(
+            character=character, reason="dummy error"
+        )
 
         # then
         character.refresh_from_db()
@@ -640,7 +642,7 @@ class TestOwnerDisableCharacters(NoSocketsTestCase):
         character = OwnerCharacterFactory(owner=self.owner)
 
         # when
-        self.owner.disable_character(
+        self.owner.disable_character_with_error_threshold(
             character=character, reason="dummy error", max_allowed_errors=1
         )
         # then

@@ -15,10 +15,10 @@ from app_utils.testing import json_response_to_python
 import structures.views.status
 from structures.models import Owner, Structure
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveCharacterFactory,
     JumpGateFactory,
     OwnerFactory,
-    PocoFactory,
     SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
@@ -148,7 +148,7 @@ class TestStructureListDataFilterVariant(TestCase):
         cls.user = UserMainDefaultFactory()
         owner = OwnerFactory(user=cls.user)
         cls.structure = StructureFactory(owner=owner)
-        cls.poco = PocoFactory(owner=owner)
+        cls.poco = CustomsOfficeFactory(owner=owner)
         cls.skyhook = SkyhookFactory(owner=owner)
         cls.starbase = StarbaseFactory(owner=owner)
         cls.jump_gate = JumpGateFactory(owner=owner)
@@ -498,7 +498,7 @@ class TestStructurePowerModes(TestCase):
 
     def test_poco(self):
         # given
-        structure = PocoFactory(owner=self.owner)
+        structure = CustomsOfficeFactory(owner=self.owner)
         # when
         obj = self.display_data_for_structure(structure.id)
         self.assertEqual(obj["power_mode_str"], "")
@@ -773,7 +773,7 @@ class TestDetailsModal(TestCase):
 
     def test_should_load_poco_detail(self):
         # given
-        structure = PocoFactory(owner=self.owner)
+        structure = CustomsOfficeFactory(owner=self.owner)
         request = self.factory.get("/")
         request.user = self.user
         # when

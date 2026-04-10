@@ -37,8 +37,8 @@ from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from structures.constants import EveTypeId
 from structures.models import Owner, Structure, StructureService, StructureTag
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     JumpGateFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     WebhookFactory,
@@ -255,7 +255,7 @@ for i in tqdm(range(1, STRUCTURES_COUNT + 1), desc="Creating upwell structures")
         "last_online_at": last_online_at,
         "unanchors_at": unanchors_at,
     }
-    if eve_type.id == EveTypeId.JUMP_GATE:
+    if eve_type.id == EveTypeId.ANSIBLE_JUMP_BRIDGE:
         structure = JumpGateFactory(**params)
 
     else:
@@ -284,7 +284,7 @@ for i in tqdm(range(1, POCOS_COUNT + 1), desc="Creating pocos"):
     reinforce_hour = randrange(24)
     owner = get_random(owners)
 
-    structure = PocoFactory(
+    structure = CustomsOfficeFactory(
         owner=owner, eve_planet=eve_planet, reinforce_hour=reinforce_hour
     )
 

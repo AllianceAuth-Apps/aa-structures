@@ -32,7 +32,7 @@ from structures.app_settings import (  # STRUCTURES_NOTIFICATION_DISABLE_ESI_FUE
     STRUCTURES_NOTIFICATION_SET_AVATAR,
     STRUCTURES_REPORT_NPC_ATTACKS,
 )
-from structures.constants import EveCategoryId, EveCorporationId, EveTypeId
+from structures.constants import EveCategoryId, EveCorporationId, EveGroupId
 from structures.core.notification_types import NotificationType
 from structures.helpers import is_absolute_url
 from structures.managers import (
@@ -326,80 +326,73 @@ class NotificationBase(models.Model):
     def calc_related_structures(self) -> models.QuerySet[Structure]:
         """Identify structures this notification is related to.
 
-        Returns:
-        - structures if any found or empty list if there are no related structures
+        Returns query of matching structures or empty query.
         """
         if not self._parsed_text:
             return Structure.objects.none()
 
-        if self.notif_type in {
-            NotificationType.STRUCTURE_ONLINE,
-            NotificationType.STRUCTURE_FUEL_ALERT,
-            NotificationType.STRUCTURE_JUMP_FUEL_ALERT,
-            NotificationType.STRUCTURE_REFUELED_EXTRA,
-            NotificationType.STRUCTURE_SERVICES_OFFLINE,
-            NotificationType.STRUCTURE_WENT_LOW_POWER,
-            NotificationType.STRUCTURE_WENT_HIGH_POWER,
-            NotificationType.STRUCTURE_UNANCHORING,
-            NotificationType.STRUCTURE_UNDER_ATTACK,
-            NotificationType.STRUCTURE_LOST_SHIELD,
-            NotificationType.STRUCTURE_LOST_ARMOR,
-            NotificationType.STRUCTURE_DESTROYED,
-            NotificationType.OWNERSHIP_TRANSFERRED,
-            NotificationType.STRUCTURE_ANCHORING,
-            NotificationType.MOONMINING_EXTRACTION_STARTED,
-            NotificationType.MOONMINING_EXTRACTION_FINISHED,
-            NotificationType.MOONMINING_AUTOMATIC_FRACTURE,
-            NotificationType.MOONMINING_EXTRACTION_CANCELLED,
-            NotificationType.MOONMINING_LASER_FIRED,
-        }:
-            try:
-                structure_id = self._parsed_text["structureID"]
-            except KeyError:
-                qs = Structure.objects.none()
-            else:
-                qs = Structure.objects.filter(id=structure_id)
+        match self.notif_type:
+            case (
+                NotificationType.STRUCTURE_ONLINE
+                | NotificationType.STRUCTURE_FUEL_ALERT
+                | NotificationType.STRUCTURE_JUMP_FUEL_ALERT
+                | NotificationType.STRUCTURE_REFUELED_EXTRA
+                | NotificationType.STRUCTURE_SERVICES_OFFLINE
+                | NotificationType.STRUCTURE_WENT_LOW_POWER
+                | NotificationType.STRUCTURE_WENT_HIGH_POWER
+                | NotificationType.STRUCTURE_UNANCHORING
+                | NotificationType.STRUCTURE_UNDER_ATTACK
+                | NotificationType.STRUCTURE_LOST_SHIELD
+                | NotificationType.STRUCTURE_LOST_ARMOR
+                | NotificationType.STRUCTURE_DESTROYED
+                | NotificationType.OWNERSHIP_TRANSFERRED
+                | NotificationType.STRUCTURE_ANCHORING
+                | NotificationType.MOONMINING_EXTRACTION_STARTED
+                | NotificationType.MOONMINING_EXTRACTION_FINISHED
+                | NotificationType.MOONMINING_AUTOMATIC_FRACTURE
+                | NotificationType.MOONMINING_EXTRACTION_CANCELLED
+                | NotificationType.MOONMINING_LASER_FIRED
+            ):
+                try:
+                    structure_id = self._parsed_text["structureID"]
+                except KeyError:
+                    return Structure.objects.none()
 
-        elif self.notif_type == NotificationType.STRUCTURE_REINFORCEMENT_CHANGED:
-            try:
-                structure_ids = [
-                    structure_info[0]
-                    for structure_info in self._parsed_text["allStructureInfo"]
-                ]
-            except KeyError:
-                qs = Structure.objects.none()
-            else:
-                qs = Structure.objects.filter(id__in=structure_ids)
+                return Structure.objects.filter(id=structure_id)
 
-        elif self.notif_type in {
-            NotificationType.ORBITAL_ATTACKED,
-            NotificationType.ORBITAL_REINFORCED,
-        }:
-            try:
-                qs = Structure.objects.filter(
-                    eve_planet_id=self._parsed_text["planetID"],
-                    eve_type_id=self._parsed_text["typeID"],
-                )
-            except KeyError:
-                qs = Structure.objects.none()
+            case NotificationType.STRUCTURE_REINFORCEMENT_CHANGED:
+                try:
+                    structure_ids = [
+                        structure_info[0]
+                        for structure_info in self._parsed_text["allStructureInfo"]
+                    ]
+                except KeyError:
+                    return Structure.objects.none()
+                return Structure.objects.filter(id__in=structure_ids)
 
-        elif self.notif_type in {
-            NotificationType.TOWER_ALERT_MSG,
-            NotificationType.TOWER_RESOURCE_ALERT_MSG,
-            NotificationType.TOWER_REFUELED_EXTRA,
-        }:
-            try:
-                qs = Structure.objects.filter(
-                    eve_moon_id=self._parsed_text["moonID"],
-                    eve_type_id=self._parsed_text["typeID"],
-                )
-            except KeyError:
-                qs = Structure.objects.none()
+            case (
+                NotificationType.ORBITAL_ATTACKED | NotificationType.ORBITAL_REINFORCED
+            ):
+                try:
+                    return Structure.objects.filter_customs_offices().filter(
+                        eve_planet_id=self._parsed_text["planetID"]
+                    )
+                except KeyError:
+                    return Structure.objects.none()
 
-        else:
-            qs = Structure.objects.none()
+            case (
+                NotificationType.TOWER_ALERT_MSG
+                | NotificationType.TOWER_RESOURCE_ALERT_MSG
+                | NotificationType.TOWER_REFUELED_EXTRA
+            ):
+                try:
+                    return Structure.objects.filter_starbases().filter(
+                        eve_moon_id=self._parsed_text["moonID"]
+                    )
+                except KeyError:
+                    return Structure.objects.none()
 
-        return qs
+        return Structure.objects.none()
 
     def send_to_webhook(self, webhook: Webhook) -> bool:
         """Send this notification to a webhook.
@@ -875,7 +868,9 @@ class JumpFuelAlertConfig(BaseFuelAlertConfig):
 
     def send_new_notifications(self, force: bool = False) -> None:
         """Send new fuel notifications based on this config."""
-        jump_gates = Structure.objects.filter(eve_type_id=EveTypeId.JUMP_GATE)
+        jump_gates = Structure.objects.filter(
+            eve_type__eve_group_id=EveGroupId.UPWELL_JUMP_BRIDGE
+        )
         for jump_gate in jump_gates:
             if not jump_gate.is_burning_fuel:
                 continue

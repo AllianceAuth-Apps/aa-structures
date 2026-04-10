@@ -152,7 +152,7 @@ if "discord" in app_labels():
             )
             webhook = WebhookFactory()
             for i in range(286):
-                group = Group.objects.create(name=f"Group {i+1}")
+                group = Group.objects.create(name=f"Group {i + 1}")
                 webhook.ping_groups.add(group)
             obj = clone_notification(
                 Notification.objects.get(notification_id=1000000509)

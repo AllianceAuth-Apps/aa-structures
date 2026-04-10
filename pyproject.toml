@@ -27,14 +27,18 @@ dependencies = [
     "allianceauth-app-utils>=1.29.1",
     "allianceauth>=4,<5",
     "dhooks-lite>=1.0",
+    "django-esi>=8,<9",
     "django-eveuniverse>=1.6",
     "django-multiselectfield",
     "django-navhelper",
-    "django-esi>=8,<9",
     "humanize>=4.7",
     "pytz!=2022.2",
+    "pyyaml>=6",
     "redis-simple-mq>=1.1",
 ]
+
+[project.optional-dependencies]
+test = ["coverage", "factory_boy", "markdown", "pook"]
 
 [project.urls]
 Homepage = "https://gitlab.com/ErikKalkoken/aa-structures"
@@ -73,12 +77,13 @@ max-line-length = 120
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = [
-    "too-many-instance-attributes",
-    "too-few-public-methods",
-    "imported-auth-user",
     "cyclic-import",
     "fixme",
     "import-outside-toplevel",
-    "redefined-builtin",
+    "imported-auth-user",
     "no-member",
+    "redefined-builtin",
+    "too-few-public-methods",
+    "too-many-instance-attributes",
+    "too-many-return-statements",
 ]

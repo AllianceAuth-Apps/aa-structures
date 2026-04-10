@@ -225,7 +225,7 @@ def _structures_query(
 
     elif selection == StructureSelection.JUMP_GATES:
         structures_qs = structures_qs.filter(
-            eve_type=EveTypeId.JUMP_GATE
+            eve_type__eve_group_id=EveGroupId.UPWELL_JUMP_BRIDGE
         ).annotate_jump_fuel_quantity()
 
     elif selection == StructureSelection.ALL:

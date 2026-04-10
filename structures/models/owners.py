@@ -10,7 +10,7 @@ from email.utils import format_datetime, parsedate_to_datetime
 from http import HTTPStatus
 from typing import Any, Iterable, List, Optional
 
-from bravado.exception import HTTPForbidden, HTTPNotFound
+from requests.exceptions import HTTPError
 
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ObjectDoesNotExist
@@ -535,8 +535,10 @@ class Owner(models.Model):
         """Updates all structures from ESI."""
         token = self.fetch_token(rotate_characters=self.RotateCharactersType.STRUCTURES)
         is_ok = self._fetch_upwell_structures(token)
+
         if STRUCTURES_FEATURE_CUSTOMS_OFFICES:
             is_ok &= self._fetch_custom_offices(token)
+
         if STRUCTURES_FEATURE_STARBASES:
             is_ok &= self._fetch_starbases(token)
 
@@ -580,10 +582,13 @@ class Owner(models.Model):
                         token=token,
                     )
                 ).results(use_etag=False)
-            except HTTPNotFound:
-                pass
-            else:
-                locations_data += locations_data_chunk
+            except HTTPClientError as ex:
+                if ex.status_code == HTTPStatus.NOT_FOUND:
+                    continue
+                raise ex
+
+            locations_data += locations_data_chunk
+
         locations = {
             obj.item_id: {"x": obj.position.x, "y": obj.position.y, "z": obj.position.z}
             for obj in locations_data
@@ -594,13 +599,17 @@ class Owner(models.Model):
         """Fetches Upwell structures from ESI an reports whether it was successful."""
         # fetch main list of structure for this corporation
         try:
-            structures = esi.client.Corporation.GetCorporationsCorporationIdStructures(
-                corporation_id=self.corporation.corporation_id,
-                token=token,
-            ).results(use_etag=False)
-        except HTTPClientError as ex:
+            structures_objs = (
+                esi.client.Corporation.GetCorporationsCorporationIdStructures(
+                    corporation_id=self.corporation.corporation_id,
+                    token=token,
+                ).results(use_etag=False)
+            )
+        except (HTTPClientError, HTTPServerError) as ex:
             self._report_esi_issue("fetch corporation structures", ex, token)
             return False
+
+        structures = [obj.model_dump() for obj in structures_objs]
 
         # fetch additional information for structures
         if not structures:
@@ -626,14 +635,14 @@ class Owner(models.Model):
         count = 0
         for s in structures:
             try:
-                structure_info = (
+                structure_info_obj = (
                     esi.client.Universe.GetUniverseStructuresStructureId(
                         structure_id=s["structure_id"],
                         token=token,
                     )
-                ).results(use_etag=False)
-            except HTTPClientError as ex:
-                if isinstance(ex, HTTPForbidden):
+                ).result(use_etag=False)
+            except (HTTPClientError, HTTPServerError) as ex:
+                if ex.status_code == HTTPStatus.NOT_FOUND:
                     logger.error(
                         "Failed to fetch structure with ID #%d belonging to %s, "
                         "because the character '%s' is missing docking rights.",
@@ -647,6 +656,7 @@ class Owner(models.Model):
                     )
                 s["name"] = "(no data)"
             else:
+                structure_info = structure_info_obj.model_dump()
                 count += 1
                 s["name"] = Structure.extract_name_from_esi_response(
                     structure_info["name"]
@@ -752,7 +762,7 @@ class Owner(models.Model):
             if STRUCTURES_DEVELOPER_MODE:
                 self._store_raw_data("customs_offices", structures)
 
-        except HTTPClientError as ex:
+        except (HTTPClientError, HTTPServerError) as ex:
             self._report_esi_issue("fetch custom offices", ex, token)
             return False
 
@@ -853,19 +863,15 @@ class Owner(models.Model):
                         token=token,
                     )
                 ).results(use_etag=False)
-            except HTTPNotFound:
-                pass
-            else:
-                names_data += names_data_chunk
-        names = {x.item_id: self._extract_planet_name(x.name) for x in names_data}
-        return names
+            except HTTPClientError as ex:
+                if ex.status_code == HTTPStatus.NOT_FOUND:
+                    continue
+                raise ex
 
-    @staticmethod
-    def _extract_planet_name(text: str) -> str:
-        """Extract name of planet from assert name for a customs office."""
-        reg_ex = re.compile(r"Customs Office \((.+)\)")
-        matches = reg_ex.match(text)
-        return matches.group(1) if matches else ""
+            names_data += names_data_chunk
+
+        names = {x.item_id: _extract_planet_name_from_asset(x.name) for x in names_data}
+        return names
 
     def _fetch_starbases(self, token: Token) -> bool:
         """Fetch starbases from ESI for this owner.
@@ -931,10 +937,12 @@ class Owner(models.Model):
                 structure, self
             )
             detail = self._update_starbase_detail(structure=structure_obj, token=token)
+
             fuel_expires_at = detail.calc_fuel_expires()
             if fuel_expires_at:
                 structure_obj.fuel_expires_at = fuel_expires_at
                 structure_obj.save()
+
             if (
                 structure_obj.state == Structure.State.POS_REINFORCED
                 and structure_obj.state_timer_end
@@ -987,8 +995,9 @@ class Owner(models.Model):
                 if ex.status_code == HTTPStatus.NOT_FOUND:
                     continue
                 raise ex
-            else:
-                names_data += names_data_chunk
+
+            names_data += names_data_chunk
+
         names = {x.item_id: x.name for x in names_data}
         return names
 
@@ -1262,7 +1271,15 @@ class Owner(models.Model):
         self._store_items_for_starbases(assets_data)
         if STRUCTURES_FEATURE_SKYHOOKS:
             self._update_skyhooks_from_assets(assets_data)
-            self._resolve_skyhook_planets()
+            skyhooks = self.structures.filter_skyhooks().filter(
+                eve_planet__isnull=True,
+                position_x__isnull=False,
+                position_y__isnull=False,
+                position_z__isnull=False,
+            )
+            if skyhooks.exists():
+                _resolve_skyhook_planets(skyhooks)
+
         if user:
             self._send_report_to_user(
                 topic="assets", topic_count=self.structures.count(), user=user
@@ -1273,7 +1290,7 @@ class Owner(models.Model):
             corporation_id=self.corporation.corporation_id,
             token=token,
         ).results(use_etag=False)
-        assets = {asset.item_id: asset for asset in assets_raw}
+        assets = {obj.item_id: obj.model_dump() for obj in assets_raw}
         locations = self._fetch_locations_for_assets(assets.keys(), token)
         for item_id, asset in assets.items():
             asset["position"] = locations[item_id] if item_id in locations else None
@@ -1293,24 +1310,26 @@ class Owner(models.Model):
                 StructureItem.LocationFlag.AUTOFIT,
             ]:
                 assets_in_structures[location_id][item_id] = item
+
+        structure: Structure
         for structure in self.structures.all():
             structure_items = []
             if structure.id in assets_in_structures.keys():
                 structure_assets = assets_in_structures[structure.id]
-                has_fitting = [
-                    asset
+                has_fitting = any(
+                    True
                     for asset in structure_assets.values()
                     if asset["location_flag"]
                     != StructureItem.LocationFlag.QUANTUM_CORE_ROOM
-                ]
-                has_core = [
-                    asset
+                )
+                has_core = any(
+                    True
                     for asset in structure_assets.values()
                     if asset["location_flag"]
                     == StructureItem.LocationFlag.QUANTUM_CORE_ROOM
-                ]
-                structure.has_fitting = bool(has_fitting)
-                structure.has_core = bool(has_core)
+                )
+                structure.has_fitting = has_fitting
+                structure.has_core = has_core
                 structure.save()
 
                 for asset in structure_assets.values():
@@ -1382,33 +1401,6 @@ class Owner(models.Model):
             new_structures=structures,
         )
 
-    def _resolve_skyhook_planets(self):
-        """Add planets to all unresolved Skyhooks."""
-        s: Structure
-        for s in self.structures.filter_skyhooks().filter(
-            eve_planet__isnull=True,
-            position_x__isnull=False,
-            position_y__isnull=False,
-            position_z__isnull=False,
-        ):
-            try:
-                celestial = s.eve_solar_system.nearest_celestial(
-                    x=s.position_x,
-                    y=s.position_y,
-                    z=s.position_z,
-                    group_id=EveGroupId.PLANET,
-                )
-            except OSError:
-                continue
-
-            if not celestial or not isinstance(celestial.eve_object, EvePlanet):
-                continue
-
-            s.eve_planet = celestial.eve_object
-            s.name = celestial.eve_type.name
-            s.save()
-            logger.info("%s: Resolved moon for Skyhook at: %s", self, s.eve_planet.name)
-
     @staticmethod
     def get_esi_scopes() -> List[str]:
         """Return all required ESI scopes."""
@@ -1423,6 +1415,40 @@ class Owner(models.Model):
         if STRUCTURES_FEATURE_STARBASES:
             scopes += ["esi-corporations.read_starbases.v1"]
         return scopes
+
+
+def _extract_planet_name_from_asset(text: str) -> str:
+    """Extract name of planet from assert name for a customs office."""
+    reg_ex = re.compile(r"Customs Office \((.+)\)")
+    matches = reg_ex.match(text)
+    return matches.group(1) if matches else ""
+
+
+def _resolve_skyhook_planets(skyhooks: models.QuerySet[Structure]):
+    """Update planets of Skyhooks."""
+    for s in skyhooks:
+        if not s.is_skyhook:
+            continue
+
+        try:
+            celestial = s.eve_solar_system.nearest_celestial(
+                x=s.position_x,
+                y=s.position_y,
+                z=s.position_z,
+                group_id=EveGroupId.PLANET,
+            )
+        except (HTTPError, ValueError) as ex:
+            logger.warning("%s: Failed to resolve planet for skyhook: %s", s, ex)
+            continue
+
+        if not celestial or not isinstance(celestial.eve_object, EvePlanet):
+            logger.warning("%s: Failed to resolve planet for skyhook", s)
+            continue
+
+        s.eve_planet = celestial.eve_object
+        s.name = celestial.eve_type.name
+        s.save()
+        logger.info("%s: Resolved planet for skyhook: %s", s.owner, s.eve_planet.name)
 
 
 class OwnerCharacter(models.Model):
@@ -1527,4 +1553,6 @@ class OwnerCharacter(models.Model):
             self.save(update_fields=["error_count"])
 
 
-# end
+# end ----------------
+
+# end ----------------

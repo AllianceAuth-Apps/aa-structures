@@ -8,6 +8,7 @@ from app_utils.testing import NoSocketsTestCase
 from structures.core.notification_types import NotificationType
 from structures.models import FuelAlert, JumpFuelAlert, Notification, Structure, Webhook
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveEntityCorporationFactory,
     FuelAlertConfigFactory,
     FuelAlertFactory,
@@ -15,7 +16,6 @@ from structures.tests.testdata.factories import (
     JumpGateFactory,
     NotificationFactory,
     OwnerFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     WebhookFactory,
@@ -650,7 +650,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
 
     def test_related_structures_for_orbital_notifications(self):
         # given
-        structure = PocoFactory(owner=self.owner, eve_planet_id=40161469)
+        structure = CustomsOfficeFactory(owner=self.owner, eve_planet__id=40161469)
         for notif_type in [
             NotificationType.ORBITAL_ATTACKED,
             NotificationType.ORBITAL_REINFORCED,
@@ -668,7 +668,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
 
     def test_related_structures_for_tower_notifications(self):
         # given
-        structure = StarbaseFactory(owner=self.owner, eve_moon_id=40161465)
+        structure = StarbaseFactory(owner=self.owner, eve_moon__id=40161465)
         for notif_type in [
             NotificationType.TOWER_ALERT_MSG,
             NotificationType.TOWER_RESOURCE_ALERT_MSG,
@@ -686,7 +686,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
 
     def test_related_structures_for_generated_notifications(self):
         # given
-        structure = StarbaseFactory(owner=self.owner, eve_moon_id=40161465)
+        structure = StarbaseFactory(owner=self.owner, eve_moon__id=40161465)
         for notif_type in [
             NotificationType.STRUCTURE_JUMP_FUEL_ALERT,
             NotificationType.STRUCTURE_REFUELED_EXTRA,

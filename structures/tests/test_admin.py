@@ -28,13 +28,13 @@ from structures.models import (
 )
 
 from .testdata.factories import (
+    CustomsOfficeFactory,
     EveAllianceInfoFactory,
     EveCorporationInfoFactory,
     FuelAlertConfigFactory,
     NotificationFactory,
     OwnerCharacterFactory,
     OwnerFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     StructureTagFactory,
@@ -526,7 +526,6 @@ class TestStructureAdmin(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.modeladmin = StructureAdmin(model=Structure, admin_site=AdminSite())
         cls.user = SuperuserFactory()
         cls.alliance = EveAllianceInfoFactory(
@@ -550,36 +549,56 @@ class TestStructureAdmin(TestCase):
 
     def test_location_structure(self):
         # given
-        obj = StructureFactory(
-            owner=self.owner, eve_solar_system_name="Amamake", eve_type_name="Astrahus"
-        )
+        obj = StructureFactory(owner=self.owner)
         # when/then
-        self.assertEqual(self.modeladmin._location(obj), "Amamake<br>Heimatar")
+        self.assertEqual(
+            self.modeladmin._location(obj),
+            (
+                obj.eve_solar_system.name
+                + "<br>"
+                + obj.eve_solar_system.eve_constellation.eve_region.name
+            ),
+        )
 
     def test_location_poco(self):
         # given
-        obj = PocoFactory(owner=self.owner, eve_planet_name="Amamake V")
+        obj = CustomsOfficeFactory(owner=self.owner)
         # when/then
-        self.assertEqual(self.modeladmin._location(obj), "Amamake V<br>Heimatar")
+        self.assertEqual(
+            self.modeladmin._location(obj),
+            (
+                obj.eve_planet.name
+                + "<br>"
+                + obj.eve_solar_system.eve_constellation.eve_region.name
+            ),
+        )
 
     def test_location_starbase(self):
         # given
-        obj = StarbaseFactory(owner=self.owner, eve_moon_name="Amamake II - Moon 1")
+        obj = StarbaseFactory(owner=self.owner)
         self.assertEqual(
-            self.modeladmin._location(obj), "Amamake II - Moon 1<br>Heimatar"
+            self.modeladmin._location(obj),
+            (
+                obj.eve_moon.name
+                + "<br>"
+                + obj.eve_solar_system.eve_constellation.eve_region.name
+            ),
         )
 
     def test_type(self):
         # given
-        obj = StructureFactory(owner=self.owner, eve_type_name="Astrahus")
+        obj = StructureFactory(owner=self.owner)
         # when/then
-        self.assertEqual(self.modeladmin._type(obj), "Astrahus<br>Citadel")
+        self.assertEqual(
+            self.modeladmin._type(obj),
+            (obj.eve_type.name + "<br>" + obj.eve_type.eve_group.name),
+        )
 
     def test_tags_1(self):
         # given
         obj = StructureFactory(
             owner=self.owner,
-            eve_solar_system_name="Amamake",
+            eve_solar_system__security_status=0.3,
             tags=[StructureTagFactory(name="my_tag")],
         )
         # when/then

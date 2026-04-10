@@ -4,6 +4,7 @@ import dhooks_lite
 
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
+from eveuniverse.models import EveType
 
 from app_utils.testing import NoSocketsTestCase
 
@@ -17,6 +18,7 @@ from structures.core.notification_embeds.war_embeds import (
 )
 from structures.core.notification_types import NotificationType
 from structures.models.notifications import Notification, Webhook
+from structures.tests.helpers import markdown_to_plain
 from structures.tests.testdata.factories import (
     EveAllianceInfoFactory,
     EveCorporationInfoFactory,
@@ -32,7 +34,6 @@ from structures.tests.testdata.factories import (
 from structures.tests.testdata.helpers import (
     load_eve_entities,
     load_notification_entities,
-    markdown_to_plain,
 )
 from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
@@ -156,8 +157,16 @@ class TestNotificationEmbedsGenerate(TestCase):
         self,
     ):
         # Pre-generate structures referenced in notifications
-        StructureFactory(owner=self.owner, id=1000000000001, eve_type_name="Astrahus")
-        StructureFactory(owner=self.owner, id=1000000000002, eve_type_name="Athanor")
+        StructureFactory(
+            owner=self.owner,
+            id=1000000000001,
+            eve_type=EveType.objects.get(name="Astrahus"),
+        )
+        StructureFactory(
+            owner=self.owner,
+            id=1000000000002,
+            eve_type=EveType.objects.get(name="Athanor"),
+        )
 
         for notif_type in NotificationType.esi_notifications():
             with self.subTest(notif_type=notif_type):

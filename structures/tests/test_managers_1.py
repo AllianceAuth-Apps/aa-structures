@@ -1,11 +1,18 @@
 import datetime as dt
 from unittest.mock import patch
 
+import pook
+
+from django.test import TestCase
 from django.utils.timezone import now
 from eveuniverse.models import EveSolarSystem
+from eveuniverse.tests.testdata.factories_2 import EveSolarSystemFactory
 
-from app_utils.esi_testing import EsiClientStub, EsiEndpoint
-from app_utils.testdata_factories import UserMainFactory
+from app_utils.testdata_factories import (
+    EveAllianceInfoFactory,
+    EveCorporationInfoFactory,
+    UserMainFactory,
+)
 from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_types import NotificationType
@@ -17,82 +24,93 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
-
-from .testdata.factories import (
-    EveAllianceInfoFactory,
+from structures.tests.testdata.factories import (
+    CitadelTypeFactory,
+    CustomsOfficeFactory,
     EveCharacterFactory,
-    EveCorporationInfoFactory,
     EveSovereigntyMapFactory,
     OwnerFactory,
-    PocoFactory,
     SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
     StructureTagFactory,
     WebhookFactory,
 )
-from .testdata.load_eveuniverse import load_eveuniverse
+from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.managers"
 MODULE_PATH_ESI_FETCH = "structures.helpers.esi_fetch"
 
 
-class TestEveSovereigntyMapManagerUpdateFromEsi(NoSocketsTestCase):
+class TestEveSovereigntyMapManagerUpdateFromEsi(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        endpoints = [
-            EsiEndpoint(
-                "Sovereignty",
-                "get_sovereignty_map",
-                data=[
-                    {
-                        "alliance_id": 3011,
-                        "corporation_id": 2011,
-                        "system_id": 30000726,
-                    },
-                    {
-                        "alliance_id": 3001,
-                        "corporation_id": 2001,
-                        "system_id": 30000474,
-                        "faction_id": None,
-                    },
-                    {
-                        "alliance_id": 3001,
-                        "corporation_id": 2001,
-                        "system_id": 30000728,
-                        "faction_id": None,
-                    },
-                    {
-                        "alliance_id": None,
-                        "corporation_id": None,
-                        "system_id": 30000142,
-                        "faction_id": None,
-                    },
-                ],
-            )
+        alliance_3001 = EveAllianceInfoFactory(id=3001)
+        corp_2001 = EveCorporationInfoFactory(id=2001)
+        corp_2001.alliance = alliance_3001
+        alliance_3011 = EveAllianceInfoFactory(id=3011)
+        corp_2011 = EveCorporationInfoFactory(id=2011)
+        corp_2011.alliance = alliance_3011
+        EveSolarSystemFactory(id=30000726, security_status=-1)
+        EveSolarSystemFactory(id=30000474, security_status=-1)
+        cls.esi_data = [
+            {
+                "alliance_id": 3011,
+                "corporation_id": 2011,
+                "system_id": 30000726,
+            },
+            {
+                "alliance_id": 3001,
+                "corporation_id": 2001,
+                "system_id": 30000474,
+                "faction_id": None,
+            },
+            {
+                "alliance_id": 3001,
+                "corporation_id": 2001,
+                "system_id": 30000728,
+                "faction_id": None,
+            },
+            {
+                "alliance_id": None,
+                "corporation_id": None,
+                "system_id": 30000142,
+                "faction_id": None,
+            },
         ]
-        cls.esi_client_stub = EsiClientStub.create_from_endpoints(endpoints)
 
-    @patch(MODULE_PATH + ".esi")
-    def test_should_create_sov_map_from_scratch(self, mock_esi):
+    @pook.on
+    def test_should_create_sov_map_from_scratch(self):
         # given
-        mock_esi.client = self.esi_client_stub
+        pook.get(
+            "https://esi.evetech.net/sovereignty/map",
+            reply=200,
+            response_json=self.esi_data,
+        )
+
         # when
         EveSovereigntyMap.objects.update_or_create_all_from_esi()
+
         # then
         solar_system_ids = EveSovereigntyMap.objects.values_list(
             "solar_system_id", flat=True
         )
         self.assertSetEqual(set(solar_system_ids), {30000726, 30000474, 30000728})
 
-    @patch(MODULE_PATH + ".esi")
-    def test_should_update_existing_map(self, mock_esi):
+    @pook.on
+    def test_should_update_existing_map(self):
         # given
-        mock_esi.client = self.esi_client_stub
         EveSovereigntyMapFactory(solar_system_id=30000726, alliance_id=3001)
+        pook.get(
+            "https://esi.evetech.net/sovereignty/map",
+            reply=200,
+            response_json=self.esi_data,
+        )
+
         # when
         EveSovereigntyMap.objects.update_or_create_all_from_esi()
+
         # then
         solar_system_ids = EveSovereigntyMap.objects.values_list(
             "solar_system_id", flat=True
@@ -109,50 +127,47 @@ class TestEveSovereigntyMapManagerUpdateFromEsi(NoSocketsTestCase):
         self.assertEqual(structure.alliance_id, 3001)
 
 
-class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
+class TestEveSovereigntyMapManagerOther(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.corporation = EveCorporationInfoFactory()
-        solar_system = EveSolarSystem.objects.get(name="1-PGSG")
+        cls.sov_solar_system = EveSolarSystemFactory(security_status=-1)
         EveSovereigntyMapFactory(
-            corporation=cls.corporation, solar_system_id=solar_system.id
+            corporation=cls.corporation, solar_system_id=cls.sov_solar_system.id
         )
 
     def test_should_return_alliance_id_for_sov_system_in_null(self):
-        # given
-        solar_system = EveSolarSystem.objects.get(name="1-PGSG")
         # when/then
         self.assertEqual(
-            EveSovereigntyMap.objects.solar_system_sov_alliance_id(solar_system),
+            EveSovereigntyMap.objects.solar_system_sov_alliance_id(
+                self.sov_solar_system
+            ),
             self.corporation.alliance.alliance_id,
         )
 
-    def test_should_return_none_when_no_sov_info_for_null_sec_system(self):
-        solar_system = EveSolarSystem.objects.get(name="A-C5TC")
+    def test_should_return_none_when_no_sov_info_for_other_null_sec_systems(self):
+        solar_system = EveSolarSystemFactory(security_status=-1)
         self.assertIsNone(
             EveSovereigntyMap.objects.solar_system_sov_alliance_id(solar_system)
         )
 
     def test_should_return_none_when_system_not_in_null(self):
-        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        solar_system = EveSolarSystemFactory(security_status=0.9)
         self.assertIsNone(
             EveSovereigntyMap.objects.solar_system_sov_alliance_id(solar_system)
         )
 
     def test_should_return_true_when_corporation_has_sov_in_null_system(self):
-        # given
-        solar_system = EveSolarSystem.objects.get(name="1-PGSG")
         # when/then
         self.assertTrue(
             EveSovereigntyMap.objects.corporation_has_sov(
-                solar_system, self.corporation
+                self.sov_solar_system, self.corporation
             )
         )
 
     def test_should_return_false_when_corporation_has_no_sov_in_null_system(self):
-        solar_system = EveSolarSystem.objects.get(name="A-C5TC")
+        solar_system = EveSolarSystemFactory(security_status=-1)
         self.assertFalse(
             EveSovereigntyMap.objects.corporation_has_sov(
                 solar_system, self.corporation
@@ -160,7 +175,7 @@ class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
         )
 
     def test_should_return_false_when_system_is_not_in_null(self):
-        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        solar_system = EveSolarSystemFactory(security_status=0.9)
         self.assertFalse(
             EveSovereigntyMap.objects.corporation_has_sov(
                 solar_system, self.corporation
@@ -168,142 +183,116 @@ class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
         )
 
 
-@patch(MODULE_PATH + ".esi")
 class TestStructureManagerEsi(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.token = cls.owner.fetch_token()
-        endpoints = [
-            EsiEndpoint(
-                "Universe",
-                "get_universe_structures_structure_id",
-                "structure_id",
-                needs_token=True,
-                data={
-                    "1000000000001": {
-                        "corporation_id": cls.owner.corporation.corporation_id,
-                        "name": "Amamake - Test Structure Alpha",
-                        "position": {
-                            "x": 55028384780.0,
-                            "y": 7310316270.0,
-                            "z": -163686684205.0,
-                        },
-                        "solar_system_id": 30002537,
-                        "type_id": 35832,
-                    },
-                    "1000000000002": {
-                        "corporation_id": 2001,
-                        "name": "Amamake - Test Structure Bravo",
-                        "position": {
-                            "x": -2518743930339.066,
-                            "y": -130157937025.56424,
-                            "z": -442026427345.6355,
-                        },
-                        "solar_system_id": 30002537,
-                        "type_id": 35835,
-                    },
-                    "1000000000003": {
-                        "corporation_id": 2001,
-                        "name": "Amamake - Test Structure Charlie",
-                        "position": {
-                            "x": -2518743930339.066,
-                            "y": -130157937025.56424,
-                            "z": -442026427345.6355,
-                        },
-                        "solar_system_id": 30000476,
-                        "type_id": 35832,
-                    },
-                },
-            )
-        ]
-        cls.esi_client_stub = EsiClientStub.create_from_endpoints(endpoints)
 
-    def test_should_return_object_from_db_if_found(self, mock_esi):
+    @pook.on
+    def test_should_return_object_from_db_if_found(self):
         # given
-        endpoints = [
-            EsiEndpoint(
-                "Universe",
-                "get_universe_structures_structure_id",
-                "structure_id",
-                needs_token=True,
-                side_effect=RuntimeError,
-            )
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
-        structure = StructureFactory(owner=self.owner, id=1000000000001, name="Batcave")
+        structure = StructureFactory(owner=self.owner)
         # when
         structure, created = Structure.objects.get_or_create_esi(
-            id=1000000000001, token=self.token
+            id=structure.id, token=self.token
         )
         # then
         self.assertFalse(created)
-        self.assertEqual(structure.id, 1000000000001)
 
-    def test_can_create_object_from_esi_if_not_found(self, mock_esi):
+    @pook.on
+    def test_can_create_object_from_esi_if_not_found(self):
         # given
-        mock_esi.client = self.esi_client_stub
-        # when
-        structure, created = Structure.objects.get_or_create_esi(
-            id=1000000000001, token=self.token
+        structure_id = 1000000000001
+        solar_system = EveSolarSystemFactory()
+        structure_type = CitadelTypeFactory()
+        pook.get(
+            f"https://esi.evetech.net/universe/structures/{structure_id}",
+            reply=200,
+            response_json={
+                "owner_id": self.owner.corporation.corporation_id,
+                "name": f"{solar_system.name} - Test Structure Alpha",
+                "position": {
+                    "x": 55028384780.0,
+                    "y": 7310316270.0,
+                    "z": -163686684205.0,
+                },
+                "solar_system_id": solar_system.id,
+                "type_id": structure_type.id,
+            },
         )
+
+        # when
+        structure: Structure
+        structure, created = Structure.objects.get_or_create_esi(
+            id=structure_id, token=self.token
+        )
+
         # then
         self.assertTrue(created)
-        self.assertEqual(structure.id, 1000000000001)
+        self.assertEqual(structure.id, structure_id)
         self.assertEqual(structure.name, "Test Structure Alpha")
-        self.assertEqual(structure.eve_type_id, 35832)
-        self.assertEqual(structure.eve_solar_system_id, 30002537)
+        self.assertEqual(structure.eve_type_id, structure_type.id)
+        self.assertEqual(structure.eve_solar_system_id, solar_system.id)
         self.assertEqual(structure.position_x, 55028384780.0)
         self.assertEqual(structure.position_y, 7310316270.0)
         self.assertEqual(structure.position_z, -163686684205.0)
 
-    def test_can_update_object_from_esi(self, mock_esi):
+    @pook.on
+    def test_can_update_object_from_esi(self):
         # given
-        mock_esi.client = self.esi_client_stub
-        structure = StructureFactory(owner=self.owner, id=1000000000001, name="Batcave")
+        structure = StructureFactory(owner=self.owner)  # generates random name
+        pook.get(
+            f"https://esi.evetech.net/universe/structures/{structure.id}",
+            reply=200,
+            response_json={
+                "owner_id": self.owner.corporation.corporation_id,
+                "name": f"{structure.eve_solar_system.name} - Test Structure Alpha",
+                "position": {
+                    "x": 55028384780.0,
+                    "y": 7310316270.0,
+                    "z": -163686684205.0,
+                },
+                "solar_system_id": structure.eve_solar_system.id,
+                "type_id": structure.eve_type.id,
+            },
+        )
+
         # when
         structure, created = Structure.objects.update_or_create_esi(
-            id=1000000000001, token=self.token
+            id=structure.id, token=self.token
         )
+
         # then
         self.assertFalse(created)
-        self.assertEqual(structure.id, 1000000000001)
         self.assertEqual(structure.name, "Test Structure Alpha")
 
-    def test_raises_exception_when_create_fails(self, mock_esi):
-        # given
-        endpoints = [
-            EsiEndpoint(
-                "Universe",
-                "get_universe_structures_structure_id",
-                "structure_id",
-                needs_token=True,
-                side_effect=RuntimeError,
-            )
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
-        # when/then
-        with self.assertRaises(RuntimeError):
+    @pook.on
+    def test_raises_exception_when_create_fails(self):
+        structure_id = 1000000000001
+        pook.get(
+            f"https://esi.evetech.net/universe/structures/{structure_id}",
+            reply=500,
+            response_json={"error": "some error"},
+        )
+        with self.assertRaises(Exception):
             Structure.objects.update_or_create_esi(id=1000000000001, token=self.token)
 
-    def test_raises_exception_when_create_without_token(self, mock_esi):
-        # given
-        mock_esi.client = self.esi_client_stub
+    @pook.on
+    def test_raises_exception_when_create_without_token(self):
         # when
         with self.assertRaises(ValueError):
             Structure.objects.update_or_create_esi(id=987, token=None)
 
 
-class TestStructureQuerySet(NoSocketsTestCase):
+class TestStructureQuerySet(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.structure = StructureFactory(owner=cls.owner)
-        cls.poco = PocoFactory(owner=cls.owner)
+        cls.poco = CustomsOfficeFactory(owner=cls.owner)
         cls.starbase = StarbaseFactory(owner=cls.owner)
         cls.skyhook = SkyhookFactory(owner=cls.owner)
 
@@ -340,7 +329,7 @@ class TestStructureQuerySet(NoSocketsTestCase):
         self.assertSetEqual(result_qs.ids(), {self.skyhook.id})
 
 
-class TestStructureQuerySetVisibleForUser(NoSocketsTestCase):
+class TestStructureQuerySetVisibleForUser(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -931,4 +920,12 @@ class TestWebhookManager(NoSocketsTestCase):
         # when
         result = Webhook.objects.enabled_notification_types()
         # then
+        self.assertSetEqual(result, set())
+        # then
+        self.assertSetEqual(result, set())
+        self.assertSetEqual(result, set())
+        self.assertSetEqual(result, set())
+        # then
+        self.assertSetEqual(result, set())
+        self.assertSetEqual(result, set())
         self.assertSetEqual(result, set())

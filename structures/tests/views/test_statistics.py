@@ -1,19 +1,19 @@
 from django.test import RequestFactory, TestCase
 
-from structures.views import statistics
-
-from ..testdata.factories import (
+from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveAllianceInfoFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
     OwnerFactory,
-    PocoFactory,
+    RefineryFactory,
     StarbaseFactory,
     StructureFactory,
     UserMainBasicFactory,
     UserMainDefaultFactory,
 )
-from ..testdata.load_eveuniverse import load_eveuniverse
+from structures.views import statistics
+
 from .utils import json_response_to_dict
 
 
@@ -22,7 +22,6 @@ class TestStatistics(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         alliance = EveAllianceInfoFactory(
             alliance_name="Wayne Enterprises", alliance_ticker="WYE"
         )
@@ -30,9 +29,9 @@ class TestStatistics(TestCase):
             corporation_name="Wayne Technologies", alliance=alliance
         )
         owner = OwnerFactory(corporation=cls.corporation)
-        StructureFactory(owner=owner, eve_type_name="Astrahus")
-        StructureFactory(owner=owner, eve_type_name="Athanor")
-        PocoFactory.create_batch(size=4, owner=owner)
+        StructureFactory(owner=owner)
+        RefineryFactory(owner=owner)
+        CustomsOfficeFactory.create_batch(size=4, owner=owner)
         StarbaseFactory.create_batch(size=3, owner=owner)
         cls.character = EveCharacterFactory(corporation=cls.corporation)
 
@@ -67,4 +66,6 @@ class TestStatistics(TestCase):
         # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_dict(response)
+        self.assertFalse(data)
+        self.assertFalse(data)
         self.assertFalse(data)

@@ -457,7 +457,7 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
     @property
     def is_jump_gate(self) -> bool:
         """Return True if this structure is a jump gate, else False."""
-        return self.eve_type_id == EveTypeId.JUMP_GATE
+        return self.eve_type.eve_group_id == EveGroupId.UPWELL_JUMP_BRIDGE
 
     @property
     def is_poco(self) -> bool:
@@ -793,7 +793,7 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
     @classmethod
     def extract_name_from_esi_response(cls, esi_name):
         """extracts the structure's name from the name in an ESI response"""
-        matches = re.search(r"^\S+ - (.+)", esi_name)
+        matches = re.search(r"^.+ - (.+)", esi_name)
         return matches.group(1) if matches else esi_name
 
 

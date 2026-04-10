@@ -1,32 +1,39 @@
 import datetime as dt
 from unittest.mock import patch
 
-from bravado.exception import HTTPBadGateway, HTTPInternalServerError
-from pytz import utc
+import pook
+import yaml
 
-from django.test import override_settings
+from django.test import TestCase, override_settings
 from django.utils.timezone import now
+from esi.exceptions import HTTPServerError
 from esi.models import Token
-from eveuniverse.models import EvePlanet
+from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EvePlanetFactory
 
-from app_utils.esi_testing import EsiClientStub, EsiEndpoint
-from app_utils.testing import BravadoResponseStub, NoSocketsTestCase, queryset_pks
+from app_utils.testing import NoSocketsTestCase, queryset_pks
 
 from structures.core.notification_types import NotificationType
 from structures.models import Notification, Structure, StructureItem
+from structures.tests.helpers import datetime_to_ldap
 from structures.tests.testdata.factories import (
+    CitadelServiceModuleTypeFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
     EveEntityCorporationFactory,
     JumpFuelAlertConfigFactory,
+    LiquidOzoneTypeFactory,
+    MoonOreTypeFactory,
     OwnerFactory,
+    PositionFactory,
+    QuantumCoreTypeFactory,
+    RefineryFactory,
     SkyhookFactory,
+    SkyhookTypeFactory,
     StarbaseFactory,
     StructureFactory,
     StructureItemFactory,
     UserMainDefaultOwnerFactory,
     WebhookFactory,
-    datetime_to_esi,
 )
 from structures.tests.testdata.helpers import (
     NearestCelestial,
@@ -39,218 +46,210 @@ OWNERS_PATH = "structures.models.owners"
 NOTIFICATIONS_PATH = "structures.models.notifications"
 
 
-@patch(OWNERS_PATH + ".esi")
-class TestFetchNotificationsEsi(NoSocketsTestCase):
+class TestFetchNotificationsEsi(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
+
         cls.sender_corporation = EveEntityCorporationFactory()
         cls.character = EveCharacterFactory()
         cls.user = UserMainDefaultOwnerFactory(main_character__character=cls.character)
-        endpoints = [
-            EsiEndpoint(
-                "Character",
-                "get_characters_character_id_notifications",
-                "character_id",
-                needs_token=True,
-                data={
-                    f"{cls.character.character_id}": [
-                        {
-                            "notification_id": 1000000505,
-                            "type": "StructureLostShields",
-                            "sender_id": cls.sender_corporation.id,
-                            "sender_type": "corporation",
-                            "timestamp": "2019-10-04 14:52:00",
-                            "text": "solarsystemID: 30002537\nstructureID: &id001 1000000000001\nstructureShowInfoData:\n- showinfo\n- 35832\n- *id001\nstructureTypeID: 35832\ntimeLeft: 1727805401093\ntimestamp: 132148470780000000\nvulnerableTime: 9000000000\n",
-                        },
-                    ]
-                },
-            )
-        ]
-        cls.esi_client_stub = EsiClientStub.create_from_endpoints(endpoints)
 
-    @patch(OWNERS_PATH + ".notify", spec=True)
-    @patch(OWNERS_PATH + ".now", spec=True)
-    def test_should_inform_user_about_successful_update(
-        self, mock_now, mock_notify, mock_esi
-    ):
+    @pook.on
+    def test_should_create_notifications_from_scratch(self):
         # given
-        mock_esi.client = self.esi_client_stub
-        mock_now.return_value = dt.datetime(2019, 8, 16, 14, 15, tzinfo=utc)
         owner = OwnerFactory(
             user=self.user,
             notifications_last_update_at=None,
             characters=[self.character],
         )
-        StructureFactory(owner=owner, id=1000000000001)
+        notification_id = 1000000916
+        recruit = EveCharacterFactory()
+        timestamp = now()
+        data = {
+            "charID": recruit.character_id,
+            "corpID": recruit.corporation_id,
+        }
+        text = yaml.dump(data)
+        pook.get(
+            f"https://esi.evetech.net/characters/{self.character.character_id}/notifications",
+            reply=200,
+            response_json=[
+                {
+                    "notification_id": notification_id,
+                    "type": "CharLeftCorpMsg",
+                    "sender_id": self.sender_corporation.id,
+                    "sender_type": "corporation",
+                    "timestamp": timestamp.isoformat(),
+                    "text": text,
+                    "is_read": True,
+                },
+            ],
+        )
+
+        # when
+        owner.fetch_notifications_esi()
+
+        # then
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_notification_sync_fresh)
+        self.assertEqual(owner.notification_set.count(), 1)
+        notif: Notification = owner.notification_set.get(
+            notification_id=notification_id
+        )
+        self.assertEqual(notif.notification_id, notification_id)
+        self.assertEqual(notif.notif_type, NotificationType.CHAR_LEFT_CORP_MSG)
+        self.assertEqual(notif.sender, self.sender_corporation)
+        self.assertEqual(notif.timestamp, timestamp)
+        self.assertEqual(notif.text, text)
+        self.assertTrue(notif.is_read)
+        self.assertFalse(notif.is_sent)
+        self.assertEqual(notif.parsed_text(), data)
+
+    @pook.on
+    def test_should_handle_other_sender_correctly(self):
+        # given
+        owner = OwnerFactory(
+            user=self.user,
+            notifications_last_update_at=None,
+            characters=[self.character],
+        )
+        notification_id = 1000000916
+        pook.get(
+            f"https://esi.evetech.net/characters/{self.character.character_id}/notifications",
+            reply=200,
+            response_json=[
+                {
+                    "notification_id": notification_id,
+                    "type": "CorpBecameWarEligible",
+                    "sender_id": 42,
+                    "sender_type": "other",
+                    "timestamp": now().isoformat(),
+                    "text": "",
+                },
+            ],
+        )
+
+        # when
+        owner.fetch_notifications_esi()
+
+        # then
+        obj = owner.notification_set.get(notification_id=notification_id)
+        self.assertIsNone(obj.sender)
+
+    @patch(OWNERS_PATH + ".notify", spec=True)
+    @pook.on
+    def test_should_inform_user_about_successful_update(self, mock_notify):
+        # given
+        owner = OwnerFactory(
+            user=self.user,
+            notifications_last_update_at=None,
+            characters=[self.character],
+        )
+        notification_id = 1000000916
+        pook.get(
+            f"https://esi.evetech.net/characters/{self.character.character_id}/notifications",
+            reply=200,
+            response_json=[
+                {
+                    "notification_id": notification_id,
+                    "type": "CorpBecameWarEligible",
+                    "sender_id": self.sender_corporation.id,
+                    "sender_type": "corporation",
+                    "timestamp": now().isoformat(),
+                    "text": "",
+                },
+            ],
+        )
+
         # when
         owner.fetch_notifications_esi(self.user)
+
         # then
         owner.refresh_from_db()
         self.assertTrue(owner.is_notification_sync_fresh)
         self.assertTrue(mock_notify.called)
 
-    def test_should_create_notifications(self, mock_esi):
+    @pook.on
+    def test_should_set_moon_for_structure_when_missing(self):
         # given
-        mock_esi.client = self.esi_client_stub
         owner = OwnerFactory(
             user=self.user,
             notifications_last_update_at=None,
             characters=[self.character],
         )
-        StructureFactory(owner=owner, id=1000000000001)
-        # when
-        owner.fetch_notifications_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertTrue(owner.is_notification_sync_fresh)
-        # should only contain the right notifications
-        notif_ids_current = set(
-            Notification.objects.values_list("notification_id", flat=True)
-        )
-        self.assertSetEqual(notif_ids_current, {1000000505})
-
-    @patch(OWNERS_PATH + ".now")
-    def test_should_set_moon_for_structure_if_missing(self, mock_now, mock_esi_client):
-        # given
-        character = EveCharacterFactory()
-        user = UserMainDefaultOwnerFactory(main_character__character=character)
-        endpoints = [
-            EsiEndpoint(
-                "Character",
-                "get_characters_character_id_notifications",
-                "character_id",
-                needs_token=True,
-                data={
-                    f"{character.character_id}": [
-                        {
-                            "notification_id": 1000000404,
-                            "type": "MoonminingExtractionStarted",
-                            "sender_id": self.sender_corporation.id,
-                            "sender_type": "corporation",
-                            "timestamp": "2019-11-13 23:33:00",
-                            "text": 'autoTime: 132186924601059151\nmoonID: 40161465\noreVolumeByType:\n  46300: 1288475.124715103\n  46301: 544691.7637724016\n  46302: 526825.4047522942\n  46303: 528996.6386983792\nreadyTime: 132186816601059151\nsolarSystemID: 30002537\nstartedBy: 1001\nstartedByLink: <a href="showinfo:1383//1001">Bruce Wayne</a>\nstructureID: 1000000000002\nstructureLink: <a href="showinfo:35835//1000000000002">Dummy</a>\nstructureName: Dummy\nstructureTypeID: 35835\n',
-                            "is_read": False,
-                        },
-                    ]
+        notification_id = 1000000404
+        ore_1 = MoonOreTypeFactory()
+        ore_2 = MoonOreTypeFactory()
+        ore_3 = MoonOreTypeFactory()
+        refinery = RefineryFactory(owner=owner, eve_moon=None)
+        moon = EveMoonFactory(eve_planet__eve_solar_system=refinery.eve_solar_system)
+        timestamp = now()
+        ready_time = timestamp + dt.timedelta(days=3)
+        data = {
+            "autoTime": datetime_to_ldap(ready_time + dt.timedelta(hours=2)),
+            "moonID": moon.id,
+            "oreVolumeByType": {
+                ore_1.id: 1288475.124715103,
+                ore_2.id: 544691.7637724016,
+                ore_3.id: 526825.4047522942,
+            },
+            "readyTime": datetime_to_ldap(ready_time),
+            "solarSystemID": refinery.eve_solar_system.id,
+            "startedBy": self.character.character_id,
+            "startedByLink": (
+                f'<a href="showinfo:1383//{self.character.character_id}">'
+                f"{self.character.character_name}</a>"
+            ),
+            "structureID": refinery.id,
+            "structureLink": (
+                f'<a href="showinfo:{refinery.eve_type.id}//{refinery.id}">'
+                f"{refinery.name}</a>"
+            ),
+            "structureName": "Dummy",
+            "structureTypeID": refinery.eve_type.id,
+        }
+        pook.get(
+            f"https://esi.evetech.net/characters/{self.character.character_id}/notifications",
+            reply=200,
+            response_json=[
+                {
+                    "notification_id": notification_id,
+                    "type": "MoonminingExtractionStarted",
+                    "sender_id": self.sender_corporation.id,
+                    "sender_type": "corporation",
+                    "timestamp": timestamp.isoformat(),
+                    "text": yaml.dump(data),
                 },
-            )
-        ]
-        mock_esi_client.client = EsiClientStub.create_from_endpoints(endpoints)
-        mock_now.return_value = dt.datetime(2019, 11, 13, 23, 50, 0, tzinfo=utc)
-        owner = OwnerFactory(
-            user=user, notifications_last_update_at=None, characters=[character]
+            ],
         )
-        structure = StructureFactory(owner=owner, id=1000000000002, eve_type_id=35835)
+
         # when
         owner.fetch_notifications_esi()
+
         # then
-        owner.refresh_from_db()
-        self.assertTrue(owner.is_notification_sync_fresh)
-        structure.refresh_from_db()
-        self.assertEqual(structure.eve_moon_id, 40161465)
+        refinery.refresh_from_db()
+        self.assertEqual(refinery.eve_moon_id, moon.id)
 
-    def test_report_error_when_esi_returns_error_during_sync(self, mock_esi):
-        def my_callback(*args, **kwargs):
-            raise HTTPBadGateway(
-                BravadoResponseStub(status_code=502, reason="Test Exception")
-            )
-
-        # given
-        endpoints = [
-            EsiEndpoint(
-                "Character",
-                "get_characters_character_id_notifications",
-                "character_id",
-                needs_token=True,
-                data=[],
-                side_effect=my_callback,
-            )
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
+    @pook.on
+    def test_should_bubble_up_http_error_during_sync(self):
         owner = OwnerFactory(
             user=self.user,
             notifications_last_update_at=None,
             characters=[self.character],
         )
-        StructureFactory(owner=owner, id=1000000000001)
+        pook.get(
+            f"https://esi.evetech.net/characters/{self.character.character_id}/notifications",
+            reply=502,
+            response_json={"error": "some error"},
+        )
         # when
-        with self.assertRaises(HTTPBadGateway):
+        with self.assertRaises(HTTPServerError):
             owner.fetch_notifications_esi()
+
         # then
         owner.refresh_from_db()
         self.assertFalse(owner.is_notification_sync_fresh)
-
-    def test_should_create_notifications_from_scratch(self, mock_esi):
-        # given
-        owner = OwnerFactory(notifications_last_update_at=None)
-        sender = EveEntityCorporationFactory()
-        eve_character = owner.characters.first().character_ownership.character
-        endpoints = [
-            EsiEndpoint(
-                "Character",
-                "get_characters_character_id_notifications",
-                "character_id",
-                needs_token=True,
-                data={
-                    str(eve_character.character_id): [
-                        {
-                            "notification_id": 42,
-                            "is_read": False,
-                            "sender_id": sender.id,
-                            "sender_type": "corporation",
-                            "text": "{}\n",
-                            "timestamp": datetime_to_esi(now()),
-                            "type": "CorpBecameWarEligible",
-                        }
-                    ]
-                },
-            )
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
-        # when
-        owner.fetch_notifications_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertTrue(owner.is_notification_sync_fresh)
-        self.assertEqual(owner.notification_set.count(), 1)
-        obj = owner.notification_set.first()
-        self.assertEqual(
-            obj.notif_type, NotificationType.WAR_CORPORATION_BECAME_ELIGIBLE
-        )
-
-    def test_should_handle_other_sender_correctly(self, mock_esi):
-        # given
-        owner = OwnerFactory(notifications_last_update_at=None)
-        eve_character = owner.characters.first().character_ownership.character
-        endpoints = [
-            EsiEndpoint(
-                "Character",
-                "get_characters_character_id_notifications",
-                "character_id",
-                needs_token=True,
-                data={
-                    str(eve_character.character_id): [
-                        {
-                            "notification_id": 42,
-                            "is_read": False,
-                            "sender_id": 1,
-                            "sender_type": "other",
-                            "text": "{}\n",
-                            "timestamp": datetime_to_esi(now()),
-                            "type": "CorpBecameWarEligible",
-                        }
-                    ]
-                },
-            )
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
-        # when
-        owner.fetch_notifications_esi()
-        # then
-        obj = owner.notification_set.get(notification_id=42)
-        self.assertIsNone(obj.sender)
 
 
 @override_settings(DEBUG=True)
@@ -385,467 +384,585 @@ class TestSendNewNotifications(NoSocketsTestCase):
         self.assertSetEqual(notifications_processed, notifications_expected)
 
 
-@patch(OWNERS_PATH + ".esi")
-class TestOwnerUpdateAssetEsi(NoSocketsTestCase):
+class TestOwnerUpdateAssetEsi(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        cls.corporation = EveCharacterFactory()
-        character = EveCharacterFactory(corporation=cls.corporation)
-        cls.user = UserMainDefaultOwnerFactory(main_character__character=character)
+        cls.character = EveCharacterFactory()
+        cls.user = UserMainDefaultOwnerFactory(main_character__character=cls.character)
+        cls.owner = OwnerFactory(user=cls.user, assets_last_update_at=None)
 
-        endpoints = [
-            EsiEndpoint(
-                "Assets",
-                "get_corporations_corporation_id_assets",
-                "corporation_id",
-                needs_token=True,
-                data={
-                    f"{cls.corporation.corporation_id}": [
-                        {
-                            "is_singleton": False,
-                            "item_id": 1300000001001,
-                            "location_flag": "QuantumCoreRoom",
-                            "location_id": 1000000000001,
-                            "location_type": "item",
-                            "quantity": 1,
-                            "type_id": 56201,
-                        },
-                        {
-                            "is_singleton": True,
-                            "item_id": 1300000001002,
-                            "location_flag": "ServiceSlot0",
-                            "location_id": 1000000000001,
-                            "location_type": "item",
-                            "quantity": 1,
-                            "type_id": 35894,
-                        },
-                        {
-                            "is_singleton": True,
-                            "item_id": 1300000002001,
-                            "location_flag": "ServiceSlot0",
-                            "location_id": 1000000000002,
-                            "location_type": "item",
-                            "quantity": 1,
-                            "type_id": 35894,
-                        },
-                        {
-                            "is_singleton": True,
-                            "item_id": 1500000000001,
-                            "location_flag": "AutoFit",
-                            "location_id": 30002537,  # Amamake,
-                            "location_type": "solar_system",
-                            "quantity": 1,
-                            "type_id": 16213,  # control tower
-                        },
-                        {
-                            "is_singleton": True,
-                            "item_id": 1500000000002,
-                            "location_flag": "AutoFit",
-                            "location_id": 30002537,  # Amamake,
-                            "location_type": "solar_system",
-                            "quantity": 1,
-                            "type_id": 32226,
-                        },
-                    ],
-                },
-            ),
-            EsiEndpoint(
-                "Assets",
-                "post_corporations_corporation_id_assets_locations",
-                "corporation_id",
-                needs_token=True,
-                data={
-                    f"{cls.corporation.corporation_id}": [
-                        {"item_id": 1500000000002, "position": {"x": 1, "y": 2, "z": 3}}
-                    ]
-                },
-            ),
-        ]
-        cls.esi_client_stub = EsiClientStub.create_from_endpoints(endpoints)
-
-    def test_should_update_upwell_items_for_owner(self, mock_esi):
+    @pook.on
+    def test_should_fetch_new_assets(self):
         # given
-        mock_esi.client = self.esi_client_stub
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        StructureFactory(owner=owner, id=1000000000001)
-        StructureFactory(owner=owner, id=1000000000002)
-        # when
-        owner.update_asset_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertTrue(owner.is_assets_sync_fresh)
-        self.assertSetEqual(
-            queryset_pks(StructureItem.objects.all()),
-            {1300000001001, 1300000001002, 1300000002001},
+        structure = StructureFactory(owner=self.owner, quantum_core=False)
+        service_module_type = CitadelServiceModuleTypeFactory()
+        item_id = 1300000001001
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": item_id,
+                    "location_flag": "ServiceSlot0",
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 1,
+                    "type_id": service_module_type.id,
+                },
+            ],
         )
-        obj = owner.structures.get(pk=1000000000001).items.get(pk=1300000001001)
-        self.assertEqual(obj.eve_type_id, 56201)
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[],
+        )
+
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.is_assets_sync_fresh)
+        obj = structure.items.get(pk=item_id)
+        self.assertEqual(obj.eve_type_id, service_module_type.id)
+        self.assertEqual(obj.location_flag, "ServiceSlot0")
+        self.assertEqual(obj.quantity, 1)
+        self.assertTrue(obj.is_singleton)
+
+    @pook.on
+    def test_should_updating_existing_assets(self):
+        # given
+
+        structure = StructureFactory(owner=self.owner, quantum_core=False)
+        item = StructureItemFactory(structure=structure, is_singleton=False, quantity=3)
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": item.is_singleton,
+                    "item_id": item.id,
+                    "location_flag": item.location_flag,
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 5,
+                    "type_id": item.eve_type.id,
+                },
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[],
+        )
+
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.is_assets_sync_fresh)
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 5)
+
+    @pook.on
+    def test_should_update_quantum_core(self):
+        # given
+
+        structure = StructureFactory(owner=self.owner, quantum_core=False)
+        quantum_core_type = QuantumCoreTypeFactory()
+        service_module_type = CitadelServiceModuleTypeFactory()
+        item_1_id = 1300000001001
+        item_2_id = 1300000002001
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": False,
+                    "item_id": item_1_id,
+                    "location_flag": "QuantumCoreRoom",
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 1,
+                    "type_id": quantum_core_type.id,
+                },
+                {
+                    "is_singleton": True,
+                    "item_id": item_2_id,
+                    "location_flag": "ServiceSlot0",
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 1,
+                    "type_id": service_module_type.id,
+                },
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[],
+        )
+
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.is_assets_sync_fresh)
+        obj = structure.items.get(pk=item_1_id)
+        self.assertEqual(obj.eve_type_id, quantum_core_type.id)
         self.assertEqual(
             obj.location_flag, StructureItem.LocationFlag.QUANTUM_CORE_ROOM
         )
         self.assertEqual(obj.quantity, 1)
         self.assertFalse(obj.is_singleton)
 
-        obj = owner.structures.get(pk=1000000000001).items.get(pk=1300000001002)
-        self.assertEqual(obj.eve_type_id, 35894)
+        obj = structure.items.get(pk=item_2_id)
+        self.assertEqual(obj.eve_type_id, service_module_type.id)
         self.assertEqual(obj.location_flag, "ServiceSlot0")
         self.assertEqual(obj.quantity, 1)
         self.assertTrue(obj.is_singleton)
 
-        structure = owner.structures.get(id=1000000000001)
+        structure.refresh_from_db()
         self.assertTrue(structure.has_fitting)
         self.assertTrue(structure.has_core)
 
-        structure = owner.structures.get(id=1000000000002)
-        self.assertTrue(structure.has_fitting)
-        self.assertFalse(structure.has_core)
-
     @patch(OWNERS_PATH + ".notify", spec=True)
-    def test_should_inform_user_about_successful_update(self, mock_notify, mock_esi):
+    @pook.on
+    def test_should_inform_user_about_successful_update(self, mock_notify):
         # given
-        mock_esi.client = self.esi_client_stub
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        StructureFactory(owner=owner, id=1000000000001)
+
+        structure = StructureFactory(owner=self.owner, quantum_core=False)
+        service_module_type = CitadelServiceModuleTypeFactory()
+        item_2_id = 1300000002001
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": item_2_id,
+                    "location_flag": "ServiceSlot0",
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 1,
+                    "type_id": service_module_type.id,
+                },
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[],
+        )
+
         # when
-        owner.update_asset_esi(user=self.user)
+        self.owner.update_asset_esi(user=self.user)
+
         # then
-        owner.refresh_from_db()
-        self.assertTrue(owner.is_assets_sync_fresh)
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.is_assets_sync_fresh)
         self.assertTrue(mock_notify.called)
 
-    def test_should_raise_exception_if_esi_has_error(self, mock_esi):
-        def my_callback(**kwargs):
-            raise HTTPInternalServerError(
-                BravadoResponseStub(status_code=500, reason="Test")
-            )
-
+    @pook.on
+    def test_should_add_item_when_location_not_found(self):
         # given
-        endpoints = [
-            EsiEndpoint(
-                "Assets",
-                "get_corporations_corporation_id_assets",
-                "corporation_id",
-                needs_token=True,
-                side_effect=my_callback,
-            )
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        StructureFactory(owner=owner, id=1000000000001)
-        # when
-        with self.assertRaises(HTTPInternalServerError):
-            owner.update_asset_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertFalse(owner.is_assets_sync_fresh)
 
-    def test_should_remove_assets_that_no_longer_exist_for_existing_structure(
-        self, mock_esi
-    ):
-        # given
-        mock_esi.client = self.esi_client_stub
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        structure = StructureFactory(owner=owner, id=1000000000001)
-        item = StructureItemFactory(structure=structure)
-        # when
-        owner.update_asset_esi()
-        # then
-        self.assertFalse(structure.items.filter(pk=item.pk).exists())
-
-    def test_should_remove_assets_that_no_longer_exist_for_removed_structure(
-        self, mock_esi
-    ):
-        # given
-        mock_esi.client = self.esi_client_stub
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        StructureFactory(owner=owner, id=1000000000001)
-        structure = StructureFactory(owner=owner, id=1000000000666)
-        item = StructureItemFactory(structure=structure)
-        # when
-        owner.update_asset_esi()
-        # then
-        self.assertFalse(structure.items.filter(pk=item.pk).exists())
-
-    def test_should_handle_asset_moved_to_another_structure(self, mock_esi):
-        # given
-        mock_esi.client = self.esi_client_stub
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        structure_1 = StructureFactory(owner=owner, id=1000000000001)
-        structure_2 = StructureFactory(owner=owner, id=1000000000002)
-        StructureItemFactory(
-            structure=structure_2,
-            id=1300000001002,
-            eve_type_id=35894,
-            location_flag="ServiceSlot0",
-            is_singleton=True,
-            quantity=1,
+        structure = StructureFactory(owner=self.owner, quantum_core=False)
+        service_module_type = CitadelServiceModuleTypeFactory()
+        item_id = 1300000001001
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": item_id,
+                    "location_flag": "ServiceSlot0",
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 1,
+                    "type_id": service_module_type.id,
+                },
+            ],
         )
-        # when
-        owner.update_asset_esi()
-        # then
-        self.assertSetEqual(queryset_pks(structure_2.items.all()), {1300000002001})
-        self.assertSetEqual(
-            queryset_pks(structure_1.items.all()), {1300000001001, 1300000001002}
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=404,
+            response_json={"error": "not found"},
         )
 
-    def test_should_not_delete_assets_from_other_owners(self, mock_esi):
-        # given
-        mock_esi.client = self.esi_client_stub
-        user_2 = UserMainDefaultOwnerFactory()
-        owner_2 = OwnerFactory(user=user_2)
-        structure_2 = StructureFactory(
-            owner=owner_2, id=1000000000004, quantum_core=False
-        )
-        StructureItemFactory(structure=structure_2, id=1300000003001)
-
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        StructureFactory(owner=owner, id=1000000000001, quantum_core=False)
-        StructureFactory(owner=owner, id=1000000000002, quantum_core=False)
-
         # when
-        owner.update_asset_esi()
+        self.owner.update_asset_esi()
 
         # then
-        self.assertSetEqual(
-            queryset_pks(StructureItem.objects.all()),
-            {1300000001001, 1300000001002, 1300000002001, 1300000003001},
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.is_assets_sync_fresh)
+        obj = structure.items.get(pk=item_id)
+        self.assertEqual(obj.eve_type_id, service_module_type.id)
+        self.assertEqual(obj.location_flag, "ServiceSlot0")
+        self.assertEqual(obj.quantity, 1)
+        self.assertTrue(obj.is_singleton)
+
+    @pook.on
+    def test_should_raise_exception_when_esi_returns_http_error(self):
+        # given
+
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=500,
+            response_json={"error": "some error"},
         )
 
-    def test_should_remove_outdated_jump_fuel_alerts(self, mock_esi):
+        # when
+        with self.assertRaises(HTTPServerError):
+            self.owner.update_asset_esi()
+
+        # then
+        self.owner.refresh_from_db()
+        self.assertFalse(self.owner.is_assets_sync_fresh)
+
+    @pook.on
+    def test_should_remove_assets_that_no_longer_exist_for_existing_structure(self):
         # given
-        user = UserMainDefaultOwnerFactory()
-        owner = OwnerFactory(user=user)
-        structure = StructureFactory(owner=owner, id=1000000000004)
+
+        structure = StructureFactory(owner=self.owner, quantum_core=False)
+        service_module_type = CitadelServiceModuleTypeFactory()
+        added_item_id = 1300000002001
+        StructureItemFactory(structure=structure)  # should be removed
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": added_item_id,
+                    "location_flag": "ServiceSlot0",
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 1,
+                    "type_id": service_module_type.id,
+                },
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[],
+        )
+
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        got = set(structure.items.values_list("id", flat=True))
+        self.assertSetEqual(got, {added_item_id})
+
+    @pook.on
+    def test_should_handle_asset_moved_to_another_structure(self):
+        # given
+
+        structure_1 = StructureFactory(owner=self.owner, quantum_core=False)
+        structure_2 = StructureFactory(owner=self.owner, quantum_core=False)
+        item = StructureItemFactory(structure=structure_2)
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": item.id,
+                    "location_flag": item.location_flag,
+                    "location_id": structure_1.id,
+                    "location_type": "item",
+                    "quantity": item.quantity,
+                    "type_id": item.eve_type.id,
+                },
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[],
+        )
+
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        self.assertSetEqual(queryset_pks(structure_2.items.all()), set())
+        self.assertSetEqual(queryset_pks(structure_1.items.all()), {item.id})
+
+    @pook.on
+    def test_should_remove_outdated_jump_fuel_alerts(self):
+        # given
+
+        structure = StructureFactory(owner=self.owner)
         config = JumpFuelAlertConfigFactory(threshold=100)
         structure.jump_fuel_alerts.create(structure=structure, config=config)
 
-        endpoints = [
-            EsiEndpoint(
-                "Assets",
-                "get_corporations_corporation_id_assets",
-                "corporation_id",
-                needs_token=True,
-                data={
-                    f"{owner.corporation.corporation_id}": [
-                        {
-                            "is_singleton": False,
-                            "item_id": 1300000003001,
-                            "location_flag": "StructureFuel",
-                            "location_id": 1000000000004,
-                            "location_type": "item",
-                            "quantity": 5000,
-                            "type_id": 16273,
-                        }
-                    ]
+        fuel_type = LiquidOzoneTypeFactory()
+        item_id = 1000000000004
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": False,
+                    "item_id": item_id,
+                    "location_flag": StructureItem.LocationFlag.STRUCTURE_FUEL,
+                    "location_id": structure.id,
+                    "location_type": "item",
+                    "quantity": 1000,
+                    "type_id": fuel_type.id,
                 },
-            ),
-            EsiEndpoint(
-                "Assets",
-                "post_corporations_corporation_id_assets_locations",
-                "corporation_id",
-                needs_token=True,
-                data={f"{owner.corporation.corporation_id}": []},
-            ),
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[],
+        )
+
         # when
-        owner.update_asset_esi()
+        self.owner.update_asset_esi()
         # then
         self.assertEqual(structure.jump_fuel_alerts.count(), 0)
 
     # TODO: Add tests for error cases
 
-    def test_should_update_starbase_items_for_owner(self, mock_esi):
+    @pook.on
+    def test_should_update_starbase_items(self):
         # given
-        mock_esi.client = self.esi_client_stub
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        StarbaseFactory(
-            owner=owner, id=1500000000001, position_x=1, position_y=2, position_z=3
-        )  # position needed to match assets
-        # when
-        owner.update_asset_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertTrue(owner.is_assets_sync_fresh)
-        self.assertSetEqual(queryset_pks(StructureItem.objects.all()), {1500000000002})
 
-    def test_should_update_upwell_items_for_owner_with_invalid_locations(
-        self, mock_esi
-    ):
-        # given
-        user = UserMainDefaultOwnerFactory()
-        owner = OwnerFactory(user=user)
-        structure = StructureFactory(owner=owner, id=1000000000004)
-
-        endpoints = [
-            EsiEndpoint(
-                "Assets",
-                "get_corporations_corporation_id_assets",
-                "corporation_id",
-                needs_token=True,
-                data={
-                    f"{owner.corporation.corporation_id}": [
-                        {
-                            "is_singleton": False,
-                            "item_id": 1300000003001,
-                            "location_flag": "StructureFuel",
-                            "location_id": 1000000000004,
-                            "location_type": "item",
-                            "quantity": 5000,
-                            "type_id": 16273,
-                        }
-                    ]
+        starbase = StarbaseFactory(owner=self.owner)  # position needs to match assets
+        item_id = 1000000000004
+        item_type = LiquidOzoneTypeFactory()
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": False,
+                    "item_id": item_id,
+                    "location_flag": StructureItem.LocationFlag.AUTOFIT,
+                    "location_id": starbase.eve_solar_system.id,
+                    "location_type": "solar_system",
+                    "quantity": 3,
+                    "type_id": item_type.id,
                 },
-            ),
-            EsiEndpoint(
-                "Assets",
-                "post_corporations_corporation_id_assets_locations",
-                "corporation_id",
-                needs_token=True,
-                http_error_code=404,
-            ),
-        ]
-        mock_esi.client = EsiClientStub.create_from_endpoints(endpoints)
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[
+                {
+                    "item_id": item_id,
+                    "position": {
+                        "x": starbase.position_x,
+                        "y": starbase.position_y,
+                        "z": starbase.position_z,
+                    },
+                },
+            ],
+        )
+
         # when
-        owner.update_asset_esi()
+        self.owner.update_asset_esi()
+
         # then
-        self.assertTrue(structure.items.filter(id=1300000003001).exists())
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.is_assets_sync_fresh)
+        self.assertSetEqual(queryset_pks(starbase.items.all()), {item_id})
 
 
 @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_SKYHOOKS", True)
 @patch(OWNERS_PATH + ".EveSolarSystem.nearest_celestial")
-@patch(OWNERS_PATH + ".esi")
-class TestOwnerUpdateSkyhooks(NoSocketsTestCase):
+class TestOwnerUpdateSkyhooks(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        cls.corporation = EveCharacterFactory()
-        character = EveCharacterFactory(corporation=cls.corporation)
-        cls.user = UserMainDefaultOwnerFactory(main_character__character=character)
-        cls.planet = EvePlanet.objects.get(id=40161469)
-        endpoints = [
-            EsiEndpoint(
-                "Assets",
-                "get_corporations_corporation_id_assets",
-                "corporation_id",
-                needs_token=True,
-                data={
-                    f"{cls.corporation.corporation_id}": [
-                        {
-                            "is_singleton": True,
-                            "item_id": 1000000010001,
-                            "location_flag": "AutoFit",
-                            "location_id": 30002537,
-                            "location_type": "solar_system",
-                            "quantity": 1,
-                            "type_id": 81080,
-                        },
-                    ],
+        cls.character = EveCharacterFactory()
+        cls.user = UserMainDefaultOwnerFactory(main_character__character=cls.character)
+        cls.owner = OwnerFactory(user=cls.user, assets_last_update_at=None)
+        cls.planet = EvePlanetFactory()
+
+    @pook.on
+    def test_should_create_new_skyhooks_from_scratch(self, mock_nearest_celestial):
+        # given
+        mock_nearest_celestial.return_value = NearestCelestial(
+            eve_object=self.planet, distance=35_000_000, eve_type=self.planet.eve_type
+        )
+        skyhook_id = 1000000010001
+        skyhook_type = SkyhookTypeFactory()
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": skyhook_id,
+                    "location_flag": "AutoFit",
+                    "location_id": self.planet.eve_solar_system.id,
+                    "location_type": "solar_system",
+                    "quantity": 1,
+                    "type_id": skyhook_type.id,
                 },
-            ),
-            EsiEndpoint(
-                "Assets",
-                "post_corporations_corporation_id_assets_locations",
-                "corporation_id",
-                needs_token=True,
-                data={
-                    f"{cls.corporation.corporation_id}": [
-                        {"item_id": 1000000010001, "position": {"x": 1, "y": 2, "z": 3}}
-                    ]
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[
+                {
+                    "item_id": skyhook_id,
+                    "position": PositionFactory(),
                 },
-            ),
-        ]
-        cls.esi_client_stub = EsiClientStub.create_from_endpoints(endpoints)
+            ],
+        )
 
-    def test_should_create_new_skyhooks_from_scratch(
-        self, mock_esi, mock_nearest_celestial
-    ):
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        self.owner.refresh_from_db()
+        self.assertEqual(self.owner.structures.count(), 1)
+        structure: Structure = self.owner.structures.get(pk=1000000010001)
+        self.assertTrue(structure.is_skyhook)
+        self.assertEqual(structure.eve_planet, self.planet)
+
+    @pook.on
+    def test_should_remove_obsolete_skyhooks(self, mock_nearest_celestial):
         # given
-        mock_esi.client = self.esi_client_stub
         mock_nearest_celestial.return_value = NearestCelestial(
             eve_object=self.planet, distance=35_000_000, eve_type=self.planet.eve_type
         )
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        # when
-        owner.update_asset_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertEqual(owner.structures.count(), 1)
-        obj: Structure = owner.structures.get(pk=1000000010001)
-        self.assertTrue(obj.is_skyhook)
-        self.assertEqual(obj.eve_planet, self.planet)
 
-    def test_should_remove_obsolete_skyhooks(self, mock_esi, mock_nearest_celestial):
-        # given
-        mock_esi.client = self.esi_client_stub
-        mock_nearest_celestial.return_value = NearestCelestial(
-            eve_object=self.planet, distance=35_000_000, eve_type=self.planet.eve_type
+        SkyhookFactory(owner=self.owner)  # should be removed
+        skyhook = SkyhookFactory(owner=self.owner)  # should not be removed
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": skyhook.id,
+                    "location_flag": StructureItem.LocationFlag.AUTOFIT,
+                    "location_id": skyhook.eve_solar_system.id,
+                    "location_type": "solar_system",
+                    "quantity": 1,
+                    "type_id": skyhook.eve_type.id,
+                },
+            ],
         )
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        SkyhookFactory.create(owner=owner)
-        # when
-        owner.update_asset_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertEqual(owner.structures.count(), 1)
-        obj: Structure = owner.structures.get(pk=1000000010001)
-        self.assertTrue(obj.is_skyhook)
-        self.assertEqual(obj.eve_planet, self.planet)
-
-    def test_should_update_existing_skyhook(self, mock_esi, mock_nearest_celestial):
-        # given
-        mock_esi.client = self.esi_client_stub
-        mock_nearest_celestial.return_value = NearestCelestial(
-            eve_object=self.planet, distance=35_000_000, eve_type=self.planet.eve_type
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[
+                {
+                    "item_id": skyhook.id,
+                    "position": PositionFactory(),
+                },
+            ],
         )
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        SkyhookFactory.create(owner=owner, id=1000000010001, eve_planet_name="Thera I")
-        # when
-        owner.update_asset_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertEqual(owner.structures.count(), 1)
-        obj: Structure = owner.structures.get(pk=1000000010001)
-        self.assertTrue(obj.is_skyhook)
-        self.assertEqual(obj.eve_planet, self.planet)
 
-    def test_should_ignore_os_error_when_resolving_planet(
-        self, mock_esi, mock_nearest_celestial
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        self.owner.refresh_from_db()
+        self.assertEqual(queryset_pks(self.owner.structures.all()), {skyhook.id})
+
+    @pook.on
+    def test_should_handle_expected_errors_when_resolving_planet(
+        self, mock_nearest_celestial
     ):
         # given
-        mock_esi.client = self.esi_client_stub
-        mock_nearest_celestial.side_effect = OSError
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
-        # when
-        owner.update_asset_esi()
-        # then
-        owner.refresh_from_db()
-        self.assertEqual(owner.structures.count(), 1)
-        obj: Structure = owner.structures.get(pk=1000000010001)
-        self.assertTrue(obj.is_skyhook)
-        self.assertIsNone(obj.eve_planet)
+        mock_nearest_celestial.side_effect = ValueError
 
-    def test_should_ignore_no_reply_when_resolving_planet(
-        self, mock_esi, mock_nearest_celestial
-    ):
+        skyhook_id = 1000000010001
+        skyhook_type = SkyhookTypeFactory()
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": skyhook_id,
+                    "location_flag": StructureItem.LocationFlag.AUTOFIT,
+                    "location_id": self.planet.eve_solar_system.id,
+                    "location_type": "solar_system",
+                    "quantity": 1,
+                    "type_id": skyhook_type.id,
+                },
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[
+                {
+                    "item_id": skyhook_id,
+                    "position": PositionFactory(),
+                },
+            ],
+        )
+        # when
+        self.owner.update_asset_esi()
+
+        # then
+        structure: Structure = self.owner.structures.first()
+        self.assertEqual(structure.id, skyhook_id)
+        self.assertTrue(structure.is_skyhook)
+        self.assertIsNone(structure.eve_planet)
+
+    @pook.on
+    def test_should_ignore_no_reply_when_resolving_planet(self, mock_nearest_celestial):
         # given
-        mock_esi.client = self.esi_client_stub
         mock_nearest_celestial.return_value = None
-        owner = OwnerFactory(user=self.user, assets_last_update_at=None)
+
+        skyhook_id = 1000000010001
+        skyhook_type = SkyhookTypeFactory()
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets",
+            reply=200,
+            response_json=[
+                {
+                    "is_singleton": True,
+                    "item_id": skyhook_id,
+                    "location_flag": StructureItem.LocationFlag.AUTOFIT,
+                    "location_id": self.planet.eve_solar_system.id,
+                    "location_type": "solar_system",
+                    "quantity": 1,
+                    "type_id": skyhook_type.id,
+                },
+            ],
+        )
+        pook.post(
+            f"https://esi.evetech.net/corporations/{self.character.corporation_id}/assets/locations",
+            reply=200,
+            response_json=[
+                {
+                    "item_id": skyhook_id,
+                    "position": PositionFactory(),
+                },
+            ],
+        )
         # when
-        owner.update_asset_esi()
+        self.owner.update_asset_esi()
+
         # then
-        owner.refresh_from_db()
-        self.assertEqual(owner.structures.count(), 1)
-        obj: Structure = owner.structures.get(pk=1000000010001)
-        self.assertTrue(obj.is_skyhook)
-        self.assertIsNone(obj.eve_planet)
+        structure: Structure = self.owner.structures.first()
+        self.assertEqual(structure.id, skyhook_id)
+        self.assertTrue(structure.is_skyhook)
+        self.assertIsNone(structure.eve_planet)
 
 
-class TestOwnerToken(NoSocketsTestCase):
+class TestOwnerToken(TestCase):
     def test_should_return_valid_token(self):
         # given
         character = EveCharacterFactory()
@@ -872,11 +989,11 @@ class TestOwnerToken(NoSocketsTestCase):
 
 @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
 @patch(OWNERS_PATH + ".notify_admins")
-class TestOwnerUpdateIsUp(NoSocketsTestCase):
+class TestOwnerUpdateIsUp(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
+
         cls.corporation = EveCorporationInfoFactory()
 
     @patch(OWNERS_PATH + ".Owner.are_all_syncs_ok", True)
@@ -948,3 +1065,6 @@ class TestOwnerUpdateIsUp(NoSocketsTestCase):
         self.assertTrue(mock_notify_admins.called)
         owner.refresh_from_db()
         self.assertTrue(owner.is_up)
+
+
+# end

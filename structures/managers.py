@@ -27,7 +27,7 @@ from .providers import esi
 from .webhooks.managers import WebhookBaseManager
 
 if TYPE_CHECKING:
-    from .models import Owner
+    from .models import Owner, Structure
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -39,7 +39,8 @@ class EveSovereigntyMapManager(models.Manager):
         logger.info("Retrieved sovereignty map from ESI")
         last_updated = now()
         obj_list = []
-        for solar_system in sov_map:
+        for row in sov_map:
+            solar_system = row.model_dump()
             obj_def = {
                 "solar_system_id": solar_system["system_id"],
                 "last_updated": last_updated,
@@ -373,9 +374,10 @@ class StructureManagerBase(models.Manager):
         if token is None:
             raise ValueError("Can not fetch structure without token")
 
-        structure_info = esi.client.Universe.GetUniverseStructuresStructureId(
+        data = esi.client.Universe.GetUniverseStructuresStructureId(
             structure_id=id, token=token
-        ).results(use_etag=False)
+        ).result(use_etag=False)
+        structure_info = data.model_dump()
         structure = {
             "structure_id": id,
             "name": self.model.extract_name_from_esi_response(structure_info["name"]),
@@ -384,7 +386,7 @@ class StructureManagerBase(models.Manager):
             "system_id": structure_info["solar_system_id"],
         }
         owner = Owner.objects.get(
-            corporation__corporation_id=structure_info["corporation_id"]
+            corporation__corporation_id=structure_info["owner_id"]
         )
         obj, created = self.update_or_create_from_dict(structure=structure, owner=owner)
         return obj, created
@@ -393,7 +395,6 @@ class StructureManagerBase(models.Manager):
         self, structure: dict, owner: Owner
     ) -> Tuple[Any, bool]:
         """Update or create a structure from a dict."""
-
         eve_type: EveType = EveType.objects.get_or_create_esi(id=structure["type_id"])[
             0
         ]
@@ -409,6 +410,7 @@ class StructureManagerBase(models.Manager):
         except self.model.DoesNotExist:
             old_obj = None
 
+        obj: Structure
         obj, created = self.update_or_create(
             id=structure["structure_id"],
             defaults={

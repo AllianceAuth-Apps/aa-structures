@@ -3,14 +3,9 @@
 import datetime as dt
 import json
 import logging
-import unicodedata
 from collections import namedtuple
 from pathlib import Path
 from random import randrange
-
-import pytz
-from bs4 import BeautifulSoup
-from markdown import markdown
 
 from django.forms.models import model_to_dict
 from django.utils.timezone import now
@@ -112,13 +107,6 @@ def _generate_notif_obj_for_owner(
     return Notification(**params)
 
 
-def markdown_to_plain(text: str) -> str:
-    """Convert text in markdown to plain text."""
-    html = markdown(text)
-    text = "".join(BeautifulSoup(html, features="html.parser").findAll(text=True))
-    return unicodedata.normalize("NFKD", text)
-
-
 # def generate_eve_entities_from_auth_entities():
 #     """Generate EveEntity objects from existing Auth EveOnline objects."""
 
@@ -185,14 +173,6 @@ def clone_notification(obj: Notification) -> Notification:
         sender=obj.sender, notif_type=obj.notif_type, owner=obj.owner, text=obj.text
     )
     return new_object
-
-
-def datetime_to_ldap(my_dt: dt.datetime) -> int:
-    """Return a standard datetime as ldap datetime."""
-    return (
-        ((my_dt - dt.datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds())
-        + 11644473600
-    ) * 10000000
 
 
 NearestCelestial = namedtuple(

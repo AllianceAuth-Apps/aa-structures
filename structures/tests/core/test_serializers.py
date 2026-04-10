@@ -12,9 +12,9 @@ from app_utils.testing import NoSocketsTestCase
 from structures.core.serializers import PocoListSerializer, StructureListSerializer
 from structures.models import Structure
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     JumpGateFactory,
     OwnerFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     UserMainDefaultFactory,
@@ -31,7 +31,6 @@ class TestStructureListSerializer(NoSocketsTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
         alliance = EveAllianceInfoFactory(
@@ -55,21 +54,22 @@ class TestStructureListSerializer(NoSocketsTestCase):
 
     def test_should_render_upwell_structure(self):
         # given
-        structure = StructureFactory(
-            owner=self.owner, eve_solar_system_name="Amamake", eve_type_name="Astrahus"
-        )
+        structure = StructureFactory(owner=self.owner)
         # when
         obj = self._render_structure(structure)
         # then
         self.assertEqual(obj["alliance_name"], "Wayne Enterprises [WYE]")
         self.assertEqual(obj["corporation_name"], "Wayne Technologies")
-        self.assertEqual(obj["region_name"], "Heimatar")
-        self.assertEqual(obj["solar_system_name"], "Amamake")
+        self.assertEqual(
+            obj["region_name"],
+            structure.eve_solar_system.eve_constellation.eve_region.name,
+        )
+        self.assertEqual(obj["solar_system_name"], structure.eve_solar_system.name)
         self.assertEqual(obj["group_name"], "Citadel")
         self.assertEqual(obj["category_name"], "Structure")
         self.assertFalse(obj["is_starbase"])
         self.assertFalse(obj["is_poco"])
-        self.assertEqual(obj["type_name"], "Astrahus")
+        self.assertEqual(obj["type_name"], structure.eve_type.name)
         self.assertFalse(obj["is_reinforced"])
         self.assertEqual(obj["is_reinforced_str"], "no")
         self.assertEqual(
@@ -121,16 +121,17 @@ class TestStructureListSerializer(NoSocketsTestCase):
 
     def test_should_return_jump_gates(self):
         # given
-        structure = JumpGateFactory(
-            owner=self.owner, jump_fuel_quantity=5000, eve_solar_system_name="1-PGSG"
-        )
+        structure = JumpGateFactory(owner=self.owner, jump_fuel_quantity=5000)
         # when
         obj = self._render_structure(
             structure, queryset=Structure.objects.annotate_jump_fuel_quantity()
         )
         # then
-        self.assertEqual(obj["region_name"], "Detorid")
-        self.assertEqual(obj["solar_system_name"], "1-PGSG")
+        self.assertEqual(
+            obj["region_name"],
+            structure.eve_solar_system.eve_constellation.eve_region.name,
+        )
+        self.assertEqual(obj["solar_system_name"], structure.eve_solar_system.name)
         # self.assertEqual(
         #     obj["structure_name_and_tags"], "1-PGSG &gt;&gt; A-C5TC - Test Jump Gate"
         # )
@@ -166,21 +167,31 @@ class TestPocoListSerializer(NoSocketsTestCase):
 
     def test_should_render_poco_correctly(self):
         # given
-        structure = PocoFactory(
+        structure = CustomsOfficeFactory(
             owner=self.owner,
-            eve_planet_name="Amamake V",
             poco_details__corporation_tax_rate=0.01,
+            eve_solar_system__security_status=0.3,
+            eve_planet__eve_type__name="Planet (Barren)",
         )
         # when
         obj = self._render_structure(structure)
         # then
         self.assertEqual(obj["alliance_name"], "Wayne Enterprises [WYE]")
-        self.assertIn("Hed", obj["constellation"])
+        self.assertEqual(
+            obj["constellation"],
+            (
+                structure.eve_solar_system.eve_constellation.eve_region.name
+                + " - "
+                + structure.eve_solar_system.eve_constellation.name
+            ),
+        )
         self.assertEqual(obj["corporation_name"], "Wayne Technologies")
         self.assertEqual(obj["has_access_str"], "yes")
-        self.assertEqual(obj["region"], "Heimatar")
-        self.assertEqual(obj["planet_name"], "Amamake V")
+        self.assertEqual(
+            obj["region"], structure.eve_solar_system.eve_constellation.eve_region.name
+        )
+        self.assertEqual(obj["planet_name"], structure.eve_planet.name)
         self.assertEqual(obj["planet_type_name"], "Barren")
-        self.assertEqual(obj["solar_system"], "Amamake")
+        self.assertEqual(obj["solar_system"], structure.eve_solar_system.name)
         self.assertEqual(obj["space_type"], "lowsec")
         self.assertEqual(obj["tax"]["sort"], 1.0)

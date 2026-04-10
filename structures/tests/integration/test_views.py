@@ -6,10 +6,10 @@ from django.urls import reverse
 from app_utils.testing import add_character_to_user
 
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveCharacterFactory,
     JumpGateFactory,
     OwnerFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     UserMainBasicFactory,
@@ -36,7 +36,7 @@ class TestStructureListView(TestCase):
     def test_should_return_correct_context(self):
         # given
         StructureFactory(owner=self.owner)
-        PocoFactory(owner=self.owner)
+        CustomsOfficeFactory(owner=self.owner)
         StarbaseFactory(owner=self.owner)
         JumpGateFactory(owner=self.owner)
         StructureFactory()  # this one will be hidden
@@ -95,9 +95,9 @@ class TestPocoView(TestCase):
     @patch(COMMON_PATH + ".STRUCTURES_PAGING_ENABLED", True)
     def test_should_return_correct_context(self):
         # given
-        PocoFactory(owner=self.owner)
-        PocoFactory(owner=self.owner)
-        PocoFactory()  # this one will be hidden
+        CustomsOfficeFactory(owner=self.owner)
+        CustomsOfficeFactory(owner=self.owner)
+        CustomsOfficeFactory()  # this one will be hidden
         self.client.force_login(self.user)
         # when
         response = self.client.get(reverse("structures:public"))

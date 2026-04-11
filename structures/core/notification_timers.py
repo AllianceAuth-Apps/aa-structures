@@ -14,9 +14,7 @@ from app_utils.datetime import (
     ldap_timedelta_2_timedelta,
 )
 from app_utils.django import app_labels
-from app_utils.logging import LoggerAddTag
 
-from structures import __title__
 from structures.app_settings import (
     STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED,
     STRUCTURES_TIMERS_ARE_CORP_RESTRICTED,
@@ -37,7 +35,7 @@ if "structuretimers" in app_labels():
 else:
     Timer = None  # pylint: disable = invalid-name
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 def add_or_remove_timer(notif: Notification) -> bool:

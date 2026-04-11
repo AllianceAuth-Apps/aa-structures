@@ -13,11 +13,10 @@ from django.contrib.auth.models import User
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.allianceauth import get_redis_client
 from app_utils.json import JSONDateTimeDecoder, JSONDateTimeEncoder
-from app_utils.logging import LoggerAddTag
 
 from structures import __title__
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class DiscordWebhookMixin:

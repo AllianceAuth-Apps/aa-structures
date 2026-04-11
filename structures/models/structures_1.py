@@ -16,9 +16,7 @@ from django.utils.translation import gettext_noop
 from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
 
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from structures import __title__
 from structures.app_settings import STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS
 from structures.constants import EveCategoryId, EveGroupId, EveTypeId
 from structures.core import starbases
@@ -31,7 +29,7 @@ from structures.managers import StructureManager, StructureTagManager
 
 from .eveuniverse import EveSpaceType
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class StructureTag(models.Model):

@@ -11,7 +11,6 @@ from esi.decorators import rate_limit_retry_task
 from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
-from app_utils.logging import LoggerAddTag
 
 from . import __title__
 from .app_settings import STRUCTURES_TASKS_TIME_LIMIT
@@ -25,7 +24,7 @@ from .models import (
     Webhook,
 )
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 TASK_PRIORITY_HIGH = 2
 

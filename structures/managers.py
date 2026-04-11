@@ -17,9 +17,7 @@ from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
 
 from allianceauth.eveonline.models import EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from . import __title__
 from .app_settings import STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION
 from .constants import EveCategoryId, EveTypeId
 from .core.notification_types import NotificationType
@@ -29,7 +27,7 @@ from .webhooks.managers import WebhookBaseManager
 if TYPE_CHECKING:
     from .models import Owner, Structure
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class EveSovereigntyMapManager(models.Manager):

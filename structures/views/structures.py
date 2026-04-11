@@ -26,7 +26,6 @@ from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.allianceauth import is_night_mode, notify_admins
-from app_utils.logging import LoggerAddTag
 
 from structures import __title__, tasks
 from structures.app_settings import (
@@ -49,7 +48,7 @@ from structures.models import (
 
 from .common import add_common_context, add_common_data_export
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 QUERY_PARAM_TAGS = "tags"
 

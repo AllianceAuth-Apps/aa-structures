@@ -4,13 +4,11 @@ from django.core.management.base import BaseCommand
 from eveuniverse.models import EveSolarSystem
 
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from structures import __title__
 from structures.constants import EveTypeId
 from structures.models import Structure
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class Command(BaseCommand):

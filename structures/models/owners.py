@@ -31,7 +31,6 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.allianceauth import notify_admins
 from app_utils.datetime import DATETIME_FORMAT
 from app_utils.helpers import chunks
-from app_utils.logging import LoggerAddTag
 
 from structures import __title__
 from structures.app_settings import (
@@ -61,7 +60,7 @@ from .notifications import (
 from .structures_1 import Structure, StructureItem
 from .structures_2 import PocoDetails, StarbaseDetail, StarbaseDetailFuel
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class General(models.Model):

@@ -18,7 +18,7 @@ The release remove
 - Tests now mostly create test data ad-hoc instead of using loaded eveunivere (faster and less brittle)
 - Now uses pinned ESI version
 - Skyhook feature now enabled by default
-- Removed
+- Removed log tags
 
 ## [3.3.1] - 2025-11-17
 

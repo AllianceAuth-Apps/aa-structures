@@ -1,5 +1,4 @@
 import datetime as dt
-from unittest.mock import patch
 
 import pook
 
@@ -53,9 +52,6 @@ class TestTasks(TestCase):
         super().setUpClass()
         reset_celery_once_locks("structures")
 
-    @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", True)
-    @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
-    @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_SKYHOOKS", True)
     @pook.on
     def test_should_fetch_new_structures_from_esi(self):
         # given
@@ -275,7 +271,6 @@ class TestTasks(TestCase):
         self.assertSetEqual(got, want)
         self.assertTrue(pook.isdone(), msg=pook.pending_mocks())
 
-    @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
     @pook.on
     def test_should_send_notification_and_create_timers_for_reinforced_starbase(self):
         # given
@@ -416,6 +411,7 @@ class TestTasks(TestCase):
         self.assertIn(
             "now eligible", discord_mock.matches[0].json["embeds"][0]["description"]
         )
+        self.assertTrue(pook.isdone(), msg=pook.pending_mocks())
 
     @pook.on
     def test_should_fetch_and_send_notification_when_enabled_for_webhook_all_anchoring(
@@ -466,8 +462,8 @@ class TestTasks(TestCase):
         self.assertIn(
             "has anchored in", discord_mock.matches[0].json["embeds"][0]["description"]
         )
+        self.assertTrue(pook.isdone(), msg=pook.pending_mocks())
 
-    @patch(NOTIFICATIONS_PATH + ".STRUCTURES_ADD_TIMERS", True)
     @pook.on
     def test_should_fetch_new_notification_and_send_to_webhook_and_create_timers(self):
         # given
@@ -519,7 +515,8 @@ class TestTasks(TestCase):
             obj = AuthTimer.objects.first()
             self.assertEqual(obj.system, structure.eve_solar_system.name)
 
-    @patch(NOTIFICATIONS_PATH + ".STRUCTURES_ADD_TIMERS", False)
+        self.assertTrue(pook.isdone(), msg=pook.pending_mocks())
+
     @pook.on
     def test_should_send_selected_notif_types_only(self):
         # given
@@ -550,6 +547,7 @@ class TestTasks(TestCase):
         self.assertIn(
             "war declarations", discord_mock.matches[0].json["embeds"][0]["title"]
         )
+        self.assertTrue(pook.isdone(), msg=pook.pending_mocks())
 
 
 # class TestPlayground(TestCase):

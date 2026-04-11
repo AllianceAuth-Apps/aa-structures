@@ -6,13 +6,29 @@ import logging
 from collections import namedtuple
 from pathlib import Path
 from random import randrange
+from typing import Any, Dict, List
 
 from django.forms.models import model_to_dict
 from django.utils.timezone import now
-from eveuniverse.models import EveEntity
+from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EvePlanetFactory
 
 from structures.core.notification_types import NotificationType
 from structures.models import Notification, Owner
+from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
+    EveEntityAllianceFactory,
+    EveEntityCharacterFactory,
+    EveEntityCorporationFactory,
+    EveSolarSystemLowSecFactory,
+    EveSolarSystemNullSecFactory,
+    IHUBTypeFactory,
+    MoonOreTypeFactory,
+    RefineryFactory,
+    SkyhookFactory,
+    StarbaseFactory,
+    StructureFactory,
+    TCUTypeFactory,
+)
 
 from .factories import NotificationFactory
 
@@ -30,20 +46,20 @@ def test_data_filename():
 # internal functions
 
 
-def _load_testdata_entities() -> dict:
-    with (_current_folder / "entities.json").open("r") as f:
-        entities = json.load(f)
+def _load_notifications() -> List[Dict[str, Any]]:
+    with (_current_folder / "notifications.json").open("r", encoding="utf-8") as f:
+        _notifications = json.load(f)
 
     # update timestamp to current
-    for notification in entities["Notification"]:
+    for notification in _notifications:
         notification["timestamp"] = now() - dt.timedelta(
             hours=randrange(3), minutes=randrange(60), seconds=randrange(60)
         )
 
-    return entities
+    return _notifications
 
 
-entities_testdata = _load_testdata_entities()
+notifications = _load_notifications()
 
 
 ###################################
@@ -54,7 +70,7 @@ entities_testdata = _load_testdata_entities()
 def load_notification_by_type(
     owner: Owner, notif_type: NotificationType
 ) -> Notification:
-    for notification in entities_testdata["Notification"]:
+    for notification in notifications:
         if notification["type"] == notif_type.value:
             return NotificationFactory(
                 owner=owner,
@@ -64,11 +80,70 @@ def load_notification_by_type(
     raise ValueError(f"Could not find notif for type: {notif_type}")
 
 
-def load_notification_entities(owner: Owner, in_bulk=True):
-    """Loads notification fixtures for this owner.
+def load_notification_entities(owner: Owner):
+    EveSolarSystemLowSecFactory(id=30002537, name="Amamake")
+    EveSolarSystemNullSecFactory(id=30000474, name="1-PGSG")
+    EvePlanetFactory(id=40161469, eve_type__id=2016, eve_solar_system__id=30000474)
+    EveMoonFactory(id=40161465, eve_planet__id=40161469)
+    EveMoonFactory(id=40161466, eve_planet__id=40161469)
 
-    Note that the notification require some EveEntity objects to exit,
-    which can be created with ``load_eve_entities()``.
+    IHUBTypeFactory()
+    MoonOreTypeFactory(id=46300)
+    MoonOreTypeFactory(id=46301)
+    MoonOreTypeFactory(id=46302)
+    MoonOreTypeFactory(id=46303)
+    TCUTypeFactory()
+
+    EveEntityAllianceFactory(id=3001)
+    EveEntityAllianceFactory(id=3002)
+    EveEntityAllianceFactory(id=3011)
+    EveEntityAllianceFactory(id=500012, name="Blood Raider Covenant")
+    EveEntityCharacterFactory(id=1001)
+    EveEntityCharacterFactory(id=1011)
+    EveEntityCorporationFactory(id=1000134, name="Blood Raiders")
+    EveEntityCorporationFactory(id=1000137, name="DED")
+    EveEntityCorporationFactory(id=2001)
+    EveEntityCorporationFactory(id=2002)
+    EveEntityCorporationFactory(id=2011)
+    EveEntityCorporationFactory(id=2021)
+    EveEntityCorporationFactory(id=2901)
+    EveEntityCorporationFactory(id=2902)
+
+    CustomsOfficeFactory(
+        eve_type__id=2233,
+        eve_planet__id=40161469,
+        owner=owner,
+    )
+    RefineryFactory(
+        eve_moon__id=40161465,
+        eve_type__id=35835,
+        id=1000000000002,
+        owner=owner,
+    )
+    StarbaseFactory(
+        eve_moon__id=40161465,
+        eve_type__id=16213,
+        owner=owner,
+    )
+    StructureFactory(
+        eve_solar_system__id=30002537,
+        eve_type__id=35832,
+        id=1000000000001,
+        owner=owner,
+    )
+    SkyhookFactory(
+        eve_planet__id=40161469,
+        eve_type__id=81080,
+        id=1000000010001,
+        owner=owner,
+    )
+
+
+def load_notification_objects(owner: Owner, in_bulk=True):
+    """Loads notification fixtures for an owner.
+
+    Note that the notification require some entities to exit,
+    which can be created with ``load_notification_entities()``.
 
     Args:
     - in_bulk: When disabled, will load notifications one by one (for debugging)
@@ -76,7 +151,7 @@ def load_notification_entities(owner: Owner, in_bulk=True):
     timestamp_start = now() - dt.timedelta(hours=2)
     objs = [
         _generate_notif_obj_for_owner(owner, timestamp_start, notification)
-        for notification in entities_testdata["Notification"]
+        for notification in notifications
     ]
     if in_bulk:
         Notification.objects.bulk_create(objs)
@@ -154,19 +229,6 @@ def _generate_notif_obj_for_owner(
 #     EveEntity.objects.bulk_create(objs)
 
 
-def load_eve_entities():
-    """Load eve entity fixtures. Will skip already existing objs."""
-    existing_ids = set(EveEntity.objects.values_list("id", flat=True))
-    data = {obj["id"]: obj for obj in entities_testdata["EveEntity"]}
-    incoming_ids = set(data.keys())
-    missing_ids = incoming_ids - existing_ids
-    objs = [EveEntity(**data[entity_id]) for entity_id in missing_ids]
-    if objs:
-        EveEntity.objects.bulk_create(objs)
-    logger.info("Loaded %d EveEntity objects", len(objs))
-    return objs
-
-
 def clone_notification(obj: Notification) -> Notification:
     """Return clone of a Notification."""
     new_object = NotificationFactory(
@@ -178,3 +240,5 @@ def clone_notification(obj: Notification) -> Notification:
 NearestCelestial = namedtuple(
     "NearestCelestial", ["eve_type", "eve_object", "distance"]
 )
+
+# end

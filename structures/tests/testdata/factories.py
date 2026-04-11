@@ -54,7 +54,8 @@ T = TypeVar("T")
 POSITION_MIN = -100_000_000_000_000_000
 POSITION_MAX = 100_000_000_000_000_000
 
-_fake = faker.Faker()
+factory.Faker._DEFAULT_LOCALE = "en_US"
+_fake = faker.Faker("en_US")
 
 
 class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
@@ -104,9 +105,31 @@ class EveEntityCorporationFactory(EveEntityFactory):
     category = EveEntity.CATEGORY_CORPORATION
 
 
+class EveEntityCorporationDEDFactory(EveEntityCorporationFactory):
+    id = 1000137
+    name = "DED"
+
+
 class EveEntityAllianceFactory(EveEntityFactory):
     name = factory.Sequence(lambda n: f"alliance_name_{n}")
     category = EveEntity.CATEGORY_ALLIANCE
+
+
+class EveSolarSystemNullSecFactory(EveSolarSystemFactory):
+    security_status = -1.0
+
+
+class EveSolarSystemLowSecFactory(EveSolarSystemFactory):
+    security_status = 0.3
+
+
+class EveSolarSystemHighSecFactory(EveSolarSystemFactory):
+    security_status = 0.9
+
+
+class EveSolarSystemWSpaceFactory(EveSolarSystemFactory):
+    id = factory.Sequence(lambda n: 31_900_000 + n)
+    security_status = -1.0
 
 
 class CitadelServiceModuleTypeFactory(EveTypeFactory):
@@ -164,6 +187,18 @@ class LiquidOzoneTypeFactory(EveTypeFactory):
     name = "Liquid Ozone"
 
 
+class IHUBTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=40,
+        eve_category__name="Sovereignty Structures",
+        id=1012,
+        name="Sovereignty Hub",
+    )
+    id = 32458
+    name = "Sovereignty Hub"
+
+
 class TCUTypeFactory(EveTypeFactory):
     eve_group = factory.SubFactory(
         EveGroupFactory,
@@ -194,7 +229,7 @@ class PlanetTypeFactory(EveTypeFactory):
 class SkyhookTypeFactory(EveTypeFactory):
     eve_group = factory.SubFactory(
         EveGroupFactory,
-        eve_category__id=36,
+        eve_category__id=EveCategoryId.ORBITAL,
         eve_category__name="Orbitals",
         id=4736,
         name="Skyhook",
@@ -371,7 +406,7 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
 
     @factory.post_generation
     def webhooks(obj, create, extracted, **kwargs):
-        # Set webhooks=False to skip creating characters.
+        # Webhooks are created by default. Set webhooks=False to disable.
         if not create or extracted is False:
             return
 

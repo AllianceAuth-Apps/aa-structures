@@ -830,7 +830,7 @@ class FuelAlertConfig(BaseFuelAlertConfig):
     @staticmethod
     def relevant_webhooks() -> models.QuerySet:
         """Webhooks relevant for processing fuel notifications based on this config."""
-        return (
+        qs = (
             Webhook.objects.filter(is_active=True)
             .filter(Q(owners__isnull=False) | Q(structures__isnull=False))
             .filter(
@@ -841,6 +841,7 @@ class FuelAlertConfig(BaseFuelAlertConfig):
             )
             .distinct()
         )
+        return qs
 
 
 class JumpFuelAlertConfig(BaseFuelAlertConfig):

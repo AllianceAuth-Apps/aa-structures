@@ -5,7 +5,6 @@ import pook
 
 from django.test import TestCase
 from django.utils.timezone import now
-from eveuniverse.models import EveSolarSystem
 from eveuniverse.tests.testdata.factories_2 import EveSolarSystemFactory
 
 from app_utils.testdata_factories import (
@@ -28,15 +27,19 @@ from structures.tests.testdata.factories import (
     CitadelTypeFactory,
     CustomsOfficeFactory,
     EveCharacterFactory,
+    EveSolarSystemHighSecFactory,
+    EveSolarSystemLowSecFactory,
+    EveSolarSystemNullSecFactory,
+    EveSolarSystemWSpaceFactory,
     EveSovereigntyMapFactory,
     OwnerFactory,
     SkyhookFactory,
     StarbaseFactory,
+    StarbaseTypeFactory,
     StructureFactory,
     StructureTagFactory,
     WebhookFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.managers"
 MODULE_PATH_ESI_FETCH = "structures.helpers.esi_fetch"
@@ -329,11 +332,10 @@ class TestStructureQuerySet(TestCase):
         self.assertSetEqual(result_qs.ids(), {self.skyhook.id})
 
 
-class TestStructureQuerySetVisibleForUser(TestCase):
+class TestStructureQuerySetVisibleForUser(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
         # same alliance
         alliance = EveAllianceInfoFactory()
@@ -445,7 +447,6 @@ class TestStructureQuerySetFilterTags(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         owner = OwnerFactory()
         tag_a = StructureTagFactory(name="tag_a")
         tag_b = StructureTagFactory(name="tag_b")
@@ -496,11 +497,13 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
 
     def test_can_create_full(self):
         # given
+        structure_type = CitadelTypeFactory()
+        solar_system = EveSolarSystemFactory()
+        structure_id = 1000000000001
         structure_data = {
             "fuel_expires": None,
             "name": "Test Structure Alpha",
@@ -522,22 +525,23 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
             "state": "shield_vulnerable",
             "state_timer_end": None,
             "state_timer_start": None,
-            "structure_id": 1000000000001,
-            "system_id": 30002537,
-            "type_id": 35832,
+            "structure_id": structure_id,
+            "system_id": solar_system.id,
+            "type_id": structure_type.id,
             "unanchors_at": None,
         }
         # when
+        structure: Structure
         structure, created = Structure.objects.update_or_create_from_dict(
             structure_data, self.owner
         )
 
         # then
         self.assertTrue(created)
-        self.assertEqual(structure.id, 1000000000001)
+        self.assertEqual(structure.id, structure_id)
         self.assertEqual(structure.name, "Test Structure Alpha")
-        self.assertEqual(structure.eve_type_id, 35832)
-        self.assertEqual(structure.eve_solar_system_id, 30002537)
+        self.assertEqual(structure.eve_type.id, structure_type.id)
+        self.assertEqual(structure.eve_solar_system.id, solar_system.id)
         self.assertEqual(structure.owner, self.owner)
         self.assertEqual(structure.position_x, 55028384780.0)
         self.assertEqual(structure.position_y, 7310316270.0)
@@ -563,9 +567,7 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
     def test_can_update_full(self):
         # given
         structure = StructureFactory(
-            id=1000000000001,
-            owner=self.owner,
-            last_updated_at=now() - dt.timedelta(hours=2),
+            owner=self.owner, last_updated_at=now() - dt.timedelta(hours=2)
         )
         structure_data = {
             "corporation_id": self.owner.corporation.corporation_id,
@@ -589,23 +591,24 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
             "state": "shield_vulnerable",
             "state_timer_end": None,
             "state_timer_start": None,
-            "structure_id": 1000000000001,
-            "system_id": 30002537,
-            "type_id": 35832,
+            "structure_id": structure.id,
+            "system_id": structure.eve_solar_system.id,
+            "type_id": structure.eve_type.id,
             "unanchors_at": None,
         }
 
         # when
+        structure: Structure
         structure, created = Structure.objects.update_or_create_from_dict(
             structure_data, self.owner
         )
 
         # then
         self.assertFalse(created)
-        self.assertEqual(structure.id, 1000000000001)
+        self.assertEqual(structure.id, structure.id)
         self.assertEqual(structure.name, "Test Structure Alpha Updated")
-        self.assertEqual(structure.eve_type_id, 35832)
-        self.assertEqual(structure.eve_solar_system_id, 30002537)
+        self.assertEqual(structure.eve_type.id, structure.eve_type.id)
+        self.assertEqual(structure.eve_solar_system.id, structure.eve_solar_system.id)
         self.assertEqual(structure.owner, self.owner)
         self.assertEqual(structure.position_x, 55028384780.0)
         self.assertEqual(structure.position_y, 7310316270.0)
@@ -645,9 +648,9 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
             "state": "shield_vulnerable",
             "state_timer_end": None,
             "state_timer_start": None,
-            "structure_id": 1000000000001,
-            "system_id": 30002537,
-            "type_id": 35832,
+            "structure_id": structure.id,
+            "system_id": structure.eve_solar_system.id,
+            "type_id": structure.eve_type.id,
             "unanchors_at": None,
         }
         structure, created = Structure.objects.update_or_create_from_dict(
@@ -660,11 +663,14 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
 
     def test_can_create_starbase_without_moon(self):
         # given
+        structure_type = StarbaseTypeFactory()
+        solar_system = EveSolarSystemFactory()
+        starbase_id = 1300000000099
         structure_data = {
-            "structure_id": 1300000000099,
+            "structure_id": starbase_id,
             "name": "Hidden place",
-            "system_id": 30002537,
-            "type_id": 16213,
+            "system_id": solar_system.id,
+            "type_id": structure_type.id,
             "moon_id": None,
             "position": {"x": 55028384780.0, "y": 7310316270.0, "z": -163686684205.0},
         }
@@ -677,9 +683,9 @@ class TestStructureManagerCreateFromDict(NoSocketsTestCase):
         # then
         structure: Structure
         self.assertTrue(created)
-        self.assertEqual(structure.id, 1300000000099)
-        self.assertEqual(structure.eve_type_id, 16213)
-        self.assertEqual(structure.eve_solar_system_id, 30002537)
+        self.assertEqual(structure.id, starbase_id)
+        self.assertEqual(structure.eve_type.id, structure_type.id)
+        self.assertEqual(structure.eve_solar_system.id, solar_system.id)
         self.assertEqual(structure.owner, self.owner)
         self.assertEqual(structure.position_x, 55028384780.0)
         self.assertEqual(structure.position_y, 7310316270.0)
@@ -691,15 +697,14 @@ class TestStructureTagManager(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.corporation = EveCorporationInfoFactory()
-        solar_system = EveSolarSystem.objects.get(name="1-PGSG")
+        solar_system = EveSolarSystemNullSecFactory()
         EveSovereigntyMapFactory(
             corporation=cls.corporation, solar_system_id=solar_system.id
         )
 
     def test_can_get_space_type_tag_that_exists(self):
-        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        solar_system = EveSolarSystemLowSecFactory()
         tag = StructureTagFactory(name=StructureTag.NAME_LOWSEC_TAG)
         structure, created = StructureTag.objects.get_or_create_for_space_type(
             solar_system
@@ -709,7 +714,7 @@ class TestStructureTagManager(NoSocketsTestCase):
 
     def test_raise_error_for_unknown_space_type_when_trying_to_get(self):
         # given
-        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        solar_system = EveSolarSystemLowSecFactory()
 
         with patch(
             "structures.models.eveuniverse.EveSpaceType.from_solar_system"
@@ -720,7 +725,7 @@ class TestStructureTagManager(NoSocketsTestCase):
 
     def test_can_get_space_type_tag_that_does_not_exist(self):
         # given
-        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        solar_system = EveSolarSystemLowSecFactory()
         # when
         structure, created = StructureTag.objects.get_or_create_for_space_type(
             solar_system
@@ -735,7 +740,7 @@ class TestStructureTagManager(NoSocketsTestCase):
 
     def test_can_update_space_type_tag(self):
         # given
-        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        solar_system = EveSolarSystemLowSecFactory()
         StructureTagFactory(
             name=StructureTag.NAME_LOWSEC_TAG,
             style=StructureTag.Style.GREEN,
@@ -757,7 +762,7 @@ class TestStructureTagManager(NoSocketsTestCase):
 
     def test_can_create_for_space_type_highsec(self):
         # given
-        solar_system = EveSolarSystem.objects.get(name="Osoggur")
+        solar_system = EveSolarSystemHighSecFactory()
         # when
         structure, created = StructureTag.objects.update_or_create_for_space_type(
             solar_system
@@ -772,7 +777,7 @@ class TestStructureTagManager(NoSocketsTestCase):
 
     def test_can_create_for_space_type_nullsec(self):
         # given
-        solar_system = EveSolarSystem.objects.get(name="1-PGSG")
+        solar_system = EveSolarSystemNullSecFactory()
         # when
         structure, created = StructureTag.objects.update_or_create_for_space_type(
             solar_system
@@ -787,7 +792,7 @@ class TestStructureTagManager(NoSocketsTestCase):
 
     def test_can_create_for_space_type_w_space(self):
         # given
-        solar_system = EveSolarSystem.objects.get(name="Thera")
+        solar_system = EveSolarSystemWSpaceFactory()
         # when
         structure, created = StructureTag.objects.update_or_create_for_space_type(
             solar_system
@@ -841,7 +846,7 @@ class TestStructureTagManager(NoSocketsTestCase):
 
     def test_should_raise_error_for_unknown_space_type_when_trying_to_update(self):
         # given
-        solar_system = EveSolarSystem.objects.get(name="Amamake")
+        solar_system = EveSolarSystemLowSecFactory()
         StructureTagFactory(
             name=StructureTag.NAME_LOWSEC_TAG,
             style=StructureTag.Style.GREEN,
@@ -926,6 +931,10 @@ class TestWebhookManager(NoSocketsTestCase):
         self.assertSetEqual(result, set())
         self.assertSetEqual(result, set())
         # then
+        self.assertSetEqual(result, set())
+        self.assertSetEqual(result, set())
+        self.assertSetEqual(result, set())
+        self.assertSetEqual(result, set())
         self.assertSetEqual(result, set())
         self.assertSetEqual(result, set())
         self.assertSetEqual(result, set())

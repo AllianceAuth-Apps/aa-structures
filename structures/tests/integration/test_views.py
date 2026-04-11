@@ -15,7 +15,6 @@ from structures.tests.testdata.factories import (
     UserMainBasicFactory,
     UserMainDefaultFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 STRUCTURES_PATH = "structures.views.structures"
 PUBLIC_PATH = "structures.views.public"
@@ -27,7 +26,6 @@ class TestStructureListView(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
 
@@ -59,7 +57,6 @@ class TestStatisticsView(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
 
@@ -84,7 +81,6 @@ class TestPocoView(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         character = EveCharacterFactory(character_name="Bruce Wayne")
         cls.user = UserMainBasicFactory(main_character__character=character)
         cls.owner = OwnerFactory(are_pocos_public=True)

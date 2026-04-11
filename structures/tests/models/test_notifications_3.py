@@ -15,7 +15,6 @@ from structures.tests.testdata.factories import (
     StarbaseFactory,
     StructureFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.models.notifications"
 
@@ -24,7 +23,6 @@ class TestGeneratedNotification(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
 
     def test_should_have_str(self):
         # given
@@ -56,7 +54,6 @@ class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
 
     def test_should_create_new_notif(self):

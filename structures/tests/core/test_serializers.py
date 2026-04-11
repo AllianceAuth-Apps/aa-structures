@@ -19,7 +19,6 @@ from structures.tests.testdata.factories import (
     StructureFactory,
     UserMainDefaultFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 
 def to_dict(lst: List[dict], key="id"):
@@ -143,7 +142,6 @@ class TestPocoListSerializer(NoSocketsTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         alliance = EveAllianceInfoFactory(
             alliance_name="Wayne Enterprises", alliance_ticker="WYE"
         )

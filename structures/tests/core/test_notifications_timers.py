@@ -7,16 +7,15 @@ from structures.core import notification_timers
 from structures.core.notification_types import NotificationType
 from structures.models import Notification
 from structures.tests.testdata.factories import (
+    EveAllianceInfoFactory,
+    EveCorporationInfoFactory,
     GeneratedNotificationFactory,
     OwnerFactory,
-    RefineryFactory,
-    StructureFactory,
 )
 from structures.tests.testdata.helpers import (
-    load_eve_entities,
     load_notification_entities,
+    load_notification_objects,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 if "timerboard" in app_labels():
     from allianceauth.timerboard.models import Timer as AuthTimer
@@ -32,12 +31,14 @@ if "timerboard" in app_labels():
         @classmethod
         def setUpClass(cls):
             super().setUpClass()
-            load_eveuniverse()
-            load_eve_entities()
-            cls.owner = OwnerFactory(is_alliance_main=True)
+            alliance = EveAllianceInfoFactory(alliance_id=3001)
+            corporation = EveCorporationInfoFactory(
+                corporation_id=2001, alliance=alliance
+            )
+            cls.owner = OwnerFactory(corporation=corporation, is_alliance_main=True)
+
             load_notification_entities(cls.owner)
-            StructureFactory(owner=cls.owner, id=1000000000001)
-            RefineryFactory(owner=cls.owner, id=1000000000002)
+            load_notification_objects(cls.owner)
 
         @patch(MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", False)
         @patch("allianceauth.timerboard.models.Timer", spec=True)
@@ -141,6 +142,12 @@ if "timerboard" in app_labels():
             # then
             self.assertTrue(result)
             obj = AuthTimer.objects.first()
+            self.assertEqual(obj.system, structure.eve_solar_system.name)
+            self.assertEqual(obj.planet_moon, structure.eve_moon.name)
+            self.assertEqual(obj.eve_time, structure.state_timer_end)
+            self.assertEqual(obj.system, structure.eve_solar_system.name)
+            self.assertEqual(obj.planet_moon, structure.eve_moon.name)
+            self.assertEqual(obj.eve_time, structure.state_timer_end)
             self.assertEqual(obj.system, structure.eve_solar_system.name)
             self.assertEqual(obj.planet_moon, structure.eve_moon.name)
             self.assertEqual(obj.eve_time, structure.state_timer_end)

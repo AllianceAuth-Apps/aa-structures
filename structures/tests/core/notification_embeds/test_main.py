@@ -4,7 +4,7 @@ import dhooks_lite
 
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
-from eveuniverse.models import EveType
+from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EveSolarSystemFactory
 
 from app_utils.testing import NoSocketsTestCase
 
@@ -24,18 +24,20 @@ from structures.tests.testdata.factories import (
     EveCorporationInfoFactory,
     EveEntityAllianceFactory,
     EveEntityCorporationFactory,
+    EveSolarSystemLowSecFactory,
     GeneratedNotificationFactory,
     NotificationFactory,
     OwnerFactory,
     StarbaseFactory,
+    StarbaseTypeFactory,
     StructureFactory,
+    TCUTypeFactory,
     UserMainDefaultOwnerFactory,
 )
 from structures.tests.testdata.helpers import (
-    load_eve_entities,
     load_notification_entities,
+    load_notification_objects,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.core.notification_embeds"
 
@@ -80,16 +82,16 @@ class TestNotificationEmbeds(TestCase):
             NotificationBaseEmbed.create(notification="dummy")
 
 
-class TestNotificationEmbedsGenerate(TestCase):
+class TestNotificationEmbedsGenerate(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
         alliance = EveAllianceInfoFactory(alliance_id=3001)
         corporation = EveCorporationInfoFactory(corporation_id=2001, alliance=alliance)
-        cls.owner = OwnerFactory(corporation=corporation)
+        cls.owner = OwnerFactory(corporation=corporation, is_alliance_main=True)
+
         load_notification_entities(cls.owner)
+        load_notification_objects(cls.owner)
 
     def test_should_generate_embed_from_notification(self):
         # given
@@ -156,18 +158,6 @@ class TestNotificationEmbedsGenerate(TestCase):
     def test_should_generate_embed_for_all_supported_esi_notification_types_normal(
         self,
     ):
-        # Pre-generate structures referenced in notifications
-        StructureFactory(
-            owner=self.owner,
-            id=1000000000001,
-            eve_type=EveType.objects.get(name="Astrahus"),
-        )
-        StructureFactory(
-            owner=self.owner,
-            id=1000000000002,
-            eve_type=EveType.objects.get(name="Athanor"),
-        )
-
         for notif_type in NotificationType.esi_notifications():
             with self.subTest(notif_type=notif_type):
                 # given
@@ -274,27 +264,27 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         user = UserMainDefaultOwnerFactory()
+        solar_system = EveSolarSystemLowSecFactory(id=30002537, name="Amamake")
         cls.owner = OwnerFactory(user=user)
-        cls.moon_id = 40161465
-        cls.solar_system_id = 30002537
-        cls.type_id = 16213
+        cls.moon = EveMoonFactory(id=40161465, eve_planet__id=40161469)
+        cls.solar_system = solar_system
+        cls.structure_type = StarbaseTypeFactory(id=16213)
         EveEntityCorporationFactory(id=1000137, name="DED")
 
     def test_should_generate_embed_for_normal_tower_resource_alert(self):
         # given
         StarbaseFactory(
             owner=self.owner,
-            eve_moon_id=self.moon_id,
-            eve_solar_system_id=self.solar_system_id,
-            eve_type_id=self.type_id,
+            eve_moon_id=self.moon.id,
+            eve_solar_system_id=self.solar_system.id,
+            eve_type_id=self.structure_type.id,
         )
         data = {
             "corpID": self.owner.corporation.corporation_id,
-            "moonID": self.moon_id,
-            "solarSystemID": self.solar_system_id,
-            "typeID": self.type_id,
+            "moonID": self.moon.id,
+            "solarSystemID": self.solar_system.id,
+            "typeID": self.structure_type.id,
             "wants": [{"quantity": 120, "typeID": 4051}],
         }
         notification = NotificationFactory(
@@ -313,9 +303,9 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
         # given
         structure = StarbaseFactory(
             owner=self.owner,
-            eve_moon_id=self.moon_id,
-            eve_solar_system_id=self.solar_system_id,
-            eve_type_id=self.type_id,
+            eve_moon_id=self.moon.id,
+            eve_solar_system_id=self.solar_system.id,
+            eve_type_id=self.structure_type.id,
             fuel_expires_at=now() + dt.timedelta(hours=2, seconds=20),
         )
         notification = Notification.create_from_structure(
@@ -333,7 +323,6 @@ class TestGeneratedNotification(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
 
     def test_should_create_tower_reinforced_embed(self):
         # given
@@ -359,8 +348,9 @@ class TestEveNotificationEmbeds(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
+        cls.solar_system = EveSolarSystemFactory()
+        cls.structure_type = TCUTypeFactory()
 
     def test_should_create_sov_embed(self):
         # given
@@ -368,7 +358,10 @@ class TestEveNotificationEmbeds(NoSocketsTestCase):
             owner=self.owner,
             sender=EveEntityAllianceFactory(),
             notif_type=NotificationType.SOV_ENTOSIS_CAPTURE_STARTED,
-            text_from_dict={"solarSystemID": 30000474, "structureTypeID": 32226},
+            text_from_dict={
+                "solarSystemID": self.solar_system.id,
+                "structureTypeID": self.structure_type.id,
+            },
         )
         embed = NotificationBaseEmbed.create(notif)
         # when
@@ -382,10 +375,31 @@ class TestEveNotificationEmbeds(NoSocketsTestCase):
             owner=self.owner,
             sender=None,
             notif_type=NotificationType.SOV_ENTOSIS_CAPTURE_STARTED,
-            text_from_dict={"solarSystemID": 30000474, "structureTypeID": 32226},
+            text_from_dict={
+                "solarSystemID": self.solar_system.id,
+                "structureTypeID": self.structure_type.id,
+            },
         )
         embed = NotificationBaseEmbed.create(notif)
         # when
         obj = embed.generate_embed()
         # then
+        self.assertTrue(obj.description)
+        embed = NotificationBaseEmbed.create(notif)
+        # when
+        obj = embed.generate_embed()
+        # then
+        self.assertTrue(obj.description)
+        embed = NotificationBaseEmbed.create(notif)
+        # when
+        obj = embed.generate_embed()
+        # then
+        self.assertTrue(obj.description)
+        self.assertTrue(obj.description)
+        self.assertTrue(obj.description)
+        self.assertTrue(obj.description)
+        self.assertTrue(obj.description)
+        self.assertTrue(obj.description)
+        self.assertTrue(obj.description)
+        self.assertTrue(obj.description)
         self.assertTrue(obj.description)

@@ -37,10 +37,9 @@ from structures.tests.testdata.factories import (
 )
 from structures.tests.testdata.helpers import (
     NearestCelestial,
-    load_eve_entities,
     load_notification_entities,
+    load_notification_objects,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 OWNERS_PATH = "structures.models.owners"
 NOTIFICATIONS_PATH = "structures.models.notifications"
@@ -259,12 +258,11 @@ class TestSendNewNotifications(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
         cls.owner = OwnerFactory(
             is_alliance_main=True, webhooks=False, forwarding_last_update_at=None
         )
         load_notification_entities(cls.owner)
+        load_notification_objects(cls.owner)
 
     def setUp(self) -> None:
         self.owner.webhooks.clear()
@@ -338,6 +336,7 @@ class TestSendNewNotifications(NoSocketsTestCase):
             forwarding_last_update_at=None,
         )
         load_notification_entities(owner)
+        load_notification_objects(owner)
 
         # when
         owner.send_new_notifications()

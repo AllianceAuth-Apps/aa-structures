@@ -27,7 +27,6 @@ from structures.tests.testdata.factories import (
     UserMainDefaultOwnerFactory,
     WebhookFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 from structures.views import structures
 
 from .utils import json_response_to_dict
@@ -144,7 +143,6 @@ class TestStructureListDataFilterVariant(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         owner = OwnerFactory(user=cls.user)
         cls.structure = StructureFactory(owner=owner)
@@ -249,7 +247,6 @@ class TestStructureListDataPermissions(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
 
     def test_should_show_structures_from_own_corporation_only(self):
         # given
@@ -319,7 +316,6 @@ class TestStructureListTagFilters(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.factory = RequestFactory()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
@@ -427,7 +423,6 @@ class TestStructurePowerModes(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user)
 
@@ -534,7 +529,6 @@ class TestAddStructureOwner(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
         cls.character: EveCharacter = cls.user.profile.main_character
         cls.character_ownership = cls.character.character_ownership
@@ -723,7 +717,6 @@ class TestStructureFittingModal(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.character = EveCharacterFactory()
         owner = OwnerFactory(corporation=cls.character.corporation)
         cls.structure = StructureFactory(owner=owner)
@@ -767,7 +760,6 @@ class TestDetailsModal(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
 

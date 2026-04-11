@@ -9,17 +9,12 @@ from app_utils.django import app_labels
 from app_utils.testing import NoSocketsTestCase
 
 from structures.models import Notification
-from structures.tests.testdata.factories import (
-    OwnerFactory,
-    StructureFactory,
-    WebhookFactory,
-)
+from structures.tests.testdata.factories import OwnerFactory, WebhookFactory
 from structures.tests.testdata.helpers import (
     clone_notification,
-    load_eve_entities,
     load_notification_entities,
+    load_notification_objects,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.models.notifications"
 
@@ -31,14 +26,12 @@ if "discord" in app_labels():
         @classmethod
         def setUpClass(cls):
             super().setUpClass()
-            load_eveuniverse()
-            load_eve_entities()
 
             cls.group_1 = Group.objects.create(name="Dummy Group 1")
             cls.group_2 = Group.objects.create(name="Dummy Group 2")
             cls.owner = OwnerFactory()
             load_notification_entities(cls.owner)
-            StructureFactory(id=1000000000001)
+            load_notification_objects(cls.owner)
 
         @staticmethod
         def _my_group_to_role(group: Group) -> dict:

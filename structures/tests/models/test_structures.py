@@ -10,7 +10,7 @@ from eveuniverse.tests.testdata.factories_2 import EveSolarSystemFactory
 
 from app_utils.testing import NoSocketsTestCase
 
-from structures.constants import EveCorporationId, EveTypeId
+from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import (
     EveSpaceType,
@@ -28,7 +28,9 @@ from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     EveSovereigntyMapFactory,
     FuelAlertConfigFactory,
+    FuelBlockTypeFactory,
     JumpGateFactory,
+    LiquidOzoneTypeFactory,
     OwnerFactory,
     PocoDetailsFactory,
     SkyhookFactory,
@@ -38,7 +40,6 @@ from structures.tests.testdata.factories import (
     StructureServiceFactory,
     StructureTagFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 STRUCTURES_PATH = "structures.models.structures_1"
 NOTIFICATIONS_PATH = "structures.models.notifications"
@@ -51,7 +52,6 @@ class TestPocoDetails(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.structure = CustomsOfficeFactory(owner=cls.owner, poco_details=False)
 
@@ -468,7 +468,6 @@ class TestStructureIsX(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.jump_gate: Structure = JumpGateFactory.build(owner=cls.owner)
         cls.poco: Structure = CustomsOfficeFactory.build(owner=cls.owner)
@@ -516,7 +515,6 @@ class TestStructureFuel(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
 
     def test_should_return_jump_fuel_quantity(self):
@@ -524,13 +522,13 @@ class TestStructureFuel(NoSocketsTestCase):
         structure = JumpGateFactory(owner=self.owner, jump_fuel_quantity=False)
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EveTypeId.LIQUID_OZONE,
+            eve_type=LiquidOzoneTypeFactory,
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=32,
         )
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EveTypeId.LIQUID_OZONE,
+            eve_type=LiquidOzoneTypeFactory,
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=10,
         )
@@ -588,19 +586,19 @@ class TestStructureFuel(NoSocketsTestCase):
         structure = StructureFactory(owner=self.owner)
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+            eve_type=FuelBlockTypeFactory(),
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=250,
         )
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EVE_ID_HELIUM_FUEL_BLOCK,
+            eve_type=FuelBlockTypeFactory(),
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=1000,
         )
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EVE_ID_HELIUM_FUEL_BLOCK,
+            eve_type=FuelBlockTypeFactory(),
             location_flag=StructureItem.LocationFlag.CARGO,
             quantity=500,
         )
@@ -619,7 +617,7 @@ class TestStructureFuel(NoSocketsTestCase):
             mock_now.return_value = dt.datetime(2021, 12, 17, 15, 13, tzinfo=UTC)
             StructureItemFactory(
                 structure=structure,
-                eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+                eve_type=FuelBlockTypeFactory(),
                 location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
                 quantity=6309,
             )
@@ -638,7 +636,7 @@ class TestStructureFuel(NoSocketsTestCase):
             mock_now.return_value = dt.datetime(2021, 12, 17, 15, 13, tzinfo=UTC)
             StructureItemFactory(
                 structure=structure,
-                eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+                eve_type=FuelBlockTypeFactory(),
                 location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
                 quantity=6309,
             )
@@ -658,7 +656,7 @@ class TestStructureFuel(NoSocketsTestCase):
             mock_now.return_value = my_now
             StructureItemFactory(
                 structure=structure,
-                eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+                eve_type=FuelBlockTypeFactory(),
                 location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
                 quantity=1,
                 last_updated_at=my_now,
@@ -707,7 +705,6 @@ class TestStructureFuelLevels(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory(
             webhooks__notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA]
         )
@@ -870,7 +867,6 @@ class TestStructurePowerMode(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
 
     def test_returns_none_for_non_upwell_structures(self):
@@ -955,7 +951,6 @@ class TestStructureTags(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
         cls.sov_solar_system = EveSolarSystemFactory(security_status=-1)
         EveSovereigntyMapFactory(
@@ -1140,7 +1135,6 @@ class TestStructureService(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
 
     def test_str(self):
         structure = StructureFactory(

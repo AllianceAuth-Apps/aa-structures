@@ -28,7 +28,7 @@ dependencies = [
     "allianceauth>=4,<5",
     "dhooks-lite>=1.0",
     "django-esi>=8,<9",
-    "django-eveuniverse>=1.6",
+    "django-eveuniverse>=1.6.1",
     "django-multiselectfield",
     "django-navhelper",
     "humanize>=4.7",

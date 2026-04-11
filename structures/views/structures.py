@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from django.db.models import Prefetch
+from django.db.models import Prefetch, QuerySet
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
@@ -200,35 +200,35 @@ def _structures_query(
     user: User, selection: Union[StructureSelection, str], tag_names: Set[str]
 ):
     """Return query for a variant and user and active tags."""
-    structures_qs = (
+    structures_qs: QuerySet = (
         Structure.objects.visible_for_user(user)
         .select_related_defaults()
         .filter_tags(tag_names)
     )
 
-    selection = StructureSelection(selection)
-    if selection == StructureSelection.STRUCTURES:
-        structures_qs = structures_qs.filter(
-            eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
-        )
+    match StructureSelection(selection):
+        case StructureSelection.STRUCTURES:
+            return structures_qs.filter(
+                eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
+            )
 
-    elif selection == StructureSelection.ORBITALS:
-        structures_qs = structures_qs.filter(
-            eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
-        ).annotate_has_poco_details()
+        case StructureSelection.ORBITALS:
+            return structures_qs.filter(
+                eve_type__eve_group__eve_category_id=EveCategoryId.ORBITAL
+            ).annotate_has_poco_details()
 
-    elif selection == StructureSelection.STARBASES:
-        structures_qs = structures_qs.filter(
-            eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
-        ).annotate_has_starbase_detail()
+        case StructureSelection.STARBASES:
+            return structures_qs.filter(
+                eve_type__eve_group__eve_category_id=EveCategoryId.STARBASE
+            ).annotate_has_starbase_detail()
 
-    elif selection == StructureSelection.JUMP_GATES:
-        structures_qs = structures_qs.filter(
-            eve_type__eve_group_id=EveGroupId.UPWELL_JUMP_BRIDGE
-        ).annotate_jump_fuel_quantity()
+        case StructureSelection.JUMP_GATES:
+            return structures_qs.filter(
+                eve_type__eve_group_id=EveGroupId.UPWELL_JUMP_BRIDGE
+            ).annotate_jump_fuel_quantity()
 
-    elif selection == StructureSelection.ALL:
-        pass
+        case StructureSelection.ALL:
+            pass
 
     return structures_qs
 
@@ -316,7 +316,9 @@ def structure_details(request: HttpRequest, structure_id: int):
         ),
         id=structure_id,
     )
-    assets = structure.items.select_related("eve_type", "eve_type__eve_group")
+    assets: QuerySet[StructureItem] = structure.items.select_related(
+        "eve_type", "eve_type__eve_group"
+    )
     high_slots = _extract_slot_assets(assets, "HiSlot")
     med_slots = _extract_slot_assets(assets, "MedSlot")
     low_slots = _extract_slot_assets(assets, "LoSlot")
@@ -379,17 +381,19 @@ def structure_details(request: HttpRequest, structure_id: int):
     return render(request, "structures/modals/structure_details.html", context)
 
 
-def _init_assets_grouped(assets):
+def _init_assets_grouped(assets: QuerySet[StructureItem]):
     assets_grouped = {"ammo_hold": [], "fighter_bay": [], "fuel_bay": []}
     for asset in assets:
-        if asset.location_flag == StructureItem.LocationFlag.CARGO:
-            assets_grouped["ammo_hold"].append(asset)
-        elif asset.location_flag == StructureItem.LocationFlag.FIGHTER_BAY:
-            assets_grouped["fighter_bay"].append(asset)
-        elif asset.location_flag == StructureItem.LocationFlag.STRUCTURE_FUEL:
-            assets_grouped["fuel_bay"].append(asset)
-        else:
-            assets_grouped[asset.location_flag] = asset
+        match asset.location_flag:
+            case StructureItem.LocationFlag.CARGO:
+                assets_grouped["ammo_hold"].append(asset)
+            case StructureItem.LocationFlag.FIGHTER_BAY:
+                assets_grouped["fighter_bay"].append(asset)
+            case StructureItem.LocationFlag.STRUCTURE_FUEL:
+                assets_grouped["fuel_bay"].append(asset)
+            case _:
+                assets_grouped[asset.location_flag] = asset
+
     return assets_grouped
 
 

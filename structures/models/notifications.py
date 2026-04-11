@@ -627,34 +627,43 @@ class Notification(NotificationBase):
             kwargs["timestamp"] = now()
         if "last_updated" not in kwargs:
             kwargs["last_updated"] = now()
-        threshold = kwargs.pop("threshold") if "threshold" in kwargs else None
+
         if "text" not in kwargs:
-            if notif_type in {
-                NotificationType.STRUCTURE_FUEL_ALERT,
-                NotificationType.STRUCTURE_REFUELED_EXTRA,
-                NotificationType.STRUCTURE_JUMP_FUEL_ALERT,
-            }:
-                data = {
-                    "solarsystemID": structure.eve_solar_system_id,
-                    "structureID": structure.id,
-                    "structureTypeID": structure.eve_type_id,
-                    "threshold": threshold,
-                }
-            elif notif_type in {
-                NotificationType.TOWER_RESOURCE_ALERT_MSG,
-                NotificationType.TOWER_REFUELED_EXTRA,
-            }:
-                data = {
-                    "moonID": structure.eve_moon_id,
-                    "typeID": structure.eve_type_id,
-                    "structureID": structure.id,
-                }
-            else:
-                raise ValueError("text property not provided and can not be generated.")
+            match notif_type:
+                case (
+                    NotificationType.STRUCTURE_FUEL_ALERT
+                    | NotificationType.STRUCTURE_REFUELED_EXTRA
+                    | NotificationType.STRUCTURE_JUMP_FUEL_ALERT
+                ):
+                    threshold = (
+                        kwargs.pop("threshold") if "threshold" in kwargs else None
+                    )
+                    data = {
+                        "solarsystemID": structure.eve_solar_system_id,
+                        "structureID": structure.id,
+                        "structureTypeID": structure.eve_type_id,
+                        "threshold": threshold,
+                    }
+                case (
+                    NotificationType.TOWER_RESOURCE_ALERT_MSG
+                    | NotificationType.TOWER_REFUELED_EXTRA
+                ):
+                    data = {
+                        "moonID": structure.eve_moon_id,
+                        "typeID": structure.eve_type_id,
+                        "structureID": structure.id,
+                    }
+                case _:
+                    raise ValueError(
+                        "text property not provided and can not be generated."
+                    )
+
             kwargs["text"] = yaml.dump(data)
+
         if "sender" not in kwargs:
             sender, _ = EveEntity.objects.get_or_create_esi(id=EveCorporationId.DED)
             kwargs["sender"] = sender
+
         kwargs["notification_id"] = cls.TEMPORARY_NOTIFICATION_ID
         kwargs["owner"] = structure.owner
         kwargs["notif_type"] = notif_type

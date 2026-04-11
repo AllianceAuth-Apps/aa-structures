@@ -22,6 +22,7 @@ def is_starbase(eve_type: EveType) -> bool:
     return eve_type.eve_group_id == EveGroupId.CONTROL_TOWER
 
 
+# TODO: Use dogmas to determine tower size instead of name
 def starbase_size(eve_type: EveType) -> StarbaseSize:
     """Return the size of a starbase or None if this type is not a starbase."""
     if not is_starbase(eve_type):

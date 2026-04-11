@@ -80,11 +80,10 @@ def main():
     }
     structure, _ = Structure.objects.update_or_create_from_dict(structure, owner)
 
-    p = Path(__file__).parent / "entities.json"
+    p = Path(__file__).parent / "notifications.json"
     with p.open(mode="r", encoding="utf-8") as fp:
-        data = json.load(fp)
+        notifications = json.load(fp)
 
-    notifications = data["Notification"]
     for n in notifications:
         if n["sender_id"] == 2901:
             n["sender_id"] = 1000137  # DED

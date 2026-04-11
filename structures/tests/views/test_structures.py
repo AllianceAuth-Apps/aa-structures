@@ -15,10 +15,10 @@ from app_utils.testing import json_response_to_python
 import structures.views.status
 from structures.models import Owner, Structure
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveCharacterFactory,
     JumpGateFactory,
     OwnerFactory,
-    PocoFactory,
     SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
@@ -27,7 +27,6 @@ from structures.tests.testdata.factories import (
     UserMainDefaultOwnerFactory,
     WebhookFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 from structures.views import structures
 
 from .utils import json_response_to_dict
@@ -144,11 +143,10 @@ class TestStructureListDataFilterVariant(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         owner = OwnerFactory(user=cls.user)
         cls.structure = StructureFactory(owner=owner)
-        cls.poco = PocoFactory(owner=owner)
+        cls.poco = CustomsOfficeFactory(owner=owner)
         cls.skyhook = SkyhookFactory(owner=owner)
         cls.starbase = StarbaseFactory(owner=owner)
         cls.jump_gate = JumpGateFactory(owner=owner)
@@ -249,7 +247,6 @@ class TestStructureListDataPermissions(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
 
     def test_should_show_structures_from_own_corporation_only(self):
         # given
@@ -319,7 +316,6 @@ class TestStructureListTagFilters(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.factory = RequestFactory()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
@@ -427,7 +423,6 @@ class TestStructurePowerModes(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
         cls.owner = OwnerFactory(user=cls.user)
 
@@ -498,7 +493,7 @@ class TestStructurePowerModes(TestCase):
 
     def test_poco(self):
         # given
-        structure = PocoFactory(owner=self.owner)
+        structure = CustomsOfficeFactory(owner=self.owner)
         # when
         obj = self.display_data_for_structure(structure.id)
         self.assertEqual(obj["power_mode_str"], "")
@@ -534,7 +529,6 @@ class TestAddStructureOwner(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultOwnerFactory()
         cls.character: EveCharacter = cls.user.profile.main_character
         cls.character_ownership = cls.character.character_ownership
@@ -723,7 +717,6 @@ class TestStructureFittingModal(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.character = EveCharacterFactory()
         owner = OwnerFactory(corporation=cls.character.corporation)
         cls.structure = StructureFactory(owner=owner)
@@ -767,13 +760,12 @@ class TestDetailsModal(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
 
     def test_should_load_poco_detail(self):
         # given
-        structure = PocoFactory(owner=self.owner)
+        structure = CustomsOfficeFactory(owner=self.owner)
         request = self.factory.get("/")
         request.user = self.user
         # when

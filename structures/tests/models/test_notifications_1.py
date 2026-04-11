@@ -3,13 +3,22 @@ from unittest.mock import patch
 
 from django.utils.timezone import now
 
+from app_utils.testdata_factories import (
+    EveAllianceInfoFactory,
+    EveCorporationInfoFactory,
+)
 from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_types import NotificationType
-from structures.models import Notification, Webhook
+from structures.models import Notification, Structure, Webhook
 from structures.tests.testdata.factories import (
-    EveCorporationInfoFactory,
+    CitadelTypeFactory,
+    EveEntityAllianceFactory,
+    EveEntityCharacterFactory,
     EveEntityCorporationFactory,
+    EveSolarSystemLowSecFactory,
+    EveSolarSystemNullSecFactory,
+    IHUBTypeFactory,
     NotificationFactory,
     OwnerFactory,
     StarbaseFactory,
@@ -18,10 +27,9 @@ from structures.tests.testdata.factories import (
 )
 from structures.tests.testdata.helpers import (
     clone_notification,
-    load_eve_entities,
     load_notification_entities,
+    load_notification_objects,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.models.notifications"
 
@@ -30,10 +38,9 @@ class TestNotification(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
         cls.owner = OwnerFactory()
         load_notification_entities(cls.owner)
+        load_notification_objects(cls.owner)
 
     def test_str(self):
         # given
@@ -89,7 +96,7 @@ class TestNotification(NoSocketsTestCase):
                     self.assertTrue(notif.can_be_rendered)
 
     def test_can_be_rendered_2(self):
-        structure = StructureFactory(owner=self.owner, id=1000000000001)
+        structure = Structure.objects.get(id=1000000000001)
         for notif_type in [
             NotificationType.STRUCTURE_REFUELED_EXTRA,
             NotificationType.TOWER_REFUELED_EXTRA,
@@ -109,12 +116,13 @@ class TestNotification(NoSocketsTestCase):
 
 class TestNotificationFilterForAllianceLevel(NoSocketsTestCase):
     @classmethod
-    def setUpClass(cls):  # TODO: Refactor so it works with setUpTestData()
+    def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
-        cls.owner = OwnerFactory()
+        alliance = EveAllianceInfoFactory(alliance_id=3001)
+        corporation = EveCorporationInfoFactory(corporation_id=2001, alliance=alliance)
+        cls.owner = OwnerFactory(corporation=corporation)
         load_notification_entities(cls.owner)
+        load_notification_objects(cls.owner)
 
     def test_should_not_filter_non_alliance_notifications_1(self):
         # given
@@ -194,7 +202,6 @@ class TestNotificationCreateFromStructure(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         EveEntityCorporationFactory(id=1000137, name="DED")
         cls.owner = OwnerFactory()
 
@@ -260,8 +267,6 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
 
     def test_should_return_owner_webhooks_for_non_structure_notif(self):
         # given
@@ -412,7 +417,6 @@ class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
 
     @patch(MODULE_PATH + ".Notification.send_to_webhook")
     def test_should_send_to_webhook(self, mock_send_to_webhook):
@@ -552,7 +556,6 @@ class TestNotificationSendToWebhook(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         EveEntityCorporationFactory(id=1000137, name="DED")
 
     def test_should_override_ping_type(self, mock_send_message):
@@ -599,11 +602,10 @@ class TestNotificationSendMessage(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
         cls.owner = OwnerFactory(is_alliance_main=True)
         cls.webhook = cls.owner.webhooks.first()
         load_notification_entities(cls.owner)
+        load_notification_objects(cls.owner)
 
     def test_can_send_message_normal(self, mock_send_message):
         # given
@@ -678,19 +680,6 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         self.assertTrue(result)
 
     @patch(MODULE_PATH + ".STRUCTURES_DEFAULT_LANGUAGE", "en")
-    def test_send_notification_without_existing_structure(self, mock_send_message):
-        # given
-        mock_send_message.return_value = 1
-        obj = clone_notification(Notification.objects.get(notification_id=1000000505))
-        # when
-        obj.send_to_webhook(self.webhook)
-        # then
-        embed = mock_send_message.call_args[1]["embeds"][0]
-        self.assertEqual(
-            embed.description[:39], "The Astrahus **(unknown)** in [Amamake]"
-        )
-
-    @patch(MODULE_PATH + ".STRUCTURES_DEFAULT_LANGUAGE", "en")
     def test_notification_with_null_aggressor_alliance(self, mock_send_message):
         # given
         mock_send_message.return_value = 1
@@ -727,20 +716,74 @@ class TestNotificationSendMessage(NoSocketsTestCase):
         self.assertIsNone(kwargs["username"])
 
 
+@patch(MODULE_PATH + ".STRUCTURES_DEFAULT_LANGUAGE", "en")
+@patch(MODULE_PATH + ".Webhook.send_message", spec=True)
+class TestNotificationSendMessage2(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
+        super().setUpClass()
+        cls.owner = OwnerFactory(is_alliance_main=True)
+        cls.webhook = cls.owner.webhooks.first()
+
+    def test_send_notification_without_existing_structure(self, mock_send_message):
+        # given
+        mock_send_message.return_value = 1
+        alliance = EveEntityAllianceFactory()
+        character = EveEntityCharacterFactory()
+        corporation = EveEntityCorporationFactory()
+        solar_system = EveSolarSystemLowSecFactory()
+        structure_id = 666  # unknown structure
+        structure_type = CitadelTypeFactory()
+        obj = NotificationFactory(
+            owner=self.owner,
+            notif_type=NotificationType.STRUCTURE_UNDER_ATTACK,
+            text_from_dict={
+                "allianceID": alliance.id,
+                "allianceLinkData": ["showinfo", 16159, alliance.id],
+                "allianceName": "Big Bad Alliance",
+                "armorPercentage": 98.65129050962584,
+                "charID": character.id,
+                "corpLinkData": ["showinfo", 2, corporation.id],
+                "corpName": "Bad Company",
+                "hullPercentage": 100.0,
+                "shieldPercentage": 4.704536686417284e-14,
+                "solarsystemID": solar_system.id,
+                "structureID": structure_id,
+                "structureShowInfoData": [
+                    "showinfo",
+                    structure_type.id,
+                    structure_id,
+                ],
+                "structureTypeID": structure_type.id,
+            },
+        )
+
+        # when
+        obj.send_to_webhook(self.webhook)
+
+        # then
+        embed = mock_send_message.call_args[1]["embeds"][0]
+        self.assertIn(
+            f"The {structure_type.name} **(unknown)** in [{solar_system.name}]",
+            embed.description,
+        )
+
+
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
 class TestNotificationPings(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         corporation = EveEntityCorporationFactory()
+        solar_system = EveSolarSystemNullSecFactory()
+        IHUBTypeFactory()
         cls.notif_params = {
             "notif_type": NotificationType.BILLING_I_HUB_BILL_ABOUT_TO_EXPIRE,
             "text_from_dict": {
                 "billID": 24803231,
                 "corpID": corporation.id,
                 "dueDate": 132936111600000000,
-                "solarSystemID": 30000474,
+                "solarSystemID": solar_system.id,
             },
         }
 
@@ -779,5 +822,9 @@ class TestNotificationPings(NoSocketsTestCase):
         result = obj.send_to_webhook(webhook_normal)
         # then
         self.assertTrue(result)
+        _, kwargs = mock_send_message.call_args
+        self.assertNotIn("@everyone", kwargs["content"])
+        _, kwargs = mock_send_message.call_args
+        self.assertNotIn("@everyone", kwargs["content"])
         _, kwargs = mock_send_message.call_args
         self.assertNotIn("@everyone", kwargs["content"])

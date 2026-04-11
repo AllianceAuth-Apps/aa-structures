@@ -17,9 +17,7 @@ from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
 
 from allianceauth.eveonline.models import EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from . import __title__
 from .app_settings import STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION
 from .constants import EveCategoryId, EveTypeId
 from .core.notification_types import NotificationType
@@ -27,19 +25,20 @@ from .providers import esi
 from .webhooks.managers import WebhookBaseManager
 
 if TYPE_CHECKING:
-    from .models import Owner
+    from .models import Owner, Structure
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class EveSovereigntyMapManager(models.Manager):
     def update_or_create_all_from_esi(self):
         """Update or create complete sovereignty map from ESI."""
-        sov_map = esi.client.Sovereignty.get_sovereignty_map().results()
+        sov_map = esi.client.Sovereignty.GetSovereigntyMap().results(use_etag=False)
         logger.info("Retrieved sovereignty map from ESI")
         last_updated = now()
         obj_list = []
-        for solar_system in sov_map:
+        for row in sov_map:
+            solar_system = row.model_dump()
             obj_def = {
                 "solar_system_id": solar_system["system_id"],
                 "last_updated": last_updated,
@@ -373,9 +372,10 @@ class StructureManagerBase(models.Manager):
         if token is None:
             raise ValueError("Can not fetch structure without token")
 
-        structure_info = esi.client.Universe.get_universe_structures_structure_id(
-            structure_id=id, token=token.valid_access_token()
-        ).results()
+        data = esi.client.Universe.GetUniverseStructuresStructureId(
+            structure_id=id, token=token
+        ).result(use_etag=False)
+        structure_info = data.model_dump()
         structure = {
             "structure_id": id,
             "name": self.model.extract_name_from_esi_response(structure_info["name"]),
@@ -384,7 +384,7 @@ class StructureManagerBase(models.Manager):
             "system_id": structure_info["solar_system_id"],
         }
         owner = Owner.objects.get(
-            corporation__corporation_id=structure_info["corporation_id"]
+            corporation__corporation_id=structure_info["owner_id"]
         )
         obj, created = self.update_or_create_from_dict(structure=structure, owner=owner)
         return obj, created
@@ -393,7 +393,6 @@ class StructureManagerBase(models.Manager):
         self, structure: dict, owner: Owner
     ) -> Tuple[Any, bool]:
         """Update or create a structure from a dict."""
-
         eve_type: EveType = EveType.objects.get_or_create_esi(id=structure["type_id"])[
             0
         ]
@@ -409,6 +408,7 @@ class StructureManagerBase(models.Manager):
         except self.model.DoesNotExist:
             old_obj = None
 
+        obj: Structure
         obj, created = self.update_or_create(
             id=structure["structure_id"],
             defaults={

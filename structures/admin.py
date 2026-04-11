@@ -18,9 +18,8 @@ from django.utils.translation import gettext_lazy as _
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.django import admin_boolean_icon_html
-from app_utils.logging import LoggerAddTag
 
-from . import __title__, app_settings, tasks
+from . import app_settings, tasks
 from .core.notification_types import NotificationType
 from .models import (
     FuelAlert,
@@ -40,7 +39,7 @@ from .models import (
     Webhook,
 )
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 def lines_sorted_html(items: list) -> str:

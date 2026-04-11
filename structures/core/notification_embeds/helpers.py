@@ -63,17 +63,15 @@ def gen_eve_entity_link(eve_entity: EveEntity) -> str:
     except AttributeError:
         return ""
 
-    if category == EveEntity.CATEGORY_ALLIANCE:
-        url = dotlan.alliance_url(eve_entity.name)
-
-    elif category == EveEntity.CATEGORY_CORPORATION:
-        url = dotlan.corporation_url(eve_entity.name)
-
-    elif category == EveEntity.CATEGORY_CHARACTER:
-        url = evewho.character_url(eve_entity.id)
-
-    else:
-        return ""
+    match category:
+        case EveEntity.CATEGORY_ALLIANCE:
+            url = dotlan.alliance_url(eve_entity.name)
+        case EveEntity.CATEGORY_CORPORATION:
+            url = dotlan.corporation_url(eve_entity.name)
+        case EveEntity.CATEGORY_CHARACTER:
+            url = evewho.character_url(eve_entity.id)
+        case _:
+            return ""
 
     return Webhook.create_link(eve_entity.name, url)
 

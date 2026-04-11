@@ -8,16 +8,14 @@ from django.utils.translation import gettext_lazy as _
 
 from allianceauth.eveonline.models import EveCharacter
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from structures import __title__
 from structures.constants import EveCategoryId
 from structures.core.serializers import PocoListSerializer
 from structures.models import Structure
 
 from .common import add_common_context, add_common_data_export
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 @login_required

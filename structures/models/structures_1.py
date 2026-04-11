@@ -16,9 +16,7 @@ from django.utils.translation import gettext_noop
 from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
 
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from structures import __title__
 from structures.app_settings import STRUCTURES_FEATURE_REFUELED_NOTIFICATIONS
 from structures.constants import EveCategoryId, EveGroupId, EveTypeId
 from structures.core import starbases
@@ -31,7 +29,7 @@ from structures.managers import StructureManager, StructureTagManager
 
 from .eveuniverse import EveSpaceType
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class StructureTag(models.Model):
@@ -457,7 +455,7 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
     @property
     def is_jump_gate(self) -> bool:
         """Return True if this structure is a jump gate, else False."""
-        return self.eve_type_id == EveTypeId.JUMP_GATE
+        return self.eve_type.eve_group_id == EveGroupId.UPWELL_JUMP_BRIDGE
 
     @property
     def is_poco(self) -> bool:
@@ -793,7 +791,7 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
     @classmethod
     def extract_name_from_esi_response(cls, esi_name):
         """extracts the structure's name from the name in an ESI response"""
-        matches = re.search(r"^\S+ - (.+)", esi_name)
+        matches = re.search(r"^.+ - (.+)", esi_name)
         return matches.group(1) if matches else esi_name
 
 

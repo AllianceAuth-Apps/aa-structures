@@ -1551,8 +1551,3 @@ class OwnerCharacter(models.Model):
         with transaction.atomic():
             self.error_count = F("error_count") + 1
             self.save(update_fields=["error_count"])
-
-
-# end ----------------
-
-# end ----------------

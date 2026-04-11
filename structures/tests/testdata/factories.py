@@ -957,11 +957,3 @@ class RawNotificationFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict
         if not self.data:
             return ""
         return yaml.dump(self.data)
-
-
-# --- allianceauth models
-
-
-# end
-# end
-# end

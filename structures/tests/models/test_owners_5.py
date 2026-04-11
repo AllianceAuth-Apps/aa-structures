@@ -1064,6 +1064,3 @@ class TestOwnerUpdateIsUp(TestCase):
         self.assertTrue(mock_notify_admins.called)
         owner.refresh_from_db()
         self.assertTrue(owner.is_up)
-
-
-# end

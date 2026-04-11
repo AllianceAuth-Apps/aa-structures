@@ -240,5 +240,3 @@ def clone_notification(obj: Notification) -> Notification:
 NearestCelestial = namedtuple(
     "NearestCelestial", ["eve_type", "eve_object", "distance"]
 )
-
-# end

@@ -2,15 +2,15 @@
 
 from typing import Iterable, Optional
 
-from celery import Task, chain, shared_task
+from celery import chain, shared_task
 
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
+from esi.decorators import rate_limit_retry_task
 
 from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
-from app_utils.esi import retry_task_on_esi_error_and_offline
 from app_utils.logging import LoggerAddTag
 
 from . import __title__
@@ -40,11 +40,11 @@ def update_all_structures():
     chain(update_sov_map.si(), update_structures.si()).delay()
 
 
-@shared_task(bind=True, base=QueueOnce, time_limit=STRUCTURES_TASKS_TIME_LIMIT)
-def update_sov_map(self: Task):
+@shared_task(base=QueueOnce, time_limit=STRUCTURES_TASKS_TIME_LIMIT)
+@rate_limit_retry_task
+def update_sov_map():
     """Update sovereignty map from ESI."""
-    with retry_task_on_esi_error_and_offline(self):
-        EveSovereigntyMap.objects.update_or_create_all_from_esi()
+    EveSovereigntyMap.objects.update_or_create_all_from_esi()
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
@@ -83,39 +83,33 @@ def update_structures_for_owner(owner_pk: int, user_pk: Optional[int] = None):
 
 
 @shared_task(
-    bind=True,
     base=QueueOnce,
     once={"keys": ["owner_pk"], "graceful": True},
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
-def update_structures_esi_for_owner(
-    self: Task, owner_pk: int, user_pk: Optional[int] = None
-):
+@rate_limit_retry_task
+def update_structures_esi_for_owner(owner_pk: int, user_pk: Optional[int] = None):
     """Update all structures for an owner from ESI.
 
     Optionally notify user_pk about the result.
     """
     owner = Owner.objects.get(pk=owner_pk)
-    with retry_task_on_esi_error_and_offline(self):
-        owner.update_structures_esi(_get_user(user_pk))
+    owner.update_structures_esi(_get_user(user_pk))
 
 
 @shared_task(
-    bind=True,
     base=QueueOnce,
     once={"keys": ["owner_pk"], "graceful": True},
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
-def update_structures_assets_for_owner(
-    self: Task, owner_pk: int, user_pk: Optional[int] = None
-):
+@rate_limit_retry_task
+def update_structures_assets_for_owner(owner_pk: int, user_pk: Optional[int] = None):
     """Update all related assets for an owner from ESI.
 
     Optionally notify user_pk about the result.
     """
     owner = Owner.objects.get(pk=owner_pk)
-    with retry_task_on_esi_error_and_offline(self):
-        owner.update_asset_esi(_get_user(user_pk))
+    owner.update_asset_esi(_get_user(user_pk))
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
@@ -158,21 +152,18 @@ def process_notifications_for_owner(owner_pk: int, user_pk: Optional[int] = None
 
 
 @shared_task(
-    bind=True,
     base=QueueOnce,
     once={"keys": ["owner_pk"], "graceful": True},
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
-def fetch_notification_for_owner(
-    self: Task, owner_pk: int, user_pk: Optional[int] = None
-):
+@rate_limit_retry_task
+def fetch_notification_for_owner(owner_pk: int, user_pk: Optional[int] = None):
     """Fetch notifications from ESI.
 
     Optionally notify user_pk about the result.
     """
     owner = Owner.objects.get(pk=owner_pk)
-    with retry_task_on_esi_error_and_offline(self):
-        owner.fetch_notifications_esi(_get_user(user_pk))
+    owner.fetch_notifications_esi(_get_user(user_pk))
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)

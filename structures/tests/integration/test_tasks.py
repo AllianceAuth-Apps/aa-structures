@@ -548,12 +548,3 @@ class TestTasks(TestCase):
             "war declarations", discord_mock.matches[0].json["embeds"][0]["title"]
         )
         self.assertTrue(pook.isdone(), msg=pook.pending_mocks())
-
-
-# class TestPlayground(TestCase):
-#     def test_playground(self):
-#         x = WebhookFactory()
-#         print(x.url)
-
-
-# end

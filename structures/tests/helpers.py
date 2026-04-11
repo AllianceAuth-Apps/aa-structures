@@ -25,6 +25,3 @@ def markdown_to_plain(text: str) -> str:
     html = markdown(text)
     text = "".join(BeautifulSoup(html, features="html.parser").findAll(text=True))
     return unicodedata.normalize("NFKD", text)
-
-
-# end

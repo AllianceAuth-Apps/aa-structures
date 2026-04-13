@@ -8,6 +8,8 @@ from app_utils.testing import NoSocketsTestCase
 from structures.core.notification_types import NotificationType
 from structures.models import FuelAlert, JumpFuelAlert, Notification, Structure, Webhook
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
+    EveEntityCorporationDEDFactory,
     EveEntityCorporationFactory,
     FuelAlertConfigFactory,
     FuelAlertFactory,
@@ -15,17 +17,15 @@ from structures.tests.testdata.factories import (
     JumpGateFactory,
     NotificationFactory,
     OwnerFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     WebhookFactory,
 )
 from structures.tests.testdata.helpers import (
-    load_eve_entities,
     load_notification_by_type,
     load_notification_entities,
+    load_notification_objects,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.models.notifications"
 
@@ -35,11 +35,11 @@ class TestStructureFuelAlerts(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):  # Can not be setUpTestData due to conflict with redis client
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
         cls.owner = OwnerFactory()
         load_notification_entities(cls.owner)
+        load_notification_objects(cls.owner)
         cls.webhook = cls.owner.webhooks.first()
+        print()
 
     def test_should_output_str(self, mock_send_message):
         # given
@@ -337,19 +337,26 @@ class TestStructureFuelAlerts(NoSocketsTestCase):
         # given
         mock_send_message.side_effect = RuntimeError
         webhook_wrong_type = WebhookFactory(
-            notification_types=[NotificationType.STRUCTURE_DESTROYED]
+            notification_types=[NotificationType.STRUCTURE_DESTROYED],
+            name="wrong_notif_type",
         )
         self.owner.webhooks.add(webhook_wrong_type)
         structure = StructureFactory(owner=self.owner)
         webhook_structure = WebhookFactory(
-            notification_types=[NotificationType.STRUCTURE_FUEL_ALERT]
+            notification_types=[NotificationType.STRUCTURE_FUEL_ALERT],
+            name="correct_structure",
         )
         structure.webhooks.add(webhook_structure)
         webhook_inactive = WebhookFactory(
-            notification_types=[NotificationType.STRUCTURE_FUEL_ALERT], is_active=False
+            notification_types=[NotificationType.STRUCTURE_FUEL_ALERT],
+            is_active=False,
+            name="wrong_inactive",
         )
         self.owner.webhooks.add(webhook_inactive)
-        WebhookFactory(notification_types=[NotificationType.STRUCTURE_FUEL_ALERT])
+        WebhookFactory(
+            notification_types=[NotificationType.STRUCTURE_FUEL_ALERT],
+            name="wrong_other_owner",
+        )
         config = FuelAlertConfigFactory(start=48, end=0, repeat=12)
         # when
         qs = config.relevant_webhooks()
@@ -365,7 +372,6 @@ class TestJumpFuelAlerts(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         EveEntityCorporationFactory(id=1000137, name="DED")
 
     def test_should_output_str(self, mock_send_message):
@@ -595,8 +601,6 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
-        load_eve_entities()
         cls.owner = OwnerFactory()
 
     def test_related_structures_for_structure_notifications(self):
@@ -650,7 +654,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
 
     def test_related_structures_for_orbital_notifications(self):
         # given
-        structure = PocoFactory(owner=self.owner, eve_planet_id=40161469)
+        structure = CustomsOfficeFactory(owner=self.owner, eve_planet__id=40161469)
         for notif_type in [
             NotificationType.ORBITAL_ATTACKED,
             NotificationType.ORBITAL_REINFORCED,
@@ -668,7 +672,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
 
     def test_related_structures_for_tower_notifications(self):
         # given
-        structure = StarbaseFactory(owner=self.owner, eve_moon_id=40161465)
+        structure = StarbaseFactory(owner=self.owner, eve_moon__id=40161465)
         for notif_type in [
             NotificationType.TOWER_ALERT_MSG,
             NotificationType.TOWER_RESOURCE_ALERT_MSG,
@@ -686,7 +690,8 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
 
     def test_related_structures_for_generated_notifications(self):
         # given
-        structure = StarbaseFactory(owner=self.owner, eve_moon_id=40161465)
+        EveEntityCorporationDEDFactory()
+        structure = StarbaseFactory(owner=self.owner)
         for notif_type in [
             NotificationType.STRUCTURE_JUMP_FUEL_ALERT,
             NotificationType.STRUCTURE_REFUELED_EXTRA,

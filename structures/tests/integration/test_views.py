@@ -6,16 +6,15 @@ from django.urls import reverse
 from app_utils.testing import add_character_to_user
 
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveCharacterFactory,
     JumpGateFactory,
     OwnerFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     UserMainBasicFactory,
     UserMainDefaultFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 STRUCTURES_PATH = "structures.views.structures"
 PUBLIC_PATH = "structures.views.public"
@@ -27,7 +26,6 @@ class TestStructureListView(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
 
@@ -36,7 +34,7 @@ class TestStructureListView(TestCase):
     def test_should_return_correct_context(self):
         # given
         StructureFactory(owner=self.owner)
-        PocoFactory(owner=self.owner)
+        CustomsOfficeFactory(owner=self.owner)
         StarbaseFactory(owner=self.owner)
         JumpGateFactory(owner=self.owner)
         StructureFactory()  # this one will be hidden
@@ -59,7 +57,6 @@ class TestStatisticsView(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.user = UserMainDefaultFactory()
         cls.owner = OwnerFactory(user=cls.user)
 
@@ -84,7 +81,6 @@ class TestPocoView(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         character = EveCharacterFactory(character_name="Bruce Wayne")
         cls.user = UserMainBasicFactory(main_character__character=character)
         cls.owner = OwnerFactory(are_pocos_public=True)
@@ -95,9 +91,9 @@ class TestPocoView(TestCase):
     @patch(COMMON_PATH + ".STRUCTURES_PAGING_ENABLED", True)
     def test_should_return_correct_context(self):
         # given
-        PocoFactory(owner=self.owner)
-        PocoFactory(owner=self.owner)
-        PocoFactory()  # this one will be hidden
+        CustomsOfficeFactory(owner=self.owner)
+        CustomsOfficeFactory(owner=self.owner)
+        CustomsOfficeFactory()  # this one will be hidden
         self.client.force_login(self.user)
         # when
         response = self.client.get(reverse("structures:public"))

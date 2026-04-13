@@ -1,14 +1,16 @@
 import datetime as dt
 from copy import deepcopy
+from typing import NamedTuple
 from unittest.mock import patch
 
 from pytz import UTC
 
 from django.utils.timezone import now
+from eveuniverse.tests.testdata.factories_2 import EveSolarSystemFactory
 
 from app_utils.testing import NoSocketsTestCase
 
-from structures.constants import EveCorporationId, EveTypeId
+from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import (
     EveSpaceType,
@@ -20,15 +22,17 @@ from structures.models import (
     StructureTag,
 )
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveCharacterFactory,
     EveCorporationInfoFactory,
     EveEntityCorporationFactory,
     EveSovereigntyMapFactory,
     FuelAlertConfigFactory,
+    FuelBlockTypeFactory,
     JumpGateFactory,
+    LiquidOzoneTypeFactory,
     OwnerFactory,
     PocoDetailsFactory,
-    PocoFactory,
     SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
@@ -36,7 +40,6 @@ from structures.tests.testdata.factories import (
     StructureServiceFactory,
     StructureTagFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 STRUCTURES_PATH = "structures.models.structures_1"
 NOTIFICATIONS_PATH = "structures.models.notifications"
@@ -49,9 +52,8 @@ class TestPocoDetails(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
-        cls.structure = PocoFactory(owner=cls.owner, poco_details=False)
+        cls.structure = CustomsOfficeFactory(owner=cls.owner, poco_details=False)
 
     def test_should_return_tax_and_access_for_corporation_member(self):
         # given
@@ -208,13 +210,12 @@ class TestStructure(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
 
     def test_str_upwell(self):
         obj = StructureFactory.build(
             owner=self.owner,
-            eve_solar_system_name="Amamake",
+            eve_solar_system__name="Amamake",
             name="Test Structure Alpha",
         )
         expected = "Amamake - Test Structure Alpha"
@@ -230,13 +231,13 @@ class TestStructure(NoSocketsTestCase):
         self.assertEqual(str(obj), expected)
 
     def test_str_poco(self):
-        obj = PocoFactory.build(eve_planet_name="Amamake V")
+        obj = CustomsOfficeFactory.build(eve_planet__name="Amamake V")
         expected = "Amamake V - Customs Office (Amamake V)"
         self.assertEqual(str(obj), expected)
 
     def test_str_starbase(self):
         obj = StarbaseFactory(
-            eve_moon_name="Amamake II - Moon 1", name="Home Sweat Home"
+            eve_moon__name="Amamake II - Moon 1", name="Home Sweat Home"
         )
         expected = "Amamake II - Moon 1 - Home Sweat Home"
         self.assertEqual(str(obj), expected)
@@ -261,7 +262,7 @@ class TestStructure(NoSocketsTestCase):
         self.assertFalse(structure.is_full_power)
 
         # none when no upwell structure
-        poco = PocoFactory(owner=self.owner)
+        poco = CustomsOfficeFactory(owner=self.owner)
         poco.fuel_expires_at = now() + dt.timedelta(hours=1)
         self.assertIsNone(poco.is_full_power)
 
@@ -292,7 +293,7 @@ class TestStructure(NoSocketsTestCase):
         self.assertFalse(structure.is_low_power)
 
         # none for non structures
-        poco = PocoFactory.build(owner=self.owner)
+        poco = CustomsOfficeFactory.build(owner=self.owner)
         self.assertIsNone(poco.is_low_power)
 
         starbase = StarbaseFactory.build(owner=self.owner)
@@ -319,13 +320,6 @@ class TestStructure(NoSocketsTestCase):
         starbase = StarbaseFactory(owner=self.owner)
         self.assertIsNone(starbase.is_abandoned)
 
-    def test_extract_name_from_esi_response(self):
-        expected = "Alpha"
-        self.assertEqual(
-            Structure.extract_name_from_esi_response("Super - Alpha"), expected
-        )
-        self.assertEqual(Structure.extract_name_from_esi_response("Alpha"), expected)
-
     def test_should_return_hours_when_fuel_expires(self):
         # given
         obj = StructureFactory.build(owner=self.owner)
@@ -346,19 +340,19 @@ class TestStructure(NoSocketsTestCase):
 
     def test_should_return_moon_location(self):
         # given
-        obj = StarbaseFactory.build(eve_moon_name="Amamake II - Moon 1")
+        obj = StarbaseFactory.build(eve_moon__name="Amamake II - Moon 1")
         # when/then
         self.assertEqual(obj.location_name, "Amamake II - Moon 1")
 
     def test_should_return_planet_location(self):
         # given
-        obj = PocoFactory.build(eve_planet_name="Amamake V")
+        obj = CustomsOfficeFactory.build(eve_planet__name="Amamake V")
         # when/then
         self.assertEqual(obj.location_name, "Amamake V")
 
     def test_should_return_solar_system_location(self):
         # given
-        obj = StructureFactory.build(eve_solar_system_name="Amamake")
+        obj = StructureFactory.build(eve_solar_system__name="Amamake")
         # when/then
         self.assertEqual(obj.location_name, "Amamake")
 
@@ -434,32 +428,52 @@ class TestStructure(NoSocketsTestCase):
                 self.assertIs(structure.is_reinforced, excepted)
 
     def test_owner_alliance_has_sov_in_null_sec_system(self):
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        sov_solar_system = EveSolarSystemFactory(security_status=-1)
         EveSovereigntyMapFactory(
-            eve_solar_system_name="1-PGSG", corporation=self.owner.corporation
+            solar_system_id=sov_solar_system.id, corporation=self.owner.corporation
         )
+        obj = StructureFactory(owner=self.owner, eve_solar_system=sov_solar_system)
         self.assertTrue(obj.owner_has_sov())
 
     def test_owner_has_no_sov_in_null_sec_system(self):
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="A-C5TC")
+        obj = StructureFactory(owner=self.owner, eve_solar_system__name="A-C5TC")
         self.assertFalse(obj.owner_has_sov())
 
     def test_owner_has_no_sov_in_low_sec_system(self):
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="Amamake")
+        obj = StructureFactory(owner=self.owner, eve_solar_system__name="Amamake")
         self.assertFalse(obj.owner_has_sov())
+
+
+class TestStructure_ExtractNameFromEsiResponse(NoSocketsTestCase):
+    def test_extract_name_from_esi_response(self):
+        class Case(NamedTuple):
+            name: str
+            value: str
+            want: str
+
+        cases = [
+            Case("with system", "Super - Alpha", "Alpha"),
+            Case("system name has multiple words", "Super Duper - Alpha", "Alpha"),
+            Case("name only", "Alpha", "Alpha"),
+            Case("empty", "", ""),
+        ]
+
+        for tc in cases:
+            with self.subTest(name=tc.name):
+                got = Structure.extract_name_from_esi_response(tc.value)
+                self.assertEqual(got, tc.want)
 
 
 class TestStructureIsX(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
-        cls.jump_gate = JumpGateFactory.build(owner=cls.owner)
-        cls.poco = PocoFactory.build(owner=cls.owner)
-        cls.skyhook = SkyhookFactory.build(owner=cls.owner)
-        cls.starbase = StarbaseFactory.build(owner=cls.owner)
-        cls.upwell_structure = StructureFactory.build(owner=cls.owner)
+        cls.jump_gate: Structure = JumpGateFactory.build(owner=cls.owner)
+        cls.poco: Structure = CustomsOfficeFactory.build(owner=cls.owner)
+        cls.skyhook: Structure = SkyhookFactory.build(owner=cls.owner)
+        cls.starbase: Structure = StarbaseFactory.build(owner=cls.owner)
+        cls.upwell_structure: Structure = StructureFactory.build(owner=cls.owner)
 
     def test_is_jump_gate(self):
         self.assertFalse(self.upwell_structure.is_jump_gate)
@@ -501,7 +515,6 @@ class TestStructureFuel(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
 
     def test_should_return_jump_fuel_quantity(self):
@@ -509,13 +522,13 @@ class TestStructureFuel(NoSocketsTestCase):
         structure = JumpGateFactory(owner=self.owner, jump_fuel_quantity=False)
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EveTypeId.LIQUID_OZONE,
+            eve_type=LiquidOzoneTypeFactory,
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=32,
         )
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EveTypeId.LIQUID_OZONE,
+            eve_type=LiquidOzoneTypeFactory,
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=10,
         )
@@ -526,7 +539,7 @@ class TestStructureFuel(NoSocketsTestCase):
 
     def test_should_return_none_when_not_jump_gate_1(self):
         # given
-        structure = StarbaseFactory(owner=self.owner, eve_type_name="Astrahus")
+        structure = StructureFactory(owner=self.owner)
         # when
         result = structure.jump_fuel_quantity()
         # then
@@ -573,19 +586,19 @@ class TestStructureFuel(NoSocketsTestCase):
         structure = StructureFactory(owner=self.owner)
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+            eve_type=FuelBlockTypeFactory(),
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=250,
         )
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EVE_ID_HELIUM_FUEL_BLOCK,
+            eve_type=FuelBlockTypeFactory(),
             location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
             quantity=1000,
         )
         StructureItemFactory(
             structure=structure,
-            eve_type_id=EVE_ID_HELIUM_FUEL_BLOCK,
+            eve_type=FuelBlockTypeFactory(),
             location_flag=StructureItem.LocationFlag.CARGO,
             quantity=500,
         )
@@ -598,14 +611,13 @@ class TestStructureFuel(NoSocketsTestCase):
         # given
         structure = StructureFactory(
             owner=self.owner,
-            eve_type_name="Astrahus",
             fuel_expires_at=dt.datetime(2022, 1, 24, 5, 0, tzinfo=UTC),
         )
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = dt.datetime(2021, 12, 17, 15, 13, tzinfo=UTC)
             StructureItemFactory(
                 structure=structure,
-                eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+                eve_type=FuelBlockTypeFactory(),
                 location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
                 quantity=6309,
             )
@@ -618,14 +630,13 @@ class TestStructureFuel(NoSocketsTestCase):
         # given
         structure = StructureFactory(
             owner=self.owner,
-            eve_type_name="Astrahus",
             fuel_expires_at=None,
         )
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = dt.datetime(2021, 12, 17, 15, 13, tzinfo=UTC)
             StructureItemFactory(
                 structure=structure,
-                eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+                eve_type=FuelBlockTypeFactory(),
                 location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
                 quantity=6309,
             )
@@ -639,14 +650,13 @@ class TestStructureFuel(NoSocketsTestCase):
         my_now = now()
         structure = StructureFactory(
             owner=self.owner,
-            eve_type_name="Astrahus",
             fuel_expires_at=my_now,
         )
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = my_now
             StructureItemFactory(
                 structure=structure,
-                eve_type_id=EVE_ID_NITROGEN_FUEL_BLOCK,
+                eve_type=FuelBlockTypeFactory(),
                 location_flag=StructureItem.LocationFlag.STRUCTURE_FUEL,
                 quantity=1,
                 last_updated_at=my_now,
@@ -683,7 +693,7 @@ class TestStructureFuel(NoSocketsTestCase):
 
     def test_should_return_false_for_poco(self):
         # given
-        poco = PocoFactory.build(owner=self.owner)
+        poco = CustomsOfficeFactory.build(owner=self.owner)
         # when/then
         self.assertFalse(poco.is_burning_fuel)
 
@@ -695,7 +705,6 @@ class TestStructureFuelLevels(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory(
             webhooks__notification_types=[NotificationType.STRUCTURE_REFUELED_EXTRA]
         )
@@ -858,14 +867,13 @@ class TestStructurePowerMode(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
 
     def test_returns_none_for_non_upwell_structures(self):
         starbase = StarbaseFactory.build(owner=self.owner)
         self.assertIsNone(starbase.power_mode)
 
-        pos = PocoFactory.build(owner=self.owner)
+        pos = CustomsOfficeFactory.build(owner=self.owner)
         self.assertIsNone(pos.power_mode)
 
         structure = StructureFactory.build(owner=self.owner)
@@ -943,15 +951,15 @@ class TestStructureTags(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
+        cls.sov_solar_system = EveSolarSystemFactory(security_status=-1)
         EveSovereigntyMapFactory(
-            eve_solar_system_name="1-PGSG", corporation=cls.owner.corporation
+            corporation=cls.owner.corporation, solar_system_id=cls.sov_solar_system.id
         )
 
     def test_can_create_generated_tags(self):
         # given
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        obj = StructureFactory(owner=self.owner, eve_solar_system=self.sov_solar_system)
         obj.tags.clear()
         # when
         obj.update_generated_tags()
@@ -963,7 +971,7 @@ class TestStructureTags(NoSocketsTestCase):
 
     def test_can_update_generated_tags(self):
         # given
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        obj = StructureFactory(owner=self.owner, eve_solar_system=self.sov_solar_system)
         null_tag = StructureTag.objects.get(name=StructureTag.NAME_NULLSEC_TAG)
         self.assertIn(null_tag, list(obj.tags.all()))
         null_tag.order = 100
@@ -989,7 +997,7 @@ class TestStructureTags(NoSocketsTestCase):
 
     def test_can_handle_unknown_space_type_for_existing_tags(self):
         # given
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        obj = StructureFactory(owner=self.owner, eve_solar_system=self.sov_solar_system)
         obj.tags.clear()
         # when
         with patch(
@@ -1005,7 +1013,7 @@ class TestStructureTags(NoSocketsTestCase):
 
     def test_can_handle_unknown_space_type_when_recreating_tags(self):
         # given
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        obj = StructureFactory(owner=self.owner, eve_solar_system=self.sov_solar_system)
         obj.tags.clear()
         # when
         with patch(
@@ -1056,14 +1064,15 @@ class TestStructureSave(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
         cls.owner = OwnerFactory()
+        cls.sov_solar_system = EveSolarSystemFactory(security_status=-1)
         EveSovereigntyMapFactory(
-            eve_solar_system_name="1-PGSG", corporation=cls.owner.corporation
+            corporation=cls.owner.corporation, solar_system_id=cls.sov_solar_system.id
         )
 
     def test_can_save_tags_low_sec(self):
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="Amamake")
+        solar_system = EveSolarSystemFactory(security_status=0.4)
+        obj = StructureFactory(owner=self.owner, eve_solar_system=solar_system)
         lowsec_tag = StructureTag.objects.get(name=StructureTag.NAME_LOWSEC_TAG)
         self.assertIn(lowsec_tag, obj.tags.all())
         self.assertIsNone(
@@ -1071,7 +1080,7 @@ class TestStructureSave(NoSocketsTestCase):
         )
 
     def test_can_save_tags_null_sec_w_sov(self):
-        obj = StructureFactory(owner=self.owner, eve_solar_system_name="1-PGSG")
+        obj = StructureFactory(owner=self.owner, eve_solar_system=self.sov_solar_system)
         nullsec_tag = StructureTag.objects.get(name=StructureTag.NAME_NULLSEC_TAG)
         self.assertIn(nullsec_tag, obj.tags.all())
         sov_tag = StructureTag.objects.get(name=StructureTag.NAME_SOV_TAG)
@@ -1126,12 +1135,12 @@ class TestStructureService(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
 
     def test_str(self):
         structure = StructureFactory(
-            eve_solar_system_name="Amamake", name="Test Structure Alpha"
+            eve_solar_system__name="Amamake", name="Test Structure Alpha"
         )
         obj = StructureServiceFactory(structure=structure, name="Clone Bay")
         expected = "Amamake - Test Structure Alpha - Clone Bay"
+        self.assertEqual(str(obj), expected)
         self.assertEqual(str(obj), expected)

@@ -14,6 +14,7 @@ from structures.core import notification_timers
 from structures.core.notification_types import NotificationType
 from structures.models import Structure
 from structures.tests.testdata.factories import (
+    CustomsOfficeFactory,
     EveEntityAllianceFactory,
     EveEntityCharacterFactory,
     GeneratedNotificationFactory,
@@ -24,11 +25,9 @@ from structures.tests.testdata.factories import (
     NotificationSovStructureReinforcedFactory,
     NotificationStructureLostShieldFactory,
     OwnerFactory,
-    PocoFactory,
     RefineryFactory,
     StructureFactory,
 )
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
 
 if "structuretimers" in app_labels():
     from structuretimers.models import Timer
@@ -45,7 +44,6 @@ if "structuretimers" in app_labels():
         @classmethod
         def setUpClass(cls):
             super().setUpClass()
-            load_eveuniverse()
 
         def test_should_create_timer_for_reinforced_structure(self):
             # given
@@ -84,8 +82,12 @@ if "structuretimers" in app_labels():
             sender = EveEntityAllianceFactory(
                 id=alliance.alliance_id, name=alliance.alliance_name
             )
+            solar_system_id = 30000474
             notif = NotificationSovStructureReinforcedFactory(
-                owner=owner, sender=sender, eve_solar_system_name="1-PGSG"
+                owner=owner,
+                sender=sender,
+                eve_solar_system__id=solar_system_id,
+                eve_solar_system__security_status=-1,
             )
             # when
             result = notification_timers.add_or_remove_timer(notif)
@@ -94,7 +96,7 @@ if "structuretimers" in app_labels():
             timer = Timer.objects.first()
             self.assertIsInstance(timer, Timer)
             self.assertEqual(timer.timer_type, Timer.Type.FINAL)
-            self.assertEqual(timer.eve_solar_system.id, 30000474)
+            self.assertEqual(timer.eve_solar_system.id, solar_system_id)
             self.assertEqual(timer.structure_type.id, EveTypeId.TCU)
             self.assertAlmostEqual(
                 timer.date,
@@ -116,8 +118,12 @@ if "structuretimers" in app_labels():
             sender = EveEntityAllianceFactory(
                 id=alliance.alliance_id, name=alliance.alliance_name
             )
+            solar_system_id = 30000474
             notif = NotificationSovStructureReinforcedFactory(
-                owner=owner, sender=sender, eve_solar_system_name="1-PGSG"
+                owner=owner,
+                sender=sender,
+                eve_solar_system__id=solar_system_id,
+                eve_solar_system__security_status=-1,
             )
             # when
             result = notification_timers.add_or_remove_timer(notif)
@@ -130,7 +136,7 @@ if "structuretimers" in app_labels():
         def test_should_create_timer_for_orbital_reinforcements(self):
             # given
             owner = OwnerFactory()
-            structure = PocoFactory(owner=owner)
+            structure = CustomsOfficeFactory(owner=owner)
             notif = NotificationOrbitalReinforcedFactory(
                 owner=owner, structure=structure
             )

@@ -3,12 +3,18 @@ from typing import Generic, List, Optional, TypeVar
 
 import factory
 import factory.fuzzy
-import pytz
 import yaml
+from factory.faker import faker
 
-from django.utils.text import slugify
 from django.utils.timezone import now
-from eveuniverse.models import EveEntity, EveMoon, EvePlanet, EveSolarSystem, EveType
+from eveuniverse.models import EveEntity
+from eveuniverse.tests.testdata.factories_2 import (
+    EveGroupFactory,
+    EveMoonFactory,
+    EvePlanetFactory,
+    EveSolarSystemFactory,
+    EveTypeFactory,
+)
 
 from allianceauth.eveonline.models import EveCharacter
 from app_utils.testdata_factories import (
@@ -19,7 +25,7 @@ from app_utils.testdata_factories import (
     UserMainFactory,
 )
 
-from structures.constants import EveGroupId, EveTypeId
+from structures.constants import EveCategoryId, EveGroupId
 from structures.core.notification_types import NotificationType
 from structures.models import (
     EveSovereigntyMap,
@@ -39,10 +45,17 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
+from structures.tests.helpers import format_datetime_esi
 
 # from .helpers import datetime_to_ldap  # TODO: Use for notifications
 
 T = TypeVar("T")
+
+POSITION_MIN = -100_000_000_000_000_000
+POSITION_MAX = 100_000_000_000_000_000
+
+factory.Faker._DEFAULT_LOCALE = "en_US"
+_fake = faker.Faker("en_US")
 
 
 class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
@@ -53,10 +66,10 @@ class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
 # eve universe (within structures)
 
 
-def datetime_to_esi(my_dt: dt.datetime) -> str:
-    """Convert datetime to ESI datetime string."""
-    utc_dt = my_dt.astimezone(pytz.utc)
-    return utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+class PositionFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict]):
+    x = factory.fuzzy.FuzzyFloat(POSITION_MIN, POSITION_MAX)
+    y = factory.fuzzy.FuzzyFloat(POSITION_MIN, POSITION_MAX)
+    z = factory.fuzzy.FuzzyFloat(POSITION_MIN, POSITION_MAX)
 
 
 class EveEntityFactory(
@@ -92,9 +105,177 @@ class EveEntityCorporationFactory(EveEntityFactory):
     category = EveEntity.CATEGORY_CORPORATION
 
 
+class EveEntityCorporationDEDFactory(EveEntityCorporationFactory):
+    id = 1000137
+    name = "DED"
+
+
 class EveEntityAllianceFactory(EveEntityFactory):
     name = factory.Sequence(lambda n: f"alliance_name_{n}")
     category = EveEntity.CATEGORY_ALLIANCE
+
+
+class EveSolarSystemNullSecFactory(EveSolarSystemFactory):
+    security_status = -1.0
+
+
+class EveSolarSystemLowSecFactory(EveSolarSystemFactory):
+    security_status = 0.3
+
+
+class EveSolarSystemHighSecFactory(EveSolarSystemFactory):
+    security_status = 0.9
+
+
+class EveSolarSystemWSpaceFactory(EveSolarSystemFactory):
+    id = factory.Sequence(lambda n: 31_900_000 + n)
+    security_status = -1.0
+
+
+class CitadelServiceModuleTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=66,
+        eve_category__name="Service Module",
+        id=1321,
+        name="Structure Citadel Service Module",
+    )
+
+
+class CitadelTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.STRUCTURE,
+        eve_category__name="Structure",
+        id=EveGroupId.CITADEL,
+        name="Citadel",
+    )
+    enabled_sections = 1  # Dogmas
+
+
+class CustomsOfficeTypeFactory(EveTypeFactory):
+    id = 2233
+    name = "Customs Office"
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.ORBITAL,
+        eve_category__name="Orbital",
+        id=1025,
+        name="Orbital Infrastructure",
+    )
+
+
+class FuelBlockTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=4,
+        eve_category__name="Material",
+        id=1136,
+        name="Fuel Block",
+    )
+
+
+class LiquidOzoneTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=4,
+        eve_category__name="Material",
+        id=423,
+        name="Ice Product",
+    )
+    id = 16273
+    name = "Liquid Ozone"
+
+
+class IHUBTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=40,
+        eve_category__name="Sovereignty Structures",
+        id=1012,
+        name="Sovereignty Hub",
+    )
+    id = 32458
+    name = "Sovereignty Hub"
+
+
+class TCUTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=40,
+        eve_category__name="Sovereignty Structures",
+        id=1003,
+        name="Territorial Claim Unit",
+    )
+    id = 32226
+    name = "Territorial Claim Unit"
+
+
+class PlanetTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=2,
+        eve_category__name="Celestial",
+        id=7,
+        name="Planet",
+    )
+
+    @factory.lazy_attribute
+    def name(self):
+        name = _fake("color")
+        return f"Planet ({name.capitalize()})"
+
+
+class SkyhookTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.ORBITAL,
+        eve_category__name="Orbitals",
+        id=4736,
+        name="Skyhook",
+    )
+    id = 81080
+    name = "Orbital Skyhook"
+
+
+class MoonDrillTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.STRUCTURE,
+        eve_category__name="Structure",
+        id=EveGroupId.UPWELL_MOON_DRILL,
+        name="Upwell Moon Drill",
+    )
+    enabled_sections = 1  # Dogmas
+
+
+class MoonOreTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=25,
+        eve_category__name="Asteroid",
+        id=1920,
+        name="Common Moon Asteroids",
+    )
+
+
+class QuantumCoreTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        id=EveGroupId.QUANTUM_CORES,
+        name="Quantum Cores",
+    )
+
+
+class RefineryTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.STRUCTURE,
+        eve_category__name="Structure",
+        id=EveGroupId.REFINERY,
+        name="Refinery",
+    )
+    enabled_sections = 1  # Dogmas
 
 
 # Structures objects
@@ -170,9 +351,14 @@ class WebhookFactory(
         model = Webhook
         django_get_or_create = ("name",)
 
-    name = factory.Sequence(lambda n: f"Generated webhook #{n+1}")
-    url = factory.LazyAttribute(lambda o: f"http://www.example.com/{slugify(o.name)}")
+    name = factory.Sequence(lambda n: f"Generated webhook #{n + 1}")
     notes = factory.Faker("sentence")
+
+    @factory.lazy_attribute
+    def url(self):
+        id = factory.fuzzy.FuzzyInteger(100000000000000000, 999999999999999999).fuzz()
+        token = _fake.sha256(raw_output=False)
+        return f"https://discord.com/api/webhooks/{id}/{token}"
 
 
 class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Owner]):
@@ -220,7 +406,7 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
 
     @factory.post_generation
     def webhooks(obj, create, extracted, **kwargs):
-        # Set webhooks=False to skip creating characters.
+        # Webhooks are created by default. Set webhooks=False to disable.
         if not create or extracted is False:
             return
 
@@ -261,29 +447,19 @@ class StructureFactory(
         model = Structure
         django_get_or_create = ("id",)
 
-    class Params:
-        eve_type_name = "Astrahus"
-        eve_solar_system_name = "Amamake"
-
     id = factory.Sequence(lambda n: 1_500_000_000_000 + n)
+    eve_type = factory.SubFactory(CitadelTypeFactory)
+    eve_solar_system = factory.SubFactory(EveSolarSystemFactory)
     fuel_expires_at = factory.LazyAttribute(lambda obj: now() + dt.timedelta(days=3))
     has_fitting = False
     has_core = True
     last_updated_at = factory.LazyFunction(now)
     name = factory.LazyAttribute(lambda o: f"Test Structure #{o.id}")
     owner = factory.SubFactory(OwnerFactory)
-    position_x = factory.fuzzy.FuzzyFloat(-10_000_000_000_000, 10_000_000_000_000)
-    position_y = factory.fuzzy.FuzzyFloat(-10_000_000_000_000, 10_000_000_000_000)
-    position_z = factory.fuzzy.FuzzyFloat(-10_000_000_000_000, 10_000_000_000_000)
+    position_x = factory.fuzzy.FuzzyFloat(POSITION_MIN, POSITION_MAX)
+    position_y = factory.fuzzy.FuzzyFloat(POSITION_MIN, POSITION_MAX)
+    position_z = factory.fuzzy.FuzzyFloat(POSITION_MIN, POSITION_MAX)
     state = Structure.State.SHIELD_VULNERABLE
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name=self.eve_type_name)
-
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return EveSolarSystem.objects.get(name=self.eve_solar_system_name)
 
     @factory.post_generation
     def webhooks(obj, create, extracted, **kwargs):
@@ -318,48 +494,31 @@ class StructureFactory(
         StructureItemFactory(
             structure=obj,
             location_flag=StructureItem.LocationFlag.QUANTUM_CORE_ROOM,
-            eve_type=EveType.objects.get(
-                name=f"{obj.eve_type.name} Upwell Quantum Core"
-            ),
+            eve_type=QuantumCoreTypeFactory(),
         )
 
 
 class RefineryFactory(StructureFactory):
-    class Params:
-        eve_moon_name = "Amamake IV - Moon 1"
+    eve_moon = factory.SubFactory(EveMoonFactory)
+    eve_type = factory.SubFactory(RefineryTypeFactory)
 
-    @factory.lazy_attribute
-    def eve_moon(self):
-        return EveMoon.objects.get(name=self.eve_moon_name)
 
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return self.eve_moon.eve_planet.eve_solar_system
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name="Athanor")
+class StarbaseTypeFactory(EveTypeFactory):
+    eve_group = factory.SubFactory(
+        EveGroupFactory,
+        eve_category__id=EveCategoryId.STARBASE,
+        eve_category__name="Starbase",
+        id=EveGroupId.CONTROL_TOWER,
+        name="Control Tower",
+    )
 
 
 class StarbaseFactory(StructureFactory):
-    class Params:
-        eve_moon_name = "Amamake II - Moon 1"
-
-    has_fitting = None
+    eve_type = factory.SubFactory(StarbaseTypeFactory)
+    eve_moon = factory.SubFactory(EveMoonFactory)
     has_core = None
+    has_fitting = None
     state = Structure.State.POS_ONLINE
-
-    @factory.lazy_attribute
-    def eve_moon(self):
-        return EveMoon.objects.get(name=self.eve_moon_name)
-
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return self.eve_moon.eve_planet.eve_solar_system
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name="Caldari Control Tower")
 
     @factory.post_generation
     def starbase_detail(obj, create, extracted, **kwargs):
@@ -400,12 +559,7 @@ class StarbaseDetailFactory(
         if not create or extracted is False:
             return
 
-        StarbaseDetailFuelFactory(
-            detail=obj, eve_type_name="Nitrogen Fuel Block", quantity=960
-        )
-        StarbaseDetailFuelFactory(
-            detail=obj, eve_type_name="Strontium Clathrates", quantity=12_000
-        )
+        StarbaseDetailFuelFactory(detail=obj, quantity=960)
 
 
 class StarbaseDetailFuelFactory(
@@ -414,35 +568,16 @@ class StarbaseDetailFuelFactory(
     class Meta:
         model = StarbaseDetailFuel
 
-    class Params:
-        eve_type_name = "Nitrogen Fuel Block"
-
+    eve_type = factory.SubFactory(FuelBlockTypeFactory)
     quantity = 1000
 
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name=self.eve_type_name)
 
-
-class PocoFactory(StructureFactory):
-    class Params:
-        eve_planet_name = "Amamake V"
-
-    has_fitting = None
+class CustomsOfficeFactory(StructureFactory):
+    eve_planet = factory.SubFactory(EvePlanetFactory)
+    eve_type = factory.SubFactory(CustomsOfficeTypeFactory)
     has_core = None
+    has_fitting = None
     state = Structure.State.NA
-
-    @factory.lazy_attribute
-    def eve_planet(self):
-        return EvePlanet.objects.get(name=self.eve_planet_name)
-
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return self.eve_planet.eve_solar_system
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name="Customs Office")
 
     @factory.lazy_attribute
     def name(self):
@@ -466,7 +601,7 @@ class PocoDetailsFactory(
     class Meta:
         model = PocoDetails
 
-    structure = factory.SubFactory(PocoFactory, poco_details=False)
+    structure = factory.SubFactory(CustomsOfficeFactory, poco_details=False)
 
     allow_access_with_standings = False
     allow_alliance_access = False
@@ -477,30 +612,22 @@ class PocoDetailsFactory(
 
 
 class SkyhookFactory(StructureFactory):
-    class Params:
-        eve_planet_name = "Amamake V"
-
     has_fitting = None
     has_core = None
     state = Structure.State.NA
-
-    @factory.lazy_attribute
-    def eve_planet(self):
-        return EvePlanet.objects.get(name=self.eve_planet_name)
-
-    @factory.lazy_attribute
-    def eve_solar_system(self):
-        return self.eve_planet.eve_solar_system
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(id=EveTypeId.ORBITAL_SKYHOOK)
+    eve_type = factory.SubFactory(SkyhookTypeFactory)
+    eve_planet = factory.SubFactory(EvePlanetFactory)
+    eve_solar_system = factory.SelfAttribute("eve_planet.eve_solar_system")
 
 
 class JumpGateFactory(StructureFactory):
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name="Ansiblex Jump Gate")
+    eve_type = factory.SubFactory(
+        EveTypeFactory,
+        eve_group__id=1408,
+        eve_group__name="Upwell Jump Bridge",
+        eve_group__eve_category__id=65,
+        eve_group__eve_category__name="Structure",
+    )
 
     @factory.post_generation
     def jump_fuel_quantity(obj, create, extracted, **kwargs):
@@ -521,26 +648,17 @@ class StructureItemFactory(
         model = StructureItem
         django_get_or_create = ("id",)
 
-    class Params:
-        eve_type_name = "Oxygen Fuel Block"
-
     id = factory.Sequence(lambda n: 1900000000001 + n)
     is_singleton = False
     location_flag = StructureItem.LocationFlag.CARGO
     quantity = 1
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(name=self.eve_type_name)
+    eve_type = factory.SubFactory(FuelBlockTypeFactory)
 
 
 class StructureItemJumpFuelFactory(StructureItemFactory):
     is_singleton = False
     location_flag = StructureItem.LocationFlag.STRUCTURE_FUEL
-
-    @factory.lazy_attribute
-    def eve_type(self):
-        return EveType.objects.get(id=EveTypeId.LIQUID_OZONE)
+    eve_type = factory.SubFactory(LiquidOzoneTypeFactory)
 
 
 class StructureServiceFactory(
@@ -573,13 +691,12 @@ class EveSovereigntyMapFactory(
 
     class Params:
         corporation = None
-        eve_solar_system_name = "1-PGSG"
 
     last_updated = factory.LazyFunction(now)
 
     @factory.lazy_attribute
     def solar_system_id(self):
-        obj = EveSolarSystem.objects.get(name=self.eve_solar_system_name)
+        obj = EveSolarSystemFactory(security_status=-1)
         return obj.id
 
     @factory.lazy_attribute
@@ -631,12 +748,6 @@ class NotificationFactory(
 class NotificationMoonMiningExtractionStartedFactory(NotificationFactory):
     class Params:
         auto_time = 132186924601059151
-        ore_volume_by_type = {
-            46300: 1288475.124715103,
-            46301: 544691.7637724016,
-            46302: 526825.4047522942,
-            46303: 528996.6386983792,
-        }
         ready_time = 132186816601059151
         structure = None
         started_by = None
@@ -647,10 +758,15 @@ class NotificationMoonMiningExtractionStartedFactory(NotificationFactory):
     def text(self):
         started_by = self.started_by or EveEntityCharacterFactory()
         structure = self.structure or RefineryFactory(owner=self.owner)
+        ore_1 = MoonOreTypeFactory()
+        ore_2 = MoonOreTypeFactory()
         data = {
             "autoTime": self.auto_time,
             "moonID": structure.eve_moon.id,
-            "oreVolumeByType": self.ore_volume_by_type,
+            "oreVolumeByType": {
+                ore_1.id: factory.fuzzy.FuzzyFloat(100_000, 1_000_000).fuzz(),
+                ore_2.id: factory.fuzzy.FuzzyFloat(100_000, 1_000_000).fuzz(),
+            },
             "readyTime": self.ready_time,
             "solarSystemID": structure.eve_solar_system.id,
             "startedBy": started_by.id,
@@ -711,7 +827,7 @@ class NotificationOrbitalReinforcedFactory(NotificationFactory):
 
     @factory.lazy_attribute
     def text(self):
-        structure = self.structure or PocoFactory(owner=self.owner)
+        structure = self.structure or CustomsOfficeFactory(owner=self.owner)
         aggressor_alliance = self.aggressor_alliance or EveEntityAllianceFactory()
         aggressor_corporation = (
             self.aggressor_corporation or EveEntityCorporationFactory()
@@ -756,20 +872,24 @@ class NotificationStructureLostShieldFactory(NotificationFactory):
 
 
 class NotificationSovStructureReinforcedFactory(NotificationFactory):
+    class Meta:
+        model = Notification
+        exclude = ("eve_solar_system", "eve_type")
+
     class Params:
         campaign_event_type = 1
         decloak_time = 131897990021334067
-        eve_solar_system_name = "1-PGSG"
 
     notif_type = NotificationType.SOV_STRUCTURE_REINFORCED
+    eve_solar_system = factory.SubFactory(EveSolarSystemFactory, security_status=-1)
+    eve_type = factory.SubFactory(TCUTypeFactory)
 
     @factory.lazy_attribute
     def text(self):
-        eve_solar_system = EveSolarSystem.objects.get(name=self.eve_solar_system_name)
         data = {
             "campaignEventType": self.campaign_event_type,
             "decloakTime": self.decloak_time,
-            "solarSystemID": eve_solar_system.id,
+            "solarSystemID": self.eve_solar_system.id,
         }
         return yaml.dump(data)
 
@@ -830,7 +950,7 @@ class RawNotificationFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict
             timestamp_dt = now()
         else:
             timestamp_dt = self.timestamp_dt
-        return datetime_to_esi(timestamp_dt)
+        return format_datetime_esi(timestamp_dt)
 
     @factory.lazy_attribute
     def text(self):

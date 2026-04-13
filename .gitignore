@@ -21,3 +21,4 @@ starbases_raw*.json
 _build/
 alliance_auth.sqlite3
 .temp/
+.env

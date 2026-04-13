@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import NamedTuple
 from unittest.mock import patch
 
 from django.contrib import admin
@@ -28,20 +29,19 @@ from structures.models import (
 )
 
 from .testdata.factories import (
+    CustomsOfficeFactory,
     EveAllianceInfoFactory,
     EveCorporationInfoFactory,
     FuelAlertConfigFactory,
     NotificationFactory,
     OwnerCharacterFactory,
     OwnerFactory,
-    PocoFactory,
     StarbaseFactory,
     StructureFactory,
     StructureTagFactory,
     SuperuserFactory,
     WebhookFactory,
 )
-from .testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structures.admin"
 
@@ -61,7 +61,6 @@ class TestFuelNotificationConfigAdminView(TestCase):
             "color": Webhook.Color.WARNING,
         }
         cls.user = SuperuserFactory()
-        load_eveuniverse()
 
     def test_should_create_new_config(self):
         # given
@@ -220,7 +219,6 @@ class TestStructureFuelAlertAdmin(TestCase):
         cls.modeladmin = StructureFuelAlertConfigAdmin(
             model=FuelAlertConfig, admin_site=AdminSite()
         )
-        load_eveuniverse()
 
     @patch(MODULE_PATH + ".StructureFuelAlertConfigAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".tasks", spec=True)
@@ -241,7 +239,6 @@ class TestNotificationAdmin(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.modeladmin = NotificationAdmin(model=Notification, admin_site=AdminSite())
         cls.user = SuperuserFactory()
         cls.owner = OwnerFactory()
@@ -363,7 +360,6 @@ class TestNotificationAdminWebhooks(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.modeladmin = NotificationAdmin(model=Notification, admin_site=AdminSite())
         cls.user = SuperuserFactory()
 
@@ -410,7 +406,6 @@ class TestOwnerAdmin(TestCase):
         super().setUpClass()
         cls.factory = RequestFactory()
         cls.modeladmin = OwnerAdmin(model=Owner, admin_site=AdminSite())
-        load_eveuniverse()
         cls.user = SuperuserFactory()
         cls.alliance = EveAllianceInfoFactory(
             alliance_id=3001, alliance_name="Wayne Enterprises"
@@ -526,7 +521,6 @@ class TestStructureAdmin(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.factory = RequestFactory()
-        load_eveuniverse()
         cls.modeladmin = StructureAdmin(model=Structure, admin_site=AdminSite())
         cls.user = SuperuserFactory()
         cls.alliance = EveAllianceInfoFactory(
@@ -548,38 +542,63 @@ class TestStructureAdmin(TestCase):
             "Wayne Technologies<br>Wayne Enterprises",
         )
 
-    def test_location_structure(self):
+    def test_location(self):
         # given
-        obj = StructureFactory(
-            owner=self.owner, eve_solar_system_name="Amamake", eve_type_name="Astrahus"
-        )
-        # when/then
-        self.assertEqual(self.modeladmin._location(obj), "Amamake<br>Heimatar")
+        class Case(NamedTuple):
+            name: str
+            structure: Structure
+            want: str
 
-    def test_location_poco(self):
-        # given
-        obj = PocoFactory(owner=self.owner, eve_planet_name="Amamake V")
-        # when/then
-        self.assertEqual(self.modeladmin._location(obj), "Amamake V<br>Heimatar")
+        cases = [
+            Case(
+                name="Upwell Structure",
+                structure=StructureFactory(
+                    owner=self.owner,
+                    eve_solar_system__name="Enaluri",
+                    eve_solar_system__eve_constellation__eve_region__name="Black Rise",
+                ),
+                want="Enaluri<br>Black Rise",
+            ),
+            Case(
+                name="Customs Office",
+                structure=CustomsOfficeFactory(
+                    owner=self.owner,
+                    eve_planet__name="Enaluri V",
+                    eve_solar_system__eve_constellation__eve_region__name="Black Rise",
+                ),
+                want="Enaluri V<br>Black Rise",
+            ),
+            Case(
+                name="Starbase",
+                structure=StarbaseFactory(
+                    owner=self.owner,
+                    eve_moon__name="Enalury V - Moon 1",
+                    eve_solar_system__eve_constellation__eve_region__name="Black Rise",
+                ),
+                want="Enalury V - Moon 1<br>Black Rise",
+            ),
+        ]
 
-    def test_location_starbase(self):
-        # given
-        obj = StarbaseFactory(owner=self.owner, eve_moon_name="Amamake II - Moon 1")
-        self.assertEqual(
-            self.modeladmin._location(obj), "Amamake II - Moon 1<br>Heimatar"
-        )
+        # when/then
+        for tc in cases:
+            with self.subTest(name=tc.name):
+                got = self.modeladmin._location(tc.structure)
+                self.assertEqual(got, tc.want)
 
     def test_type(self):
         # given
-        obj = StructureFactory(owner=self.owner, eve_type_name="Astrahus")
+        obj = StructureFactory(owner=self.owner)
         # when/then
-        self.assertEqual(self.modeladmin._type(obj), "Astrahus<br>Citadel")
+        self.assertEqual(
+            self.modeladmin._type(obj),
+            (obj.eve_type.name + "<br>" + obj.eve_type.eve_group.name),
+        )
 
     def test_tags_1(self):
         # given
         obj = StructureFactory(
             owner=self.owner,
-            eve_solar_system_name="Amamake",
+            eve_solar_system__security_status=0.3,
             tags=[StructureTagFactory(name="my_tag")],
         )
         # when/then
@@ -737,4 +756,6 @@ class TestWebhookAdmin(TestCase):
         )
         self.assertEqual(r.status_code, 302)
         webhook.refresh_from_db()
+        self.assertIn(owner, webhook.owners.all())
+        self.assertIn(owner, webhook.owners.all())
         self.assertIn(owner, webhook.owners.all())

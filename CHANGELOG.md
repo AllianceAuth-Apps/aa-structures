@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [4.0.0] - TBD
+
+The release remove
+
+### Changed
+
+- Replace deprecated swagger client with openAPI 3.0 client in django-esi
+- Tests now run with the esi client instead of using a fake like before (more reliable)
+- Tests now mostly create test data ad-hoc instead of using loaded eveunivere (faster and less brittle)
+- Now uses pinned ESI version
+- Skyhook feature now enabled by default
+- Removed log tags
+
 ## [3.3.1] - 2025-11-17
 
 ### Fixed

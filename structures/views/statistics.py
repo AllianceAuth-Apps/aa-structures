@@ -9,17 +9,15 @@ from django.utils.translation import gettext_lazy as _
 from eveuniverse.core import dotlan, eveimageserver
 
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 from app_utils.views import link_html
 
-from structures import __title__
 from structures.constants import EveCategoryId, EveGroupId, EveTypeId
 from structures.helpers import floating_icon_with_text_html
 from structures.models import Structure
 
 from .common import add_common_context, add_common_data_export
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 def _default_if_none(value, default=None):

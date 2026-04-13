@@ -1,9 +1,12 @@
-from eveuniverse.models import EveSolarSystem
-
 from app_utils.testing import NoSocketsTestCase
 
 from structures.models import EveSovereigntyMap, EveSpaceType
-from structures.tests.testdata.load_eveuniverse import load_eveuniverse
+from structures.tests.testdata.factories import (
+    EveSolarSystemHighSecFactory,
+    EveSolarSystemLowSecFactory,
+    EveSolarSystemNullSecFactory,
+    EveSolarSystemWSpaceFactory,
+)
 
 MODULE_PATH = "structures.models.eveuniverse"
 
@@ -24,24 +27,23 @@ class TestEveSpaceType(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eveuniverse()
 
     def test_space_type_highsec(self):
-        obj = EveSolarSystem.objects.get(id=30002506)
+        obj = EveSolarSystemHighSecFactory()
         expected = EveSpaceType.HIGHSEC
         self.assertEqual(EveSpaceType.from_solar_system(obj), expected)
 
     def test_space_type_lowsec(self):
-        obj = EveSolarSystem.objects.get(id=30002537)
+        obj = EveSolarSystemLowSecFactory()
         expected = EveSpaceType.LOWSEC
         self.assertEqual(EveSpaceType.from_solar_system(obj), expected)
 
     def test_space_type_nullsec(self):
-        obj = EveSolarSystem.objects.get(id=30000474)
+        obj = EveSolarSystemNullSecFactory()
         expected = EveSpaceType.NULLSEC
         self.assertEqual(EveSpaceType.from_solar_system(obj), expected)
 
     def test_space_type_wh_space(self):
-        obj = EveSolarSystem.objects.get(id=31000005)
+        obj = EveSolarSystemWSpaceFactory()
         expected = EveSpaceType.W_SPACE
         self.assertEqual(EveSpaceType.from_solar_system(obj), expected)

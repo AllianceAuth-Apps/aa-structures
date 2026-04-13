@@ -7,9 +7,10 @@ import json
 import os
 import re
 from email.utils import format_datetime, parsedate_to_datetime
+from http import HTTPStatus
 from typing import Any, Iterable, List, Optional
 
-from bravado.exception import HTTPForbidden, HTTPNotFound
+from requests.exceptions import HTTPError
 
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ObjectDoesNotExist
@@ -19,6 +20,7 @@ from django.db.models import F
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from esi.errors import TokenError
+from esi.exceptions import HTTPClientError, HTTPServerError
 from esi.models import Token
 from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
 
@@ -29,7 +31,6 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.allianceauth import notify_admins
 from app_utils.datetime import DATETIME_FORMAT
 from app_utils.helpers import chunks
-from app_utils.logging import LoggerAddTag
 
 from structures import __title__
 from structures.app_settings import (
@@ -59,7 +60,7 @@ from .notifications import (
 from .structures_1 import Structure, StructureItem
 from .structures_2 import PocoDetails, StarbaseDetail, StarbaseDetailFuel
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class General(models.Model):
@@ -355,13 +356,14 @@ class Owner(models.Model):
             eve_solar_system=eve_solar_system, corporation=self.corporation
         )
 
-    def disable_character(
+    def disable_character_with_error_threshold(
         self,
         character: "OwnerCharacter",
         reason: str,
         max_allowed_errors: int = 0,
     ) -> None:
-        """Disable character and notify it's owner and admins about it.
+        """Disable character and notify it's owner and admins about it
+        when to many errors have occurred for this character.
 
         Args:
         - character: Character to disable
@@ -501,7 +503,7 @@ class Owner(models.Model):
 
             token = character.valid_token()
             if not token:
-                self.disable_character(
+                self.disable_character_with_error_threshold(
                     character=character, reason="No valid token found for character"
                 )
                 continue
@@ -532,8 +534,10 @@ class Owner(models.Model):
         """Updates all structures from ESI."""
         token = self.fetch_token(rotate_characters=self.RotateCharactersType.STRUCTURES)
         is_ok = self._fetch_upwell_structures(token)
+
         if STRUCTURES_FEATURE_CUSTOMS_OFFICES:
             is_ok &= self._fetch_custom_offices(token)
+
         if STRUCTURES_FEATURE_STARBASES:
             is_ok &= self._fetch_starbases(token)
 
@@ -571,32 +575,40 @@ class Owner(models.Model):
         for item_ids_chunk in chunks(item_ids, 999):
             try:
                 locations_data_chunk = (
-                    esi.client.Assets.post_corporations_corporation_id_assets_locations(
+                    esi.client.Assets.PostCorporationsCorporationIdAssetsLocations(
                         corporation_id=self.corporation.corporation_id,
-                        item_ids=item_ids_chunk,
-                        token=token.valid_access_token(),
+                        body=item_ids_chunk,
+                        token=token,
                     )
-                ).results()
-            except HTTPNotFound:
-                pass
-            else:
-                locations_data += locations_data_chunk
-        positions = {x["item_id"]: x["position"] for x in locations_data}
-        return positions
+                ).results(use_etag=False)
+            except HTTPClientError as ex:
+                if ex.status_code == HTTPStatus.NOT_FOUND:
+                    continue
+                raise ex
+
+            locations_data += locations_data_chunk
+
+        locations = {
+            obj.item_id: {"x": obj.position.x, "y": obj.position.y, "z": obj.position.z}
+            for obj in locations_data
+        }
+        return locations
 
     def _fetch_upwell_structures(self, token: Token) -> bool:
         """Fetches Upwell structures from ESI an reports whether it was successful."""
         # fetch main list of structure for this corporation
         try:
-            structures = (
-                esi.client.Corporation.get_corporations_corporation_id_structures(
+            structures_objs = (
+                esi.client.Corporation.GetCorporationsCorporationIdStructures(
                     corporation_id=self.corporation.corporation_id,
-                    token=token.valid_access_token(),
-                ).results()
+                    token=token,
+                ).results(use_etag=False)
             )
-        except OSError as ex:
+        except (HTTPClientError, HTTPServerError) as ex:
             self._report_esi_issue("fetch corporation structures", ex, token)
             return False
+
+        structures = [obj.model_dump() for obj in structures_objs]
 
         # fetch additional information for structures
         if not structures:
@@ -617,19 +629,19 @@ class Owner(models.Model):
         return is_ok
 
     def _fetch_universe_infos_for_structures(
-        self, token, structures: List[dict]
+        self, token: Token, structures: List[dict]
     ) -> bool:
         count = 0
         for s in structures:
             try:
-                structure_info = (
-                    esi.client.Universe.get_universe_structures_structure_id(
+                structure_info_obj = (
+                    esi.client.Universe.GetUniverseStructuresStructureId(
                         structure_id=s["structure_id"],
-                        token=token.valid_access_token(),
+                        token=token,
                     )
-                ).results()
-            except OSError as ex:
-                if isinstance(ex, HTTPForbidden):
+                ).result(use_etag=False)
+            except (HTTPClientError, HTTPServerError) as ex:
+                if ex.status_code == HTTPStatus.NOT_FOUND:
                     logger.error(
                         "Failed to fetch structure with ID #%d belonging to %s, "
                         "because the character '%s' is missing docking rights.",
@@ -643,6 +655,7 @@ class Owner(models.Model):
                     )
                 s["name"] = "(no data)"
             else:
+                structure_info = structure_info_obj.model_dump()
                 count += 1
                 s["name"] = Structure.extract_name_from_esi_response(
                     structure_info["name"]
@@ -712,23 +725,25 @@ class Owner(models.Model):
         """
         structures = {}
         try:
-            pocos = esi.client.Planetary_Interaction.get_corporations_corporation_id_customs_offices(
+            pocos = esi.client.Planetary_Interaction.GetCorporationsCorporationIdCustomsOffices(
                 corporation_id=self.corporation.corporation_id,
-                token=token.valid_access_token(),
-            ).results()
+                token=token,
+            ).results(
+                use_etag=False
+            )
 
             if not pocos:
                 logger.info("%s: No custom offices retrieved from ESI", self)
 
             else:
-                pocos_2 = {row["office_id"]: row for row in pocos}
+                pocos_2 = {row.office_id: row for row in pocos}
                 office_ids = list(pocos_2.keys())
-                positions = self._fetch_locations_for_assets(office_ids, token)
+                locations = self._fetch_locations_for_assets(office_ids, token)
                 names = self._fetch_names_for_pocos(office_ids, token)
 
                 # making sure we have all solar systems loaded
                 # incl. their planets for later name matching
-                solar_system_ids = {int(obj["system_id"]) for obj in pocos}
+                solar_system_ids = {int(obj.system_id) for obj in pocos}
                 for solar_system_id in solar_system_ids:
                     EveSolarSystem.objects.get_or_create_esi(
                         id=solar_system_id,
@@ -738,7 +753,7 @@ class Owner(models.Model):
                     )
 
                 structures.update(
-                    self._compile_pocos_for_structures(pocos_2, positions, names)
+                    self._compile_pocos_for_structures(pocos_2, locations, names)
                 )
 
                 self._store_poco_details(structures, pocos_2)
@@ -746,7 +761,7 @@ class Owner(models.Model):
             if STRUCTURES_DEVELOPER_MODE:
                 self._store_raw_data("customs_offices", structures)
 
-        except OSError as ex:
+        except (HTTPClientError, HTTPServerError) as ex:
             self._report_esi_issue("fetch custom offices", ex, token)
             return False
 
@@ -767,37 +782,31 @@ class Owner(models.Model):
                 )
                 continue
 
-            standing_level = PocoDetails.StandingLevel.from_esi(
-                poco.get("standing_level")
-            )
+            standing_level = PocoDetails.StandingLevel.from_esi(poco.standing_level)
             structure_obj, _ = Structure.objects.update_or_create_from_dict(
                 structure, self
             )
             PocoDetails.objects.update_or_create(
                 structure=structure_obj,
                 defaults={
-                    "alliance_tax_rate": poco.get("alliance_tax_rate"),
-                    "allow_access_with_standings": poco.get(
-                        "allow_access_with_standings"
-                    ),
-                    "allow_alliance_access": poco.get("allow_alliance_access"),
-                    "bad_standing_tax_rate": poco.get("bad_standing_tax_rate"),
-                    "corporation_tax_rate": poco.get("corporation_tax_rate"),
-                    "excellent_standing_tax_rate": poco.get(
-                        "excellent_standing_tax_rate"
-                    ),
-                    "good_standing_tax_rate": poco.get("good_standing_tax_rate"),
-                    "neutral_standing_tax_rate": poco.get("neutral_standing_tax_rate"),
-                    "reinforce_exit_end": poco.get("reinforce_exit_end"),
-                    "reinforce_exit_start": poco.get("reinforce_exit_start"),
+                    "alliance_tax_rate": poco.alliance_tax_rate,
+                    "allow_access_with_standings": poco.allow_access_with_standings,
+                    "allow_alliance_access": poco.allow_alliance_access,
+                    "bad_standing_tax_rate": poco.bad_standing_tax_rate,
+                    "corporation_tax_rate": poco.corporation_tax_rate,
+                    "excellent_standing_tax_rate": poco.excellent_standing_tax_rate,
+                    "good_standing_tax_rate": poco.good_standing_tax_rate,
+                    "neutral_standing_tax_rate": poco.neutral_standing_tax_rate,
+                    "reinforce_exit_end": poco.reinforce_exit_end,
+                    "reinforce_exit_start": poco.reinforce_exit_start,
                     "standing_level": standing_level,
-                    "terrible_standing_tax_rate": poco.get(
-                        "terrible_standing_tax_rate"
-                    ),
+                    "terrible_standing_tax_rate": poco.terrible_standing_tax_rate,
                 },
             )
 
-    def _compile_pocos_for_structures(self, pocos_2, positions, names) -> dict:
+    def _compile_pocos_for_structures(
+        self, pocos_2: dict, locations: dict, names
+    ) -> dict:
         structures = {}
         for office_id, poco in pocos_2.items():
             planet_name = names.get(office_id, "")
@@ -815,7 +824,7 @@ class Owner(models.Model):
                 planet_id = None
 
             reinforce_exit_start = dt.datetime(
-                year=2000, month=1, day=1, hour=poco["reinforce_exit_start"]
+                year=2000, month=1, day=1, hour=poco.reinforce_exit_start
             )
             reinforce_hour = reinforce_exit_start + dt.timedelta(hours=1)
             structure = {
@@ -823,15 +832,15 @@ class Owner(models.Model):
                 "type_id": EveTypeId.CUSTOMS_OFFICE,
                 "corporation_id": self.corporation.corporation_id,
                 "name": name if name else "",
-                "system_id": poco["system_id"],
+                "system_id": poco.system_id,
                 "reinforce_hour": reinforce_hour.hour,
                 "state": Structure.State.UNKNOWN,
             }
             if planet_id:
                 structure["planet_id"] = planet_id
 
-            if office_id in positions:
-                structure["position"] = positions[office_id]
+            if office_id in locations:
+                structure["position"] = locations[office_id]
 
             structures[office_id] = structure
 
@@ -847,25 +856,21 @@ class Owner(models.Model):
         for item_ids_chunk in chunks(item_ids, 999):
             try:
                 names_data_chunk = (
-                    esi.client.Assets.post_corporations_corporation_id_assets_names(
+                    esi.client.Assets.PostCorporationsCorporationIdAssetsNames(
+                        body=item_ids_chunk,
                         corporation_id=self.corporation.corporation_id,
-                        item_ids=item_ids_chunk,
-                        token=token.valid_access_token(),
+                        token=token,
                     )
-                ).results()
-            except HTTPNotFound:
-                pass
-            else:
-                names_data += names_data_chunk
-        names = {x["item_id"]: self._extract_planet_name(x["name"]) for x in names_data}
-        return names
+                ).results(use_etag=False)
+            except HTTPClientError as ex:
+                if ex.status_code == HTTPStatus.NOT_FOUND:
+                    continue
+                raise ex
 
-    @staticmethod
-    def _extract_planet_name(text: str) -> str:
-        """Extract name of planet from assert name for a customs office."""
-        reg_ex = re.compile(r"Customs Office \((.+)\)")
-        matches = reg_ex.match(text)
-        return matches.group(1) if matches else ""
+            names_data += names_data_chunk
+
+        names = {x.item_id: _extract_planet_name_from_asset(x.name) for x in names_data}
+        return names
 
     def _fetch_starbases(self, token: Token) -> bool:
         """Fetch starbases from ESI for this owner.
@@ -882,16 +887,16 @@ class Owner(models.Model):
         structures = []
         try:
             starbases_data = (
-                esi.client.Corporation.get_corporations_corporation_id_starbases(
+                esi.client.Corporation.GetCorporationsCorporationIdStarbases(
                     corporation_id=self.corporation.corporation_id,
-                    token=token.valid_access_token(),
+                    token=token,
                 )
-            ).results()
+            ).results(use_etag=False)
             if not starbases_data:
                 logger.info("%s: This corporation has no starbases.", self)
 
             else:
-                starbases_data = {obj["starbase_id"]: obj for obj in starbases_data}
+                starbases_data = {obj.starbase_id: obj for obj in starbases_data}
                 names = self._fetch_starbases_names(starbases_data.keys(), token)
                 locations = self._fetch_locations_for_assets(
                     starbases_data.keys(), token
@@ -905,15 +910,15 @@ class Owner(models.Model):
             if STRUCTURES_DEVELOPER_MODE:
                 self._store_raw_data("starbases", structures)
 
-        except HTTPForbidden:
-            self.disable_character(
-                character=character,
-                reason=("This character is not a director or CEO"),
-                max_allowed_errors=STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES,
-            )
-            return False
+        except (HTTPClientError, HTTPServerError) as ex:
+            if ex.status_code == HTTPStatus.FORBIDDEN:
+                self.disable_character_with_error_threshold(
+                    character=character,
+                    reason=("This character is not a director or CEO"),
+                    max_allowed_errors=STRUCTURES_ESI_DIRECTOR_ERROR_MAX_RETRIES,
+                )
+                return False
 
-        except OSError as ex:
             self._report_esi_issue("fetch starbases", ex, token)
             return False
 
@@ -931,10 +936,12 @@ class Owner(models.Model):
                 structure, self
             )
             detail = self._update_starbase_detail(structure=structure_obj, token=token)
+
             fuel_expires_at = detail.calc_fuel_expires()
             if fuel_expires_at:
                 structure_obj.fuel_expires_at = fuel_expires_at
                 structure_obj.save()
+
             if (
                 structure_obj.state == Structure.State.POS_REINFORCED
                 and structure_obj.state_timer_end
@@ -954,24 +961,18 @@ class Owner(models.Model):
             except KeyError:
                 name = "Starbase"
             structure = {
-                "structure_id": structure_id,
-                "type_id": starbase["type_id"],
                 "corporation_id": self.corporation.corporation_id,
+                "moon_id": starbase.moon_id,
                 "name": name,
-                "system_id": starbase["system_id"],
+                "state_timer_end": starbase.reinforced_until,
+                "state": starbase.state,
+                "structure_id": structure_id,
+                "system_id": starbase.system_id,
+                "type_id": starbase.type_id,
+                "unanchors_at": starbase.unanchor_at,
             }
             if structure_id in locations:
                 structure["position"] = locations[structure_id]
-            if "state" in starbase:
-                structure["state"] = starbase["state"]
-            if "moon_id" in starbase:
-                structure["moon_id"] = starbase["moon_id"]
-            if "fuel_expires" in starbase:
-                structure["fuel_expires"] = starbase["fuel_expires"]
-            if "reinforced_until" in starbase:
-                structure["state_timer_end"] = starbase["reinforced_until"]
-            if "unanchors_at" in starbase:
-                structure["unanchors_at"] = starbase["unanchors_at"]
             structures.append(structure)
 
         return structures
@@ -983,64 +984,66 @@ class Owner(models.Model):
         for item_ids_chunk in chunks(item_ids, 999):
             try:
                 names_data_chunk = (
-                    esi.client.Assets.post_corporations_corporation_id_assets_names(
+                    esi.client.Assets.PostCorporationsCorporationIdAssetsNames(
+                        body=item_ids_chunk,
                         corporation_id=self.corporation.corporation_id,
-                        item_ids=item_ids_chunk,
-                        token=token.valid_access_token(),
+                        token=token,
                     )
-                ).results()
-            except HTTPNotFound:
-                pass
-            else:
-                names_data += names_data_chunk
-        names = {x["item_id"]: x["name"] for x in names_data}
+                ).results(use_etag=False)
+            except HTTPClientError as ex:
+                if ex.status_code == HTTPStatus.NOT_FOUND:
+                    continue
+                raise ex
+
+            names_data += names_data_chunk
+
+        names = {x.item_id: x.name for x in names_data}
         return names
 
     def _update_starbase_detail(self, structure, token: Token) -> StarbaseDetail:
         """Update detail for the starbase from ESI."""
-        operation = esi.client.Corporation.get_corporations_corporation_id_starbases_starbase_id(
-            corporation_id=structure.owner.corporation.corporation_id,
-            starbase_id=structure.id,
-            system_id=structure.eve_solar_system.id,
-            token=token.valid_access_token(),
+        operation = (
+            esi.client.Corporation.GetCorporationsCorporationIdStarbasesStarbaseId(
+                corporation_id=structure.owner.corporation.corporation_id,
+                starbase_id=structure.id,
+                system_id=structure.eve_solar_system.id,
+                token=token,
+            )
         )
-        operation.request_config.also_return_response = True
-        data, response = operation.results()
+        data, response = operation.result(use_etag=False, return_response=True)
         last_modified_at = parsedate_to_datetime(
             response.headers.get("Last-Modified", format_datetime(now()))
         )
         defaults = {
-            "allow_alliance_members": data["allow_alliance_members"],
-            "allow_corporation_members": data["allow_corporation_members"],
-            "anchor_role": StarbaseDetail.Role.from_esi(data["anchor"]),
-            "attack_if_at_war": data["attack_if_at_war"],
-            "attack_if_other_security_status_dropping": data.get(
-                "attack_if_other_security_status_dropping"
+            "allow_alliance_members": data.allow_alliance_members,
+            "allow_corporation_members": data.allow_corporation_members,
+            "anchor_role": StarbaseDetail.Role.from_esi(data.anchor),
+            "attack_if_at_war": data.attack_if_at_war,
+            "attack_if_other_security_status_dropping": (
+                data.attack_if_other_security_status_dropping
             ),
-            "attack_security_status_threshold": data.get(
-                "attack_security_status_threshold"
-            ),
-            "attack_standing_threshold": data.get("attack_standing_threshold"),
-            "fuel_bay_take_role": StarbaseDetail.Role.from_esi(data["fuel_bay_take"]),
-            "fuel_bay_view_role": StarbaseDetail.Role.from_esi(data["fuel_bay_view"]),
+            "attack_security_status_threshold": data.attack_security_status_threshold,
+            "attack_standing_threshold": data.attack_standing_threshold,
+            "fuel_bay_take_role": StarbaseDetail.Role.from_esi(data.fuel_bay_take),
+            "fuel_bay_view_role": StarbaseDetail.Role.from_esi(data.fuel_bay_view),
             "last_modified_at": last_modified_at,
-            "offline_role": StarbaseDetail.Role.from_esi(data["offline"]),
-            "online_role": StarbaseDetail.Role.from_esi(data["online"]),
-            "unanchor_role": StarbaseDetail.Role.from_esi(data["unanchor"]),
-            "use_alliance_standings": data["use_alliance_standings"],
+            "offline_role": StarbaseDetail.Role.from_esi(data.offline),
+            "online_role": StarbaseDetail.Role.from_esi(data.online),
+            "unanchor_role": StarbaseDetail.Role.from_esi(data.unanchor),
+            "use_alliance_standings": data.use_alliance_standings,
         }
-        for fuel in data["fuels"]:
-            EveType.objects.get_or_create_esi(id=fuel["type_id"])
+        for fuel in data.fuels:
+            EveType.objects.get_or_create_esi(id=fuel.type_id)
         with transaction.atomic():
             detail, _ = StarbaseDetail.objects.update_or_create(
                 structure=structure, defaults=defaults
             )
             detail.fuels.all().delete()
-            for fuel in data["fuels"]:
+            for fuel in data.fuels:
                 StarbaseDetailFuel.objects.create(
-                    eve_type_id=fuel["type_id"],
+                    eve_type_id=fuel.type_id,
                     detail=detail,
-                    quantity=fuel["quantity"],
+                    quantity=fuel.quantity,
                 )
         return detail
 
@@ -1079,9 +1082,9 @@ class Owner(models.Model):
 
     def _fetch_notifications_from_esi(self, token: Token) -> List[dict]:
         """fetching all notifications from ESI for current owner"""
-        notifications = esi.client.Character.get_characters_character_id_notifications(
-            character_id=token.character_id, token=token.valid_access_token()
-        ).results()
+        notifications = esi.client.Character.GetCharactersCharacterIdNotifications(
+            character_id=token.character_id, token=token
+        ).results(use_etag=False)
         if STRUCTURES_DEVELOPER_MODE:
             self._store_raw_data("notifications", notifications)
         if STRUCTURES_NOTIFICATIONS_ARCHIVING_ENABLED:
@@ -1111,7 +1114,7 @@ class Owner(models.Model):
             )
             file.write("\n")
 
-    def _store_notifications(self, notifications: List[dict]) -> int:
+    def _store_notifications(self, notifications: list) -> int:
         """Store new notifications in database.
         Returns number of newly created objects.
         """
@@ -1122,29 +1125,27 @@ class Owner(models.Model):
         new_notifications = [
             obj
             for obj in notifications
-            if obj["notification_id"] not in existing_notification_ids
+            if obj.notification_id not in existing_notification_ids
         ]
         # create new notification objects
         for notification in new_notifications:
-            if notification["sender_type"] == "other":
+            if notification.sender_type == "other":
                 sender = None
             else:
                 sender, _ = EveEntity.objects.get_or_create_esi(
-                    id=notification["sender_id"]
+                    id=notification.sender_id
                 )
-            text = notification["text"] if "text" in notification else None
-            is_read = notification["is_read"] if "is_read" in notification else None
             # at least one type has a trailing white space
             # which we need to remove
-            notif_type = notification["type"].strip()
+            notif_type = notification.type.strip()
             Notification.objects.create(
-                notification_id=notification["notification_id"],
+                notification_id=notification.notification_id,
                 owner=self,
                 sender=sender,
-                timestamp=notification["timestamp"],
+                timestamp=notification.timestamp,
                 notif_type=notif_type,
-                text=text,
-                is_read=is_read,
+                text=notification.text,
+                is_read=notification.is_read,
                 last_updated=now(),
                 created=now(),
             )
@@ -1269,21 +1270,29 @@ class Owner(models.Model):
         self._store_items_for_starbases(assets_data)
         if STRUCTURES_FEATURE_SKYHOOKS:
             self._update_skyhooks_from_assets(assets_data)
-            self._resolve_skyhook_planets()
+            skyhooks = self.structures.filter_skyhooks().filter(
+                eve_planet__isnull=True,
+                position_x__isnull=False,
+                position_y__isnull=False,
+                position_z__isnull=False,
+            )
+            if skyhooks.exists():
+                _resolve_skyhook_planets(skyhooks)
+
         if user:
             self._send_report_to_user(
                 topic="assets", topic_count=self.structures.count(), user=user
             )
 
     def _fetch_owner_assets_from_esi(self, token: Token) -> dict:
-        assets_raw = esi.client.Assets.get_corporations_corporation_id_assets(
+        assets_raw = esi.client.Assets.GetCorporationsCorporationIdAssets(
             corporation_id=self.corporation.corporation_id,
-            token=token.valid_access_token(),
-        ).results()
-        assets = {asset["item_id"]: asset for asset in assets_raw}
-        positions = self._fetch_locations_for_assets(assets.keys(), token)
+            token=token,
+        ).results(use_etag=False)
+        assets = {obj.item_id: obj.model_dump() for obj in assets_raw}
+        locations = self._fetch_locations_for_assets(assets.keys(), token)
         for item_id, asset in assets.items():
-            asset["position"] = positions[item_id] if item_id in positions else None
+            asset["position"] = locations[item_id] if item_id in locations else None
         return assets
 
     def _store_items_for_upwell_structures(self, assets_data: dict):
@@ -1300,24 +1309,26 @@ class Owner(models.Model):
                 StructureItem.LocationFlag.AUTOFIT,
             ]:
                 assets_in_structures[location_id][item_id] = item
+
+        structure: Structure
         for structure in self.structures.all():
             structure_items = []
             if structure.id in assets_in_structures.keys():
                 structure_assets = assets_in_structures[structure.id]
-                has_fitting = [
-                    asset
+                has_fitting = any(
+                    True
                     for asset in structure_assets.values()
                     if asset["location_flag"]
                     != StructureItem.LocationFlag.QUANTUM_CORE_ROOM
-                ]
-                has_core = [
-                    asset
+                )
+                has_core = any(
+                    True
                     for asset in structure_assets.values()
                     if asset["location_flag"]
                     == StructureItem.LocationFlag.QUANTUM_CORE_ROOM
-                ]
-                structure.has_fitting = bool(has_fitting)
-                structure.has_core = bool(has_core)
+                )
+                structure.has_fitting = has_fitting
+                structure.has_core = has_core
                 structure.save()
 
                 for asset in structure_assets.values():
@@ -1389,33 +1400,6 @@ class Owner(models.Model):
             new_structures=structures,
         )
 
-    def _resolve_skyhook_planets(self):
-        """Add planets to all unresolved Skyhooks."""
-        s: Structure
-        for s in self.structures.filter_skyhooks().filter(
-            eve_planet__isnull=True,
-            position_x__isnull=False,
-            position_y__isnull=False,
-            position_z__isnull=False,
-        ):
-            try:
-                celestial = s.eve_solar_system.nearest_celestial(
-                    x=s.position_x,
-                    y=s.position_y,
-                    z=s.position_z,
-                    group_id=EveGroupId.PLANET,
-                )
-            except OSError:
-                continue
-
-            if not celestial or not isinstance(celestial.eve_object, EvePlanet):
-                continue
-
-            s.eve_planet = celestial.eve_object
-            s.name = celestial.eve_type.name
-            s.save()
-            logger.info("%s: Resolved moon for Skyhook at: %s", self, s.eve_planet.name)
-
     @staticmethod
     def get_esi_scopes() -> List[str]:
         """Return all required ESI scopes."""
@@ -1430,6 +1414,40 @@ class Owner(models.Model):
         if STRUCTURES_FEATURE_STARBASES:
             scopes += ["esi-corporations.read_starbases.v1"]
         return scopes
+
+
+def _extract_planet_name_from_asset(text: str) -> str:
+    """Extract name of planet from assert name for a customs office."""
+    reg_ex = re.compile(r"Customs Office \((.+)\)")
+    matches = reg_ex.match(text)
+    return matches.group(1) if matches else ""
+
+
+def _resolve_skyhook_planets(skyhooks: models.QuerySet[Structure]):
+    """Update planets of Skyhooks."""
+    for s in skyhooks:
+        if not s.is_skyhook:
+            continue
+
+        try:
+            celestial = s.eve_solar_system.nearest_celestial(
+                x=s.position_x,
+                y=s.position_y,
+                z=s.position_z,
+                group_id=EveGroupId.PLANET,
+            )
+        except (HTTPError, ValueError) as ex:
+            logger.warning("%s: Failed to resolve planet for skyhook: %s", s, ex)
+            continue
+
+        if not celestial or not isinstance(celestial.eve_object, EvePlanet):
+            logger.warning("%s: Failed to resolve planet for skyhook", s)
+            continue
+
+        s.eve_planet = celestial.eve_object
+        s.name = celestial.eve_type.name
+        s.save()
+        logger.info("%s: Resolved planet for skyhook: %s", s.owner, s.eve_planet.name)
 
 
 class OwnerCharacter(models.Model):

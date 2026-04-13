@@ -1,9 +1,9 @@
 {% extends 'structures/base.html' %}
 {% load i18n %}
-{% load bootstrap %}
+{% load django_bootstrap5 %}
 {% load static %}
-{% load humanize %}
-
+{% load humanize %} 
+ 
 {% block details %}
     <ul class="nav nav-tabs" role="tablist">
 
@@ -107,7 +107,7 @@
                 <form method="post">
                     <div class="modal-body">
                         {% csrf_token %}
-                        {{ tags_filter_form|bootstrap }}
+                        {% bootstrap_form tags_filter_form %}
                     </div>
                     <div class="modal-footer">
                         <a class="btn btn-secondary pull-left" href="{% url 'structures:index' %}" role="button">

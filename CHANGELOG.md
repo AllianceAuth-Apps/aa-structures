@@ -7,18 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [4.0.0] - TBD
+## [4.0.0b1] - 2025-04-13
 
-The release remove
+This release switches to the openAPI client for django-esi.
 
 ### Changed
 
+- BREAKING CHANGE: Now requires Python 3.10+
+- BREAKING CHANGE: Now requires django-esi 8
 - Replace deprecated swagger client with openAPI 3.0 client in django-esi
+- Skyhook feature now enabled by default
+- Now uses pinned ESI version
+- Removed application name tag in logs
+- Replace deprecated boostrap form usage in all templates. Thanks to @Dark_Apogee for the contribution.
+- Refactoring (e.g. replace if/elif with match)
 - Tests now run with the esi client instead of using a fake like before (more reliable)
 - Tests now mostly create test data ad-hoc instead of using loaded eveunivere (faster and less brittle)
-- Now uses pinned ESI version
-- Skyhook feature now enabled by default
-- Removed log tags
 
 ## [3.3.1] - 2025-11-17
 

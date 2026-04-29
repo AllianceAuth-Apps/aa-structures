@@ -627,7 +627,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
                 # when
                 result_qs = notif.calc_related_structures()
                 # then
-                self.assertQuerysetEqual(
+                self.assertQuerySetEqual(
                     result_qs, Structure.objects.filter(id=structure.id)
                 )
 
@@ -648,7 +648,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
                 # when
                 result_qs = notif.calc_related_structures()
                 # then
-                self.assertQuerysetEqual(
+                self.assertQuerySetEqual(
                     result_qs, Structure.objects.filter(id=structure.id)
                 )
 
@@ -666,7 +666,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
                 # when
                 result_qs = notif.calc_related_structures()
                 # then
-                self.assertQuerysetEqual(
+                self.assertQuerySetEqual(
                     result_qs, Structure.objects.filter(id=structure.id)
                 )
 
@@ -684,7 +684,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
                 # when
                 result_qs = notif.calc_related_structures()
                 # then
-                self.assertQuerysetEqual(
+                self.assertQuerySetEqual(
                     result_qs, Structure.objects.filter(id=structure.id)
                 )
 
@@ -704,7 +704,7 @@ class TestNotificationRelatedStructures(NoSocketsTestCase):
                 # when
                 result_qs = notif.calc_related_structures()
                 # then
-                self.assertQuerysetEqual(
+                self.assertQuerySetEqual(
                     result_qs, Structure.objects.filter(id=structure.id)
                 )
 

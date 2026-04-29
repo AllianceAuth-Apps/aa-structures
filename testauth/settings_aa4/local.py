@@ -30,6 +30,9 @@ DEBUG = False
 INSTALLED_APPS += [
     "eveuniverse",
     "structures",
+    "allianceauth.timerboard",
+    "allianceauth.services.modules.discord",
+    "structuretimers",
 ]
 
 APPS_WITH_PUBLIC_VIEWS = ["structures"]
@@ -89,3 +92,7 @@ DISCORD_SYNC_NAMES = False
 STATICFILES_DIRS = []
 ANALYTICS_DISABLED = True
 LOGGING = None
+
+STORAGES["staticfiles"][
+    "BACKEND"
+] = "django.contrib.staticfiles.storage.StaticFilesStorage"

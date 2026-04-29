@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from django.test import TestCase
-from django.utils.timezone import now, utc
+from django.utils.timezone import now
 from esi.errors import TokenError
 from esi.models import Token
 
@@ -355,15 +355,21 @@ class TestOwnerFetchToken(TestCase):
         owner = OwnerFactory(characters=False)
         character_1 = OwnerCharacterFactory(
             owner=owner,
-            notifications_last_used_at=dt.datetime(2021, 1, 1, 1, 0, tzinfo=utc),
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 1, 0, tzinfo=dt.timezone.utc
+            ),
         )
         character_2 = OwnerCharacterFactory(
             owner=owner,
-            notifications_last_used_at=dt.datetime(2021, 1, 1, 2, 0, tzinfo=utc),
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 2, 0, tzinfo=dt.timezone.utc
+            ),
         )
         character_3 = OwnerCharacterFactory(
             owner=owner,
-            notifications_last_used_at=dt.datetime(2021, 1, 1, 3, 0, tzinfo=utc),
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 3, 0, tzinfo=dt.timezone.utc
+            ),
         )
         OwnerCharacterFactory(
             owner=owner, is_enabled=False
@@ -414,15 +420,21 @@ class TestOwnerFetchToken(TestCase):
         owner = OwnerFactory(characters=False)
         character_1 = OwnerCharacterFactory(
             owner=owner,
-            structures_last_used_at=dt.datetime(2021, 1, 1, 3, 0, tzinfo=utc),
+            structures_last_used_at=dt.datetime(
+                2021, 1, 1, 3, 0, tzinfo=dt.timezone.utc
+            ),
         )
         character_2 = OwnerCharacterFactory(
             owner=owner,
-            structures_last_used_at=dt.datetime(2021, 1, 1, 1, 0, tzinfo=utc),
+            structures_last_used_at=dt.datetime(
+                2021, 1, 1, 1, 0, tzinfo=dt.timezone.utc
+            ),
         )
         character_3 = OwnerCharacterFactory(
             owner=owner,
-            structures_last_used_at=dt.datetime(2021, 1, 1, 2, 0, tzinfo=utc),
+            structures_last_used_at=dt.datetime(
+                2021, 1, 1, 2, 0, tzinfo=dt.timezone.utc
+            ),
         )
         tokens_received = []
 
@@ -473,14 +485,16 @@ class TestOwnerFetchToken(TestCase):
             user=user,
             characters=[character_1],
             characters__notifications_last_used_at=dt.datetime(
-                2021, 1, 1, 1, 2, tzinfo=utc
+                2021, 1, 1, 1, 2, tzinfo=dt.timezone.utc
             ),
         )
         character_2 = EveCharacterFactory()  # invalid, because of different corporation
         OwnerCharacterFactory(
             owner=owner,
             eve_character=character_2,
-            notifications_last_used_at=dt.datetime(2021, 1, 1, 1, 1, tzinfo=utc),
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 1, 1, tzinfo=dt.timezone.utc
+            ),
         )
 
         # when
@@ -521,7 +535,7 @@ class TestOwnerCharacters(TestCase):
     def test_should_not_overwrite_existing_characters(self):
         # given
         character = self.owner.characters.first()
-        my_dt = datetime(year=2021, month=2, day=11, hour=12, tzinfo=utc)
+        my_dt = datetime(year=2021, month=2, day=11, hour=12, tzinfo=dt.timezone.utc)
         character.notifications_last_used_at = my_dt
         character.save()
         # when

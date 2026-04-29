@@ -21,7 +21,7 @@ import sphinx_rtd_theme  # noqa
 
 
 sys.path.insert(0, os.path.abspath(".."))
-os.environ["DJANGO_SETTINGS_MODULE"] = "testauth.settings_aa4.local_core"
+os.environ["DJANGO_SETTINGS_MODULE"] = "testauth.settings_aa4.local"
 
 
 # -- Project information -----------------------------------------------------

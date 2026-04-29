@@ -3,8 +3,6 @@ from copy import deepcopy
 from typing import NamedTuple
 from unittest.mock import patch
 
-from pytz import UTC
-
 from django.utils.timezone import now
 from eveuniverse.tests.testdata.factories_2 import EveSolarSystemFactory
 
@@ -611,10 +609,12 @@ class TestStructureFuel(NoSocketsTestCase):
         # given
         structure = StructureFactory(
             owner=self.owner,
-            fuel_expires_at=dt.datetime(2022, 1, 24, 5, 0, tzinfo=UTC),
+            fuel_expires_at=dt.datetime(2022, 1, 24, 5, 0, tzinfo=dt.timezone.utc),
         )
         with patch("django.utils.timezone.now") as mock_now:
-            mock_now.return_value = dt.datetime(2021, 12, 17, 15, 13, tzinfo=UTC)
+            mock_now.return_value = dt.datetime(
+                2021, 12, 17, 15, 13, tzinfo=dt.timezone.utc
+            )
             StructureItemFactory(
                 structure=structure,
                 eve_type=FuelBlockTypeFactory(),
@@ -633,7 +633,9 @@ class TestStructureFuel(NoSocketsTestCase):
             fuel_expires_at=None,
         )
         with patch("django.utils.timezone.now") as mock_now:
-            mock_now.return_value = dt.datetime(2021, 12, 17, 15, 13, tzinfo=UTC)
+            mock_now.return_value = dt.datetime(
+                2021, 12, 17, 15, 13, tzinfo=dt.timezone.utc
+            )
             StructureItemFactory(
                 structure=structure,
                 eve_type=FuelBlockTypeFactory(),

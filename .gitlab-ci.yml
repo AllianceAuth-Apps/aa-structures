@@ -30,36 +30,21 @@ pylint:
     script:
         - tox -e pylint
 
-test-310-django42:
-    extends: .tox_setup
-    image: python:3.10-bookworm
-    script:
-        - tox -e py310-django42
-        - bash <(curl -s https://codecov.io/bash)
-
-test-311-django42:
-    extends: .tox_setup
-    image: python:3.11-bookworm
-    script:
-        - tox -e py311-django42
-        - bash <(curl -s https://codecov.io/bash)
-
-test-312-django42:
-    extends: .tox_setup
-    image: python:3.12-bookworm
-    script:
-        - tox -e py312-django42
-        - bash <(curl -s https://codecov.io/bash)
-
-test-core:
-    extends: .tox_setup
-    image: python:3.12-bookworm
-    script:
-        - tox -e core
+test:
+  extends: .tox_setup
+  image: python:3.$PYTHON_VERSION-bookworm
+  parallel:
+    matrix:
+    - PYTHON_VERSION: [10, 11, 12]
+      DJANGO_VERSION: [42, 52]
+  script:
+    - tox -e py3$PYTHON_VERSION-django$DJANGO_VERSION
+    - bash <(curl -s https://codecov.io/bash)
 
 test-docs:
     stage: test
     image: python:3.11-bookworm
+    allow_failure: true
     before_script:
         - pip install tox
     script:

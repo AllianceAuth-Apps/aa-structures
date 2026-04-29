@@ -280,7 +280,7 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
         # when
         result_qs = notif.relevant_webhooks()
         # then
-        self.assertQuerysetEqual(result_qs, Webhook.objects.filter(pk=webhook.pk))
+        self.assertQuerySetEqual(result_qs, Webhook.objects.filter(pk=webhook.pk))
 
     def test_should_return_no_webhooks(self):
         # given
@@ -291,7 +291,7 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
         # when
         result_qs = notif.relevant_webhooks()
         # then
-        self.assertQuerysetEqual(result_qs, Webhook.objects.none())
+        self.assertQuerySetEqual(result_qs, Webhook.objects.none())
 
     def test_should_return_owner_webhooks_for_structure_notif(self):
         # given
@@ -326,7 +326,7 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
         # when
         result_qs = notif.relevant_webhooks()
         # then
-        self.assertQuerysetEqual(result_qs, Webhook.objects.filter(pk=webhook.pk))
+        self.assertQuerySetEqual(result_qs, Webhook.objects.filter(pk=webhook.pk))
 
     def test_should_return_structure_webhooks_for_structure_notif(self):
         # given
@@ -365,7 +365,7 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
         # when
         result_qs = notif.relevant_webhooks()
         # then
-        self.assertQuerysetEqual(
+        self.assertQuerySetEqual(
             result_qs, Webhook.objects.filter(pk=webhook_structure.pk)
         )
 
@@ -410,7 +410,7 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
         # when
         result_qs = notif.relevant_webhooks()
         # then
-        self.assertQuerysetEqual(result_qs, Webhook.objects.filter(pk=webhook_owner.pk))
+        self.assertQuerySetEqual(result_qs, Webhook.objects.filter(pk=webhook_owner.pk))
 
 
 class TestNotificationSendToConfiguredWebhooks(NoSocketsTestCase):

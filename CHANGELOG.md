@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [4.0.0b2] - 2025-04-29
+
+### Changed
+
+- Added support for AA 5
+
 ## [4.0.0b1] - 2025-04-13
 
-This release switches to the openAPI client for django-esi.
+This release switches to the OpenAPI client for django-esi.
 
 ### Changed
 

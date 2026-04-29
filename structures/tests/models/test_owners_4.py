@@ -4,7 +4,6 @@ from unittest.mock import patch
 import pook
 
 from django.test import TestCase
-from django.utils.timezone import utc
 from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EveTypeFactory
 
 from structures.constants import EveCorporationId
@@ -64,7 +63,7 @@ class TestUpdateStarbasesEsi(TestCase):
             reply=200,
             response_json=[],
         )
-        reinforced_until = dt.datetime(2020, 4, 5, 7, tzinfo=utc)
+        reinforced_until = dt.datetime(2020, 4, 5, 7, tzinfo=dt.timezone.utc)
         pook.get(
             f"https://esi.evetech.net/corporations/{self.corporation_id}/starbases",
             reply=200,
@@ -184,7 +183,7 @@ class TestUpdateStarbasesEsi(TestCase):
         # self.assertEqual(structure.state, Structure.State.POS_OFFLINE)
         # self.assertEqual(structure.eve_moon_id, 40161466)
         # self.assertEqual(
-        #     structure.unanchors_at, dt.datetime(2020, 5, 5, 7, 0, 0, tzinfo=utc)
+        #     structure.unanchors_at, dt.datetime(2020, 5, 5, 7, 0, 0, tzinfo=dt.timezone.utc)
         # )
         # self.assertIsNone(structure.fuel_expires_at)
         # self.assertFalse(structure.generatednotification_set.exists())
@@ -204,7 +203,7 @@ class TestUpdateStarbasesEsi(TestCase):
         #     delta=dt.timedelta(seconds=30),
         # )
         # self.assertEqual(
-        #     structure.state_timer_end, dt.datetime(2020, 1, 2, 3, tzinfo=utc)
+        #     structure.state_timer_end, dt.datetime(2020, 1, 2, 3, tzinfo=dt.timezone.utc)
         # )
         # self.assertTrue(structure.generatednotification_set.exists())
 
@@ -213,7 +212,7 @@ class TestUpdateStarbasesEsi(TestCase):
         # given
         starbase = StarbaseFactory(owner=self.owner)
         fuel_type = EveTypeFactory()
-        reinforced_until = dt.datetime(2020, 4, 5, 7, tzinfo=utc)
+        reinforced_until = dt.datetime(2020, 4, 5, 7, tzinfo=dt.timezone.utc)
 
         pook.post(
             f"https://esi.evetech.net/corporations/{self.corporation_id}/assets/locations",
@@ -429,7 +428,7 @@ class TestUpdateStarbasesEsi(TestCase):
                     "system_id": moon.eve_planet.eve_solar_system.id,
                     "type_id": starbase_type.id,
                     "reinforced_until": dt.datetime(
-                        2020, 4, 5, 7, tzinfo=utc
+                        2020, 4, 5, 7, tzinfo=dt.timezone.utc
                     ).isoformat(),
                 }
             ],

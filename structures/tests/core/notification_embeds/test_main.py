@@ -2,6 +2,7 @@ import datetime as dt
 
 import dhooks_lite
 
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
 from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EveSolarSystemFactory
@@ -264,6 +265,7 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cache.clear()
         user = UserMainDefaultOwnerFactory()
         solar_system = EveSolarSystemLowSecFactory(id=30002537, name="Amamake")
         cls.owner = OwnerFactory(user=user)

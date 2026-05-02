@@ -18,6 +18,7 @@ from django.db.models import Q
 from django.utils import translation
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+from esi.exceptions import HTTPClientError, HTTPServerError
 from eveuniverse.models import EveEntity, EveMoon, EvePlanet, EveSolarSystem, EveType
 
 from allianceauth.services.hooks import get_extension_logger
@@ -400,8 +401,8 @@ class NotificationBase(models.Model):
         logger.info("%s: Trying to sent to webhook: %s", self, webhook)
         try:
             embed, ping_type = self._generate_embed(webhook.language_code)
-        except OSError as ex:
-            logger.error("%s: Failed to generate embed: %s", self, ex, exc_info=True)
+        except (HTTPServerError, HTTPClientError) as ex:
+            logger.error("%s: Failed to generate embed: %s", self, ex)
             return False
 
         content = self._create_content_with_pings(webhook, ping_type)
@@ -496,13 +497,9 @@ class NotificationBase(models.Model):
         try:
             with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
                 return notification_timers.add_or_remove_timer(self)
-        except OSError as ex:
-            logger.warning(
-                "%s: Failed to add timer from notification: %s",
-                self,
-                ex,
-                exc_info=True,
-            )
+        except (HTTPServerError, HTTPClientError) as ex:
+            logger.warning("%s: Failed to add timer from notification: %s", self, ex)
+
         return False
 
 

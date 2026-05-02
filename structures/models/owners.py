@@ -10,8 +10,6 @@ from email.utils import format_datetime, parsedate_to_datetime
 from http import HTTPStatus
 from typing import Any, Iterable, List, Optional
 
-from requests.exceptions import HTTPError
-
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
@@ -675,11 +673,12 @@ class Owner(models.Model):
         for s in structures:
             try:
                 Structure.objects.update_or_create_from_dict(s, self)
-            except OSError:
-                logger.warning(
-                    "%s: Failed to store update for structure with ID %s",
+            except (HTTPServerError, HTTPClientError) as ex:
+                logger.error(
+                    "%s: Failed to store update for structure with ID %s: %s",
                     self,
                     s["structure_id"],
+                    ex,
                 )
             else:
                 count += 1
@@ -708,7 +707,13 @@ class Owner(models.Model):
                     z=s.position_z,
                     group_id=EveGroupId.MOON,
                 )
-            except OSError:
+            except (HTTPClientError, HTTPServerError) as ex:
+                logger.warning(
+                    "%s: Failed to get moon celestial for %s: %s ",
+                    self,
+                    s.eve_solar_system,
+                    ex,
+                )
                 continue
 
             if not celestial or not isinstance(celestial.eve_object, EveMoon):
@@ -1436,7 +1441,7 @@ def _resolve_skyhook_planets(skyhooks: models.QuerySet[Structure]):
                 z=s.position_z,
                 group_id=EveGroupId.PLANET,
             )
-        except (HTTPError, ValueError) as ex:
+        except (HTTPClientError, HTTPServerError, ValueError) as ex:
             logger.warning("%s: Failed to resolve planet for skyhook: %s", s, ex)
             continue
 

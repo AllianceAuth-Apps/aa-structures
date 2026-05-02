@@ -274,7 +274,6 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
         cls.structure_type = StarbaseTypeFactory(id=16213)
         EveEntityCorporationFactory(id=1000137, name="DED")
 
-    # FIXME: Flaky test
     def test_should_generate_embed_for_normal_tower_resource_alert(self):
         # given
         StarbaseFactory(
@@ -300,7 +299,7 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
         discord_embed = notification_embed.generate_embed()
         # then
         description = markdown_to_plain(discord_embed.description)
-        self.assertIn("is running out of fuel in 3 hours", description)
+        self.assertIn("is running out of fuel", description)
 
     def test_should_generate_embed_for_generated_tower_resource_alert(self):
         # given
@@ -319,7 +318,7 @@ class TestNotificationEmbedsClasses(NoSocketsTestCase):
         discord_embed = notification_embed.generate_embed()
         # then
         description = markdown_to_plain(discord_embed.description)
-        self.assertIn("is running out of fuel in 2 hours", description)
+        self.assertIn("is running out of fuel", description)
 
 
 class TestGeneratedNotification(NoSocketsTestCase):

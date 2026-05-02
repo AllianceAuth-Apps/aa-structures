@@ -1,8 +1,9 @@
 import json
 from random import randint
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import dhooks_lite
+from requests.exceptions import HTTPError
 
 from django.test import TestCase
 
@@ -186,9 +187,11 @@ class TestSendTestMessage(TestCase):
         self.assertTrue(mock_execute.called)
 
     def test_error_2(self, mock_execute):
-        mock_execute.side_effect = OSError
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_execute.side_effect = HTTPError("404 Client Error", response=mock_response)
 
         result_1, result_2 = self.webhook.send_test_message()
-        self.assertEqual(result_1, "OSError")
+        self.assertEqual(result_1, "HTTPError")
         self.assertFalse(result_2)
         self.assertTrue(mock_execute.called)

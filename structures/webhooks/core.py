@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 import dhooks_lite
+from requests.exceptions import HTTPError
 from simple_mq import SimpleMQ
 
 from django.contrib.auth.models import User
@@ -187,7 +188,7 @@ class DiscordWebhookMixin:
         try:
             success = self._send_message_to_webhook(message)
 
-        except OSError as ex:
+        except HTTPError as ex:
             logger.warning(
                 "Failed to send test notification to webhook %s: %s",
                 self,

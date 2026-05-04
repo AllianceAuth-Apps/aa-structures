@@ -3,13 +3,13 @@ from unittest.mock import patch
 
 import pook
 
-from django.test import TestCase
 from django.utils.timezone import now
 from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EveSolarSystemFactory
 
 from structures.constants import EveCorporationId
 from structures.core.notification_types import NotificationType
 from structures.models import Structure, StructureService
+from structures.tests.helpers import TestCaseWithClearCache
 from structures.tests.testdata.factories import (
     CitadelTypeFactory,
     EveEntityCorporationFactory,
@@ -28,7 +28,7 @@ MODULE_PATH = "structures.models.owners"
 
 @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
 @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
-class TestUpdateStructuresEsi(TestCase):
+class TestUpdateStructuresEsi(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -396,7 +396,7 @@ class TestUpdateStructuresEsi(TestCase):
 
 @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
 @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
-class TestUpdateStructuresEsi_FuelAlerts(TestCase):
+class TestUpdateStructuresEsi_FuelAlerts(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

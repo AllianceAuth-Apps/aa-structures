@@ -5,6 +5,9 @@ import pytz
 from bs4 import BeautifulSoup
 from markdown import markdown
 
+from django.core.cache import cache
+from django.test import TestCase
+
 
 def format_datetime_esi(my_dt: dt.datetime) -> str:
     """Convert datetime to ESI format, e.g `"2019-08-16T14:08:00Z"`."""
@@ -25,3 +28,10 @@ def markdown_to_plain(text: str) -> str:
     html = markdown(text)
     text = "".join(BeautifulSoup(html, features="html.parser").findAll(text=True))
     return unicodedata.normalize("NFKD", text)
+
+
+class TestCaseWithClearCache(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cache.clear()

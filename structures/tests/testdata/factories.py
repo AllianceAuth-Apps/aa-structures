@@ -45,7 +45,6 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
-from structures.tests.helpers import format_datetime_esi
 
 # from .helpers import datetime_to_ldap  # TODO: Use for notifications
 
@@ -950,7 +949,7 @@ class RawNotificationFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict
             timestamp_dt = now()
         else:
             timestamp_dt = self.timestamp_dt
-        return format_datetime_esi(timestamp_dt)
+        return timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @factory.lazy_attribute
     def text(self):

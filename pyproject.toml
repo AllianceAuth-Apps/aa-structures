@@ -32,7 +32,6 @@ dependencies = [
     "django-multiselectfield",
     "django-navhelper",
     "humanize>=4.7",
-    "pytz!=2022.2",
     "pyyaml>=6",
     "redis-simple-mq>=1.1",
 ]

@@ -1406,7 +1406,7 @@ class Owner(models.Model):
         )
 
     @staticmethod
-    def get_esi_scopes() -> List[str]:
+    def esi_scopes() -> List[str]:
         """Return all required ESI scopes."""
         scopes = [
             "esi-corporations.read_structures.v1",
@@ -1527,7 +1527,7 @@ class OwnerCharacter(models.Model):
                 user=self.character_ownership.user,
                 character_id=self.character_ownership.character.character_id,
             )
-            .require_scopes(Owner.get_esi_scopes())
+            .require_scopes(Owner.esi_scopes())
             .require_valid()
             .first()
         )

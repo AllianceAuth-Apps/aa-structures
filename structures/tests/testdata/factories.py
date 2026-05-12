@@ -288,14 +288,14 @@ class SuperuserFactory(UserFactory):
 class UserMainBasicFactory(UserMainFactory):
     """Basic user in Structures."""
 
-    main_character__scopes = Owner.get_esi_scopes()
+    main_character__scopes = Owner.esi_scopes()
     permissions__ = ["structures.basic_access"]
 
 
 class UserMainDefaultFactory(UserMainFactory):
     """Default user in Structures."""
 
-    main_character__scopes = Owner.get_esi_scopes()
+    main_character__scopes = Owner.esi_scopes()
     permissions__ = [
         "structures.basic_access",
         "structures.view_corporation_structures",
@@ -305,7 +305,7 @@ class UserMainDefaultFactory(UserMainFactory):
 class UserMainDefaultOwnerFactory(UserMainFactory):
     """Default user owning structures."""
 
-    main_character__scopes = Owner.get_esi_scopes()
+    main_character__scopes = Owner.esi_scopes()
     permissions__ = [
         "structures.basic_access",
         "structures.add_structure_owner",

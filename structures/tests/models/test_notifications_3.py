@@ -86,7 +86,7 @@ class TestGeneratedNotificationManagerCreatePosReinforced(NoSocketsTestCase):
             owner=starbase.owner,
             notif_type=NotificationType.TOWER_REINFORCED_EXTRA,
             details={"reinforced_until": reinforced_until.isoformat()},
-            create_structure=False,
+            structures=False,
         )
         obj_old.structures.add(starbase)
         # when

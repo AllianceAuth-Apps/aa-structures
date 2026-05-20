@@ -2,7 +2,7 @@ import datetime as dt
 
 import pook
 
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from django.utils.timezone import now
 from eveuniverse.models import EvePlanet, EveSolarSystem
 from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EveTypeFactory
@@ -12,6 +12,7 @@ from app_utils.testing import queryset_pks, reset_celery_once_locks
 
 from structures import tasks
 from structures.core.notification_types import NotificationType
+from structures.tests.helpers import TestCaseWithClearCache
 from structures.tests.testdata.factories import (
     CitadelTypeFactory,
     CustomsOfficeTypeFactory,
@@ -46,7 +47,7 @@ TASKS_PATH = "structures.tasks"
 
 
 @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
-class TestTasks(TestCase):
+class TestTasks(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

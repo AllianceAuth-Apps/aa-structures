@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [4.0.0b4] - 2026-05-20
+
+### Changed
+
+- Removed pytz dependency
+- Improved test suite
+- Refactoring
+
 ## [4.0.0b3] - 2026-05-02
 
 ### Fixed

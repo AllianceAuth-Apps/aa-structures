@@ -5,7 +5,7 @@ stages:
 
 pre-commit:
     stage: checks
-    image: python:3.11-bookworm
+    image: python:3.12-bookworm
     variables:
         PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
     cache:
@@ -43,7 +43,7 @@ test:
 
 test-docs:
     stage: test
-    image: python:3.11-bookworm
+    image: python:3.12-bookworm
     allow_failure: true
     before_script:
         - pip install tox
@@ -52,7 +52,7 @@ test-docs:
 
 deploy-pypi:
     stage: deploy
-    image: python:3.11-bookworm
+    image: python:3.12-bookworm
 
     before_script:
         - pip install build twine

@@ -1,8 +1,6 @@
 import datetime as dt
 from unittest.mock import Mock, patch
 
-import pytz
-
 from django.utils.timezone import now
 from eveuniverse.models import EveType
 
@@ -100,7 +98,7 @@ if "structuretimers" in app_labels():
             self.assertEqual(timer.structure_type.id, EveTypeId.TCU)
             self.assertAlmostEqual(
                 timer.date,
-                pytz.utc.localize(dt.datetime(2018, 12, 20, 17, 3, 22)),
+                dt.datetime(2018, 12, 20, 17, 3, 22, tzinfo=dt.timezone.utc),
                 delta=dt.timedelta(seconds=120),
             )
             self.assertEqual(timer.eve_corporation, owner.corporation)
@@ -154,7 +152,7 @@ if "structuretimers" in app_labels():
             self.assertEqual(timer.location_details, structure.eve_planet.name)
             self.assertAlmostEqual(
                 timer.date,
-                pytz.utc.localize(dt.datetime(2019, 10, 13, 20, 32, 27)),
+                dt.datetime(2019, 10, 13, 20, 32, 27, tzinfo=dt.timezone.utc),
                 delta=dt.timedelta(seconds=120),
             )
             self.assertEqual(timer.eve_corporation, owner.corporation)

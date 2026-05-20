@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pook
 
-from django.test import TestCase
 from django.utils.timezone import now
 from eveuniverse.tests.testdata.factories_2 import EveSolarSystemFactory
 
@@ -23,6 +22,7 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
+from structures.tests.helpers import TestCaseWithClearCache
 from structures.tests.testdata.factories import (
     CitadelTypeFactory,
     CustomsOfficeFactory,
@@ -45,7 +45,7 @@ MODULE_PATH = "structures.managers"
 MODULE_PATH_ESI_FETCH = "structures.helpers.esi_fetch"
 
 
-class TestEveSovereigntyMapManagerUpdateFromEsi(TestCase):
+class TestEveSovereigntyMapManagerUpdateFromEsi(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -130,7 +130,7 @@ class TestEveSovereigntyMapManagerUpdateFromEsi(TestCase):
         self.assertEqual(structure.alliance_id, 3001)
 
 
-class TestEveSovereigntyMapManagerOther(TestCase):
+class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -289,7 +289,7 @@ class TestStructureManagerEsi(NoSocketsTestCase):
             Structure.objects.update_or_create_esi(id=987, token=None)
 
 
-class TestStructureQuerySet(TestCase):
+class TestStructureQuerySet(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

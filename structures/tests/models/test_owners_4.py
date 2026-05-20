@@ -3,11 +3,11 @@ from unittest.mock import patch
 
 import pook
 
-from django.test import TestCase
 from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EveTypeFactory
 
 from structures.constants import EveCorporationId
 from structures.models import OwnerCharacter, StarbaseDetail, Structure
+from structures.tests.helpers import TestCaseWithClearCache
 from structures.tests.testdata.factories import (
     EveEntityCorporationFactory,
     OwnerFactory,
@@ -22,7 +22,7 @@ MODULE_PATH = "structures.models.owners"
 
 @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
 @patch(MODULE_PATH + ".STRUCTURES_FEATURE_CUSTOMS_OFFICES", False)
-class TestUpdateStarbasesEsi(TestCase):
+class TestUpdateStarbasesEsi(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

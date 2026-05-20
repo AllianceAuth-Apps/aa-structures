@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pook
 import yaml
 
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from django.utils.timezone import now
 from esi.exceptions import HTTPServerError
 from esi.models import Token
@@ -14,7 +14,7 @@ from app_utils.testing import NoSocketsTestCase, queryset_pks
 
 from structures.core.notification_types import NotificationType
 from structures.models import Notification, Structure, StructureItem
-from structures.tests.helpers import datetime_to_ldap
+from structures.tests.helpers import TestCaseWithClearCache, datetime_to_ldap
 from structures.tests.testdata.factories import (
     CitadelServiceModuleTypeFactory,
     EveCharacterFactory,
@@ -45,7 +45,7 @@ OWNERS_PATH = "structures.models.owners"
 NOTIFICATIONS_PATH = "structures.models.notifications"
 
 
-class TestFetchNotificationsEsi(TestCase):
+class TestFetchNotificationsEsi(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -383,7 +383,7 @@ class TestSendNewNotifications(NoSocketsTestCase):
         self.assertSetEqual(notifications_processed, notifications_expected)
 
 
-class TestOwnerUpdateAssetEsi(TestCase):
+class TestOwnerUpdateAssetEsi(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -781,7 +781,7 @@ class TestOwnerUpdateAssetEsi(TestCase):
 
 @patch(OWNERS_PATH + ".STRUCTURES_FEATURE_SKYHOOKS", True)
 @patch(OWNERS_PATH + ".EveSolarSystem.nearest_celestial")
-class TestOwnerUpdateSkyhooks(TestCase):
+class TestOwnerUpdateSkyhooks(TestCaseWithClearCache):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -961,7 +961,7 @@ class TestOwnerUpdateSkyhooks(TestCase):
         self.assertIsNone(structure.eve_planet)
 
 
-class TestOwnerToken(TestCase):
+class TestOwnerToken(NoSocketsTestCase):
     def test_should_return_valid_token(self):
         # given
         character = EveCharacterFactory()
@@ -988,7 +988,7 @@ class TestOwnerToken(TestCase):
 
 @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
 @patch(OWNERS_PATH + ".notify_admins")
-class TestOwnerUpdateIsUp(TestCase):
+class TestOwnerUpdateIsUp(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

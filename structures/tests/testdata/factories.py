@@ -45,7 +45,6 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
-from structures.tests.helpers import format_datetime_esi
 
 # from .helpers import datetime_to_ldap  # TODO: Use for notifications
 
@@ -289,14 +288,14 @@ class SuperuserFactory(UserFactory):
 class UserMainBasicFactory(UserMainFactory):
     """Basic user in Structures."""
 
-    main_character__scopes = Owner.get_esi_scopes()
+    main_character__scopes = Owner.esi_scopes()
     permissions__ = ["structures.basic_access"]
 
 
 class UserMainDefaultFactory(UserMainFactory):
     """Default user in Structures."""
 
-    main_character__scopes = Owner.get_esi_scopes()
+    main_character__scopes = Owner.esi_scopes()
     permissions__ = [
         "structures.basic_access",
         "structures.view_corporation_structures",
@@ -306,7 +305,7 @@ class UserMainDefaultFactory(UserMainFactory):
 class UserMainDefaultOwnerFactory(UserMainFactory):
     """Default user owning structures."""
 
-    main_character__scopes = Owner.get_esi_scopes()
+    main_character__scopes = Owner.esi_scopes()
     permissions__ = [
         "structures.basic_access",
         "structures.add_structure_owner",
@@ -405,17 +404,15 @@ class OwnerFactory(factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[
         OwnerCharacterFactory(owner=obj, **kwargs)
 
     @factory.post_generation
-    def webhooks(obj, create, extracted, **kwargs):
-        # Webhooks are created by default. Set webhooks=False to disable.
+    def webhooks(self, create, extracted, **kwargs):
         if not create or extracted is False:
             return
 
         if extracted:
-            for webhook in extracted:
-                obj.webhooks.add(webhook)
+            self.webhooks.add(*extracted)
 
         else:
-            obj.webhooks.add(WebhookFactory(**kwargs))
+            self.webhooks.add(WebhookFactory(**kwargs))
 
 
 class OwnerCharacterFactory(
@@ -462,21 +459,18 @@ class StructureFactory(
     state = Structure.State.SHIELD_VULNERABLE
 
     @factory.post_generation
-    def webhooks(obj, create, extracted, **kwargs):
-        if not create:
+    def webhooks(self, create, extracted, **kwargs):
+        if not create or not extracted:
             return
 
-        if extracted:
-            for webhook in extracted:
-                obj.webhooks.add(webhook)
+        self.webhooks.add(*extracted)
 
     @factory.post_generation
-    def tags(obj, create, extracted, **kwargs):
-        if not create:
+    def tags(self, create, extracted, **kwargs):
+        if not create or not extracted:
             return
 
-        elif extracted:
-            obj.tags.add(*extracted)
+        self.tags.add(*extracted)
 
     @factory.post_generation
     def quantum_core(obj, create, extracted, **kwargs):
@@ -522,10 +516,6 @@ class StarbaseFactory(StructureFactory):
 
     @factory.post_generation
     def starbase_detail(obj, create, extracted, **kwargs):
-        """Set this param to False to disable.
-
-        Set StarbaseDetails attributes with `starbase_detail__key=value`
-        """
         if not create or extracted is False:
             return
 
@@ -554,12 +544,12 @@ class StarbaseDetailFactory(
     use_alliance_standings = False
 
     @factory.post_generation
-    def fuel_detail(obj, create, extracted, **kwargs):
+    def fuel_detail(self, create, extracted, **kwargs):
         """Set this param to False to disable."""
         if not create or extracted is False:
             return
 
-        StarbaseDetailFuelFactory(detail=obj, quantity=960)
+        StarbaseDetailFuelFactory(detail=self, quantity=960)
 
 
 class StarbaseDetailFuelFactory(
@@ -584,7 +574,7 @@ class CustomsOfficeFactory(StructureFactory):
         return f"Customs Office ({self.eve_planet.name})"
 
     @factory.post_generation
-    def poco_details(obj, create, extracted, **kwargs):
+    def poco_details(self, create, extracted, **kwargs):
         """Set this param to False to disable.
 
         Set PocoDetails attributes with `poco_details__key=value`
@@ -592,7 +582,7 @@ class CustomsOfficeFactory(StructureFactory):
         if not create or extracted is False:
             return
 
-        PocoDetailsFactory(structure=obj, **kwargs)
+        PocoDetailsFactory(structure=self, **kwargs)
 
 
 class PocoDetailsFactory(
@@ -630,13 +620,13 @@ class JumpGateFactory(StructureFactory):
     )
 
     @factory.post_generation
-    def jump_fuel_quantity(obj, create, extracted, **kwargs):
+    def jump_fuel_quantity(self, create, extracted, **kwargs):
         """Set this param to False to disable."""
         if not create or extracted is False:
             return
 
         StructureItemJumpFuelFactory(
-            structure=obj,
+            structure=self,
             quantity=extracted or 1000,  # default
         )
 
@@ -912,18 +902,22 @@ class GeneratedNotificationFactory(
         return {"reinforced_until": reinforced_until.isoformat()}
 
     @factory.post_generation
-    def create_structure(obj, create, extracted, **kwargs):
-        """Set this param to False to disable."""
+    def structures(self, create, extracted, **kwargs):
         if not create or extracted is False:
             return
 
-        reinforced_until = dt.datetime.fromisoformat(obj.details["reinforced_until"])
-        starbase = StarbaseFactory(
-            owner=obj.owner,
-            state=Structure.State.POS_REINFORCED,
-            state_timer_end=reinforced_until,
-        )
-        obj.structures.add(starbase)
+        if extracted:
+            self.structures.add(*extracted)
+        else:
+            reinforced_until = dt.datetime.fromisoformat(
+                self.details["reinforced_until"]
+            )
+            starbase = StarbaseFactory(
+                owner=self.owner,
+                state=Structure.State.POS_REINFORCED,
+                state_timer_end=reinforced_until,
+            )
+            self.structures.add(starbase)
 
 
 class RawNotificationFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict]):
@@ -950,7 +944,7 @@ class RawNotificationFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict
             timestamp_dt = now()
         else:
             timestamp_dt = self.timestamp_dt
-        return format_datetime_esi(timestamp_dt)
+        return timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @factory.lazy_attribute
     def text(self):

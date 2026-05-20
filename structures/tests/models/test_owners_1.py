@@ -121,7 +121,7 @@ class TestOwner(TestCase):
     @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
     def test_get_esi_scopes_pocos_off(self):
         self.assertSetEqual(
-            set(Owner.get_esi_scopes()),
+            set(Owner.esi_scopes()),
             {
                 "esi-corporations.read_structures.v1",
                 "esi-universe.read_structures.v1",
@@ -134,7 +134,7 @@ class TestOwner(TestCase):
     @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", False)
     def test_get_esi_scopes_pocos_on(self):
         self.assertSetEqual(
-            set(Owner.get_esi_scopes()),
+            set(Owner.esi_scopes()),
             {
                 "esi-corporations.read_structures.v1",
                 "esi-universe.read_structures.v1",
@@ -148,7 +148,7 @@ class TestOwner(TestCase):
     @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
     def test_get_esi_scopes_starbases_on(self):
         self.assertSetEqual(
-            set(Owner.get_esi_scopes()),
+            set(Owner.esi_scopes()),
             {
                 "esi-corporations.read_structures.v1",
                 "esi-universe.read_structures.v1",
@@ -162,7 +162,7 @@ class TestOwner(TestCase):
     @patch(MODULE_PATH + ".STRUCTURES_FEATURE_STARBASES", True)
     def test_get_esi_scopes_starbases_and_custom_offices(self):
         self.assertSetEqual(
-            set(Owner.get_esi_scopes()),
+            set(Owner.esi_scopes()),
             {
                 "esi-corporations.read_structures.v1",
                 "esi-universe.read_structures.v1",
@@ -282,7 +282,7 @@ class TestOwnerFetchToken(TestCase):
         self.assertEqual(token.user, user)
         self.assertEqual(token.character_id, character.character_id)
         self.assertSetEqual(
-            set(Owner.get_esi_scopes()),
+            set(Owner.esi_scopes()),
             set(token.scopes.values_list("name", flat=True)),
         )
         self.assertFalse(mock_notify_admins.called)

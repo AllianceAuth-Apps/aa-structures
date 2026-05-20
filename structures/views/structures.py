@@ -557,7 +557,7 @@ def starbase_detail(request: HttpRequest, structure_id: int):
 
 @login_required
 @permission_required("structures.add_structure_owner")
-@token_required(scopes=Owner.get_esi_scopes())  # type: ignore
+@token_required(scopes=Owner.esi_scopes())  # type: ignore
 def add_structure_owner(request: HttpRequest, token: Token):
     """View for adding or replacing a structure owner."""
     token_char = get_object_or_404(EveCharacter, character_id=token.character_id)

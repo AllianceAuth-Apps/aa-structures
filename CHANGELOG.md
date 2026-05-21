@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [4.0.0] - 2026-05-21
+
+This release adds support for Alliance Auth V5 and contains breaking changes.
+
+### Changed
+
+- BREAKING CHANGE: Now requires Python 3.10+
+- BREAKING CHANGE: Now requires django-esi 8
+- Replace deprecated swagger client with openAPI 3.0 client in django-esi
+- Replace deprecated boostrap form usage in all templates. Thanks to @Dark_Apogee for the contribution.
+- Skyhook feature now enabled by default
+- Now uses pinned ESI version
+- Removed logger tag
+- Removed pytz dependency
+- Refactoring (e.g. replace if/elif with match)
+- Test modernization
+
+### Fixed
+
+- ESI from OpenAPI client errors not always handled correctly
+
 ## [4.0.0b4] - 2026-05-20
 
 ### Changed

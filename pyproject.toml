@@ -29,7 +29,7 @@ dependencies = [
     "allianceauth>=4,<6",
     "dhooks-lite>=1.0",
     "django-esi>=8,<10",
-    "django-eveuniverse>=2.0.0a7",
+    "django-eveuniverse>=2",
     "django-multiselectfield",
     "django-navhelper",
     "humanize>=4.7",

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [4.0.1] - 2026-06-02
+
+### Fixed
+
+- ESI rate limit decorator not working as intended
+- ResponseSchemaError when calling ESI operation GetSovereigntyMap
+
 ## [4.0.0] - 2026-05-21
 
 This release adds support for Alliance Auth V5 and contains breaking changes.

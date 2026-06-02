@@ -39,9 +39,9 @@ def update_all_structures():
     chain(update_sov_map.si(), update_structures.si()).delay()
 
 
-@shared_task(base=QueueOnce, time_limit=STRUCTURES_TASKS_TIME_LIMIT)
+@shared_task(base=QueueOnce, bind=True, time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 @rate_limit_retry_task
-def update_sov_map():
+def update_sov_map(_self):
     """Update sovereignty map from ESI."""
     EveSovereigntyMap.objects.update_or_create_all_from_esi()
 
@@ -84,10 +84,13 @@ def update_structures_for_owner(owner_pk: int, user_pk: Optional[int] = None):
 @shared_task(
     base=QueueOnce,
     once={"keys": ["owner_pk"], "graceful": True},
+    bind=True,
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
 @rate_limit_retry_task
-def update_structures_esi_for_owner(owner_pk: int, user_pk: Optional[int] = None):
+def update_structures_esi_for_owner(
+    _self, owner_pk: int, user_pk: Optional[int] = None
+):
     """Update all structures for an owner from ESI.
 
     Optionally notify user_pk about the result.
@@ -99,10 +102,13 @@ def update_structures_esi_for_owner(owner_pk: int, user_pk: Optional[int] = None
 @shared_task(
     base=QueueOnce,
     once={"keys": ["owner_pk"], "graceful": True},
+    bind=True,
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
 @rate_limit_retry_task
-def update_structures_assets_for_owner(owner_pk: int, user_pk: Optional[int] = None):
+def update_structures_assets_for_owner(
+    _self, owner_pk: int, user_pk: Optional[int] = None
+):
     """Update all related assets for an owner from ESI.
 
     Optionally notify user_pk about the result.
@@ -153,10 +159,11 @@ def process_notifications_for_owner(owner_pk: int, user_pk: Optional[int] = None
 @shared_task(
     base=QueueOnce,
     once={"keys": ["owner_pk"], "graceful": True},
+    bind=True,
     time_limit=STRUCTURES_TASKS_TIME_LIMIT,
 )
 @rate_limit_retry_task
-def fetch_notification_for_owner(owner_pk: int, user_pk: Optional[int] = None):
+def fetch_notification_for_owner(_self, owner_pk: int, user_pk: Optional[int] = None):
     """Fetch notifications from ESI.
 
     Optionally notify user_pk about the result.

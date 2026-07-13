@@ -46,7 +46,7 @@ Structures adds the following main features to Alliance Auth:
 - Interface for 3rd party monitoring of the services status
 - Chinese :cn:, English :us:, German :de: and Russian :ru: localization
 
-> ![TIP]
+> [!TIP]
 > Please also check out [Discord Notify](https://github.com/AllianceAuth-Apps/aa-discordnotify) that will automatically forward auth notifications to the respective users on Discord.
 
 ## Screenshots

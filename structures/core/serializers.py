@@ -335,9 +335,11 @@ class _AbstractStructureListSerializer(ABC):
             row["details"] = format_html(
                 '<button type="button" class="btn btn-secondary" '
                 'data-bs-toggle="modal" data-bs-target="#modalUpwellDetails" '
-                f"data-ajax_url={ajax_url} "
-                f'title="{_("Show fitting")}">'
-                '<i class="fas fa-search"></i></button>'
+                "data-ajax_url={} "
+                'title="{}">'
+                '<i class="fas fa-search"></i></button>',
+                ajax_url,
+                _("Show fitting"),
             )
 
         elif structure.is_poco:
@@ -345,9 +347,11 @@ class _AbstractStructureListSerializer(ABC):
             row["details"] = format_html(
                 '<button type="button" class="btn btn-secondary" '
                 'data-bs-toggle="modal" data-bs-target="#modalPocoDetails" '
-                f"data-ajax_url={ajax_url} "
-                f'title="{_("Show details")}">'
-                '<i class="fas fa-search"></i></button>'
+                "data-ajax_url={} "
+                'title="{}">'
+                '<i class="fas fa-search"></i></button>',
+                ajax_url,
+                _("Show details"),
             )
 
         elif structure.is_starbase:
@@ -355,9 +359,11 @@ class _AbstractStructureListSerializer(ABC):
             row["details"] = format_html(
                 '<button type="button" class="btn btn-secondary" '
                 'data-bs-toggle="modal" data-bs-target="#modalStarbaseDetail" '
-                f"data-ajax_url={ajax_url} "
-                f'title="{_("Show details")}">'
-                '<i class="fas fa-search"></i></button>'
+                "data-ajax_url={} "
+                'title="{}">'
+                '<i class="fas fa-search"></i></button>',
+                ajax_url,
+                _("Show details"),
             )
         else:
             row["details"] = ""

@@ -15,7 +15,6 @@ classifiers = [
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.2",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
@@ -41,11 +40,8 @@ dependencies = [
 test = ["coverage", "factory_boy", "markdown", "pook"]
 
 [project.urls]
-Homepage = "https://gitlab.com/ErikKalkoken/aa-structures"
-Documentation = "https://aa-structures.readthedocs.io/en/latest/"
-Source = "https://gitlab.com/ErikKalkoken/aa-structures"
-Changelog = "https://gitlab.com/ErikKalkoken/aa-structures/-/blob/master/CHANGELOG.md"
-Tracker = "https://gitlab.com/ErikKalkoken/aa-structures/-/issues"
+Homepage = "https://github.com/AllianceAuth-Apps/aa-structures"
+Documentation = "https://aa-structures.readthedocs.io"
 
 [tool.flit.module]
 name = "structures"

@@ -1,11 +1,20 @@
 # Change Log
 
+> **Notice**<br>
+> This file has been decommissioned. Changes are now documented on the GitHub releases page.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
+
+## [4.0.2] - 2026-07-13
+
+### Changed
+
+- Migrated the repository to GitHub: [aa-structures](https://github.com/AllianceAuth-Apps/aa-structures)
 
 ## [4.0.1] - 2026-06-02
 

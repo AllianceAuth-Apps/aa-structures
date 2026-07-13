@@ -15,7 +15,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import translation
-from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from esi.decorators import token_required
 from esi.models import Token
@@ -569,14 +568,12 @@ def add_structure_owner(request: HttpRequest, token: Token):
         character_ownership = None
         messages.error(
             request,
-            format_html(
-                _(
-                    "You can only use your main or alt characters "
-                    "to add corporations. "
-                    "However, character %s is neither. "
-                )
-                % token_char.character_name
-            ),
+            _(
+                "You can only use your main or alt characters "
+                "to add corporations. "
+                "However, character %s is neither. "
+            )
+            % token_char.character_name,
         )
         return redirect("structures:index")
     try:
@@ -602,16 +599,14 @@ def add_structure_owner(request: HttpRequest, token: Token):
         tasks.update_all_for_owner.delay(owner_pk=owner.pk, user_pk=request.user.pk)  # type: ignore
         messages.info(
             request,
-            format_html(
-                _(
-                    "%(corporation)s has been added with %(character)s "
-                    "as sync character. "
-                    "We have started fetching structures and notifications "
-                    "for this corporation and you will receive a report once "
-                    "the process is finished."
-                )
-                % {"corporation": owner, "character": token_char}
-            ),
+            _(
+                "%(corporation)s has been added with %(character)s "
+                "as sync character. "
+                "We have started fetching structures and notifications "
+                "for this corporation and you will receive a report once "
+                "the process is finished."
+            )
+            % {"corporation": owner, "character": token_char},
         )
         if STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
             with translation.override(STRUCTURES_DEFAULT_LANGUAGE):
@@ -626,18 +621,16 @@ def add_structure_owner(request: HttpRequest, token: Token):
     else:
         messages.info(
             request,
-            format_html(
-                _(
-                    "%(character)s has been added to %(corporation)s "
-                    "as sync character. "
-                    "You now have %(characters_count)d sync character(s) configured."
-                )
-                % {
-                    "corporation": owner,
-                    "character": token_char,
-                    "characters_count": owner.valid_characters_count(),
-                }
-            ),
+            _(
+                "%(character)s has been added to %(corporation)s "
+                "as sync character. "
+                "You now have %(characters_count)d sync character(s) configured."
+            )
+            % {
+                "corporation": owner,
+                "character": token_char,
+                "characters_count": owner.valid_characters_count(),
+            },
         )
         if STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED:
             with translation.override(STRUCTURES_DEFAULT_LANGUAGE):

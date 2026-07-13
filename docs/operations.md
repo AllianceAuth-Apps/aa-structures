@@ -6,7 +6,7 @@
 
 1. Structures is a plugin for Alliance Auth. If you don't have Alliance Auth running already, please install it first before proceeding. (see the official [AA installation guide](https://allianceauth.readthedocs.io/en/latest/installation/auth/allianceauth/) for details)
 
-2. Structures needs the app [django-eveuniverse](https://gitlab.com/ErikKalkoken/django-eveuniverse) to function. Please make sure it is installed, before before installing the app.
+2. Structures needs the app [django-eveuniverse](https://github.com/AllianceAuth-Apps/django-eveuniverse) to function. Please make sure it is installed, before before installing the app.
 
 ### Step 1 - Install app
 
@@ -142,13 +142,13 @@ This is an overview of all permissions used by this app. Note that all permissio
 
 Name | Purpose | Code
 -- | -- | --
-Can access public views | User can access this app and view public pages, e.g. public POCO view |  <https://i.imgur.com/BK3MadZ.png>
-Can view corporation structures | User can see structures belonging to corporations of his characters only. |  `general.view_corporation_structures`
-Can view alliance structures | User can view all structures belonging to corporation in the alliance of the user. |  `general.view_alliance_structures`
-Can view all structures | User can see all structures in the system |  `general.view_all_structures`
-Can add new structure owner | User can add a corporation with it's structures |  `general.add_structure_owner`
-Can view unanchoring timers for all structures the user can see | User can view unanchoring timers for all structures the user can see based on other permissions |  `general.view_all_unanchoring_status`
-Can view structure fittings | User can view structure fittings |  `general.view_structure_fittings`
+Can access public views | User can access this app and view public pages, e.g. public POCO view | <https://i.imgur.com/BK3MadZ.png>
+Can view corporation structures | User can see structures belonging to corporations of his characters only. | `general.view_corporation_structures`
+Can view alliance structures | User can view all structures belonging to corporation in the alliance of the user. | `general.view_alliance_structures`
+Can view all structures | User can see all structures in the system | `general.view_all_structures`
+Can add new structure owner | User can add a corporation with it's structures | `general.add_structure_owner`
+Can view unanchoring timers for all structures the user can see | User can view unanchoring timers for all structures the user can see based on other permissions | `general.view_all_unanchoring_status`
+Can view structure fittings | User can view structure fittings | `general.view_structure_fittings`
 
 ## Admin tools
 

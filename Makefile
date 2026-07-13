@@ -1,3 +1,6 @@
+-include .env
+export
+
 appname = aa-structures
 package = structures
 
@@ -41,20 +44,10 @@ compilemessages:
 		-l zh_Hans
 
 coverage:
-	coverage run --concurrency=multiprocessing ../myauth/manage.py test --keepdb --failfast --timing --parallel && coverage combine && coverage html && coverage report -m
-
-test:
-	# runs a full test incl. re-creating of the test DB
-	python ../myauth/manage.py test $(package) --failfast --debug-mode -v 2
+	coverage run $(MANAGE_PY_PATH) test $(package) --keepdb --failfast && coverage html && coverage report -m
 
 pylint:
 	pylint --load-plugins pylint_django $(package)
 
-check_complexity:
-	flake8 $(package) --max-complexity=10
-
-flake8:
-	flake8 $(package) --count
-
 graph_models:
-	python ../myauth/manage.py graph_models $(package) --arrow-shape normal -o $(appname)_models.png
+	python $(MANAGE_PY_PATH) graph_models $(package) --arrow-shape normal -o $(appname)_models.png

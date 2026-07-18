@@ -1,3 +1,8 @@
+# This makefile provides tools for developers.
+#
+# Note that it requires you to have a .env file defined with the path to your manage.py file
+# The syntax is: MANAGE_PY_PATH = /path/to/manage.py
+
 -include .env
 export
 

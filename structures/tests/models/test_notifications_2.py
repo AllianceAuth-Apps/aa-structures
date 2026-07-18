@@ -357,14 +357,13 @@ class TestStructureFuelAlerts(NoSocketsTestCase):
             notification_types=[NotificationType.STRUCTURE_FUEL_ALERT],
             name="wrong_other_owner",
         )
-        config = FuelAlertConfigFactory(start=48, end=0, repeat=12)
+        config = FuelAlertConfigFactory()
+
         # when
-        qs = config.relevant_webhooks()
+        got = config.relevant_webhooks()
+
         # then
-        relevant_webhook_pks = qs.values_list("pk", flat=True)
-        self.assertSetEqual(
-            set(relevant_webhook_pks), {self.webhook.pk, webhook_structure.pk}
-        )
+        self.assertCountEqual(got, [self.webhook, webhook_structure])
 
 
 @patch(MODULE_PATH + ".Webhook.send_message", spec=True)
@@ -587,14 +586,13 @@ class TestJumpFuelAlerts(NoSocketsTestCase):
         )
         structure.webhooks.add(webhook_structure)
         WebhookFactory(notification_types=[NotificationType.STRUCTURE_JUMP_FUEL_ALERT])
-        config = JumpFuelAlertConfigFactory(threshold=100)
+        config = JumpFuelAlertConfigFactory()
+
         # when
-        qs = config.relevant_webhooks()
+        got = config.relevant_webhooks()
+
         # then
-        relevant_webhook_pks = qs.values_list("pk", flat=True)
-        self.assertSetEqual(
-            set(relevant_webhook_pks), {webhook.pk, webhook_structure.pk}
-        )
+        self.assertCountEqual(got, [webhook, webhook_structure])
 
 
 class TestNotificationRelatedStructures(NoSocketsTestCase):

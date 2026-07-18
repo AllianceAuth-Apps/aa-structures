@@ -215,15 +215,17 @@ def send_new_notifications_for_owner(owner_pk: int):
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def send_structure_fuel_notifications_for_config(config_pk: int):
     """Send structure fuel notifications for a config."""
-    FuelAlertConfig.objects.get(pk=config_pk).send_new_notifications()
-    send_queued_messages_for_webhooks(FuelAlertConfig.relevant_webhooks())
+    config = FuelAlertConfig.objects.get(pk=config_pk)
+    config.send_new_notifications()
+    send_queued_messages_for_webhooks(config.relevant_webhooks())
 
 
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def send_jump_fuel_notifications_for_config(config_pk: int):
     """Send jump fuel notifications for a config."""
-    JumpFuelAlertConfig.objects.get(pk=config_pk).send_new_notifications()
-    send_queued_messages_for_webhooks(JumpFuelAlertConfig.relevant_webhooks())
+    config = JumpFuelAlertConfig.objects.get(pk=config_pk)
+    config.send_new_notifications()
+    send_queued_messages_for_webhooks(config.relevant_webhooks())
 
 
 def send_queued_messages_for_webhooks(webhooks: Iterable[Webhook]):

@@ -741,8 +741,7 @@ class BaseFuelAlertConfig(models.Model):
         """Send new fuel notifications based on this config."""
         raise NotImplementedError()
 
-    @staticmethod
-    def relevant_webhooks() -> models.QuerySet:
+    def relevant_webhooks(self) -> models.QuerySet:
         """Webhooks relevant for processing fuel notifications based on this config."""
         raise NotImplementedError()
 
@@ -833,8 +832,7 @@ class FuelAlertConfig(BaseFuelAlertConfig):
                 if created or force:
                     notif.send_generated_notification()
 
-    @staticmethod
-    def relevant_webhooks() -> models.QuerySet:
+    def relevant_webhooks(self) -> models.QuerySet:
         """Webhooks relevant for processing fuel notifications based on this config."""
         qs = (
             Webhook.objects.filter(is_active=True)
@@ -889,8 +887,7 @@ class JumpFuelAlertConfig(BaseFuelAlertConfig):
                 if created or force:
                     notif.send_generated_notification()
 
-    @staticmethod
-    def relevant_webhooks() -> models.QuerySet:
+    def relevant_webhooks(self) -> models.QuerySet:
         """Webhooks relevant for processing jump fuel notifications based on this config."""
         return Webhook.objects.filter(
             is_active=True,

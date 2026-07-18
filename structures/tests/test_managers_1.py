@@ -887,8 +887,30 @@ class TestStructureTagManager(NoSocketsTestCase):
     #     self.assertEqual(structure.order, 50)
 
 
-class TestWebhookManager(NoSocketsTestCase):
-    def test_should_return_enabled_notification_types(self):
+class TestWebhookQuerySetFilterNotificationType(NoSocketsTestCase):
+    def test_should_only_include_correct_matches(self):
+        # given
+        nt = NotificationType.STRUCTURE_DESTROYED
+        nt_embedded = NotificationType.SOV_STRUCTURE_DESTROYED
+        nt_other_1 = NotificationType.WAR_DECLARE_WAR
+        nt_other_2 = NotificationType.MOONMINING_LASER_FIRED
+        wh_1 = WebhookFactory(notification_types=[nt])
+        wh_2 = WebhookFactory(notification_types=[nt, nt_other_1])
+        wh_3 = WebhookFactory(notification_types=[nt_other_1, nt])
+        wh_4 = WebhookFactory(notification_types=[nt_other_1, nt, nt_other_2])
+        WebhookFactory(notification_types=[nt_embedded])
+        WebhookFactory(notification_types=[nt_other_1, nt_embedded])
+        WebhookFactory(notification_types=[nt_embedded, nt_other_2])
+
+        # when
+        qs = Webhook.objects.filter_notification_type(nt)
+
+        # then
+        self.assertCountEqual(qs, [wh_1, wh_2, wh_3, wh_4])
+
+
+class TestWebhookManagerEnabledNotificationTypes(NoSocketsTestCase):
+    def test_should_return_types(self):
         # given
         WebhookFactory(
             is_active=True,

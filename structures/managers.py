@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import itertools
+import re
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Set, Tuple
 
 from django.contrib.auth.models import User
@@ -545,10 +546,21 @@ class StructureTagManager(models.Manager):
         )
 
 
-class WebhookManager(WebhookBaseManager):
+class WebhookQuerySet(models.QuerySet):
+    def filter_notification_type(self, notif_type: NotificationType):
+        """Return Queryset with a filter for a notification type."""
+        return self.filter(
+            notification_types__regex=rf"(^|,){re.escape(notif_type)}(,|$)"
+        )
+
+
+class WebhookManagerBase(WebhookBaseManager):
     def enabled_notification_types(self) -> Set[str]:
-        """Set of all currently enabled notification types."""
+        """Return currently enabled notification types."""
         notif_types_list = list(
             self.filter(is_active=True).values_list("notification_types", flat=True)
         )
         return set(itertools.chain(*notif_types_list))
+
+
+WebhookManager = WebhookManagerBase.from_queryset(WebhookQuerySet)

@@ -309,18 +309,20 @@ class NotificationBase(models.Model):
             structures_qs = Structure.objects.none()
         else:
             structures_qs = self.calc_related_structures()
+
         if (
             structures_qs.exists()
             and structures_qs.filter(webhooks__isnull=False).count() == 1
         ):
-            webhooks_qs = structures_qs.first().webhooks.filter(
-                notification_types__contains=self.notif_type, is_active=True
-            )
+            webhooks_qs = structures_qs.first().webhooks
         else:
-            webhooks_qs = self.owner.webhooks.filter(
-                notification_types__contains=self.notif_type, is_active=True
-            )
-        return webhooks_qs
+            webhooks_qs = self.owner.webhooks
+
+        qs = webhooks_qs.filter(is_active=True).filter_notification_type(
+            self.notif_type
+        )
+
+        return qs
 
     def calc_related_structures(self) -> models.QuerySet[Structure]:
         """Identify structures this notification is related to.

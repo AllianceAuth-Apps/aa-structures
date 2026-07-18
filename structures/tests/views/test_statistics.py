@@ -1,5 +1,6 @@
 from django.test import RequestFactory, TestCase
 
+from structures.tests.helpers import json_response_to_dict
 from structures.tests.testdata.factories import (
     CustomsOfficeFactory,
     EveAllianceInfoFactory,
@@ -12,7 +13,6 @@ from structures.tests.testdata.factories import (
     UserMainBasicFactory,
     UserMainDefaultFactory,
 )
-from structures.tests.views.utils import json_response_to_dict
 from structures.views import statistics
 
 

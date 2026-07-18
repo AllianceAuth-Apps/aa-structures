@@ -13,6 +13,7 @@ from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import json_response_to_python
 
 from structures.models import Owner, Structure
+from structures.tests.helpers import json_response_to_dict
 from structures.tests.testdata.factories import (
     CustomsOfficeFactory,
     EveCharacterFactory,
@@ -26,7 +27,6 @@ from structures.tests.testdata.factories import (
     UserMainDefaultOwnerFactory,
     WebhookFactory,
 )
-from structures.tests.views.utils import json_response_to_dict
 from structures.views import structures
 
 VIEWS_PATH = "structures.views.structures"

@@ -19,14 +19,14 @@ from eveuniverse.models import EveMoon, EvePlanet, EveSolarSystem, EveType
 from allianceauth.eveonline.models import EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 
-from .app_settings import STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION
-from .constants import EveCategoryId, EveTypeId
-from .core.notification_types import NotificationType
-from .providers import esi
-from .webhooks.managers import WebhookBaseManager
+from structures.app_settings import STRUCTURES_HOURS_UNTIL_STALE_NOTIFICATION
+from structures.constants import EveCategoryId, EveTypeId
+from structures.core.notification_types import NotificationType
+from structures.providers import esi
+from structures.webhooks.managers import WebhookBaseManager
 
 if TYPE_CHECKING:
-    from .models import Owner, Structure
+    from structures.models import Owner, Structure
 
 logger = get_extension_logger(__name__)
 
@@ -303,7 +303,7 @@ class StructureQuerySet(models.QuerySet):
 
     def annotate_has_poco_details(self) -> models.QuerySet:
         """Add annotation that reports whether the structure has poco details."""
-        from .models import PocoDetails
+        from structures.models import PocoDetails
 
         return self.annotate(
             has_poco_details=Exists(
@@ -313,7 +313,7 @@ class StructureQuerySet(models.QuerySet):
 
     def annotate_has_starbase_detail(self) -> models.QuerySet:
         """Add annotation whether the structure has starbase details."""
-        from .models import StarbaseDetail
+        from structures.models import StarbaseDetail
 
         return self.annotate(
             has_starbase_detail=Exists(
@@ -323,7 +323,7 @@ class StructureQuerySet(models.QuerySet):
 
     def annotate_jump_fuel_quantity(self) -> models.QuerySet:
         """Add annotation with quantity of jump fuel."""
-        from .models import StructureItem
+        from structures.models import StructureItem
 
         return self.annotate(
             jump_fuel_quantity_2=Sum(
@@ -366,7 +366,7 @@ class StructureManagerBase(models.Manager):
         Returns:
             object, created
         """
-        from .models import Owner
+        from structures.models import Owner
 
         id = int(id)
         logger.info("Trying to fetch structure from ESI with ID %s", id)
@@ -464,7 +464,7 @@ class StructureManagerBase(models.Manager):
 
     @staticmethod
     def _save_related_structure_services(structure, obj):
-        from .models import StructureService
+        from structures.models import StructureService
 
         StructureService.objects.filter(structure=obj).delete()
         if "services" in structure and structure["services"]:
@@ -514,7 +514,7 @@ class StructureTagManager(models.Manager):
         )
 
     def _obj_params_from_solar_system(self, solar_system):
-        from .models import EveSpaceType
+        from structures.models import EveSpaceType
 
         space_type = EveSpaceType.from_solar_system(solar_system)
         params = self.model.SPACE_TYPE_MAP.get(space_type)

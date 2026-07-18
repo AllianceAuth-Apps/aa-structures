@@ -1,5 +1,5 @@
-from .eveuniverse import EveSovereigntyMap, EveSpaceType
-from .notifications import (
+from structures.models.eveuniverse import EveSovereigntyMap, EveSpaceType
+from structures.models.notifications import (
     FuelAlert,
     FuelAlertConfig,
     GeneratedNotification,
@@ -9,9 +9,9 @@ from .notifications import (
     Webhook,
     get_default_notification_types,
 )
-from .owners import Owner, OwnerCharacter
-from .structures_1 import Structure, StructureItem, StructureTag
-from .structures_2 import (
+from structures.models.owners import Owner, OwnerCharacter
+from structures.models.structures_1 import Structure, StructureItem, StructureTag
+from structures.models.structures_2 import (
     PocoDetails,
     StarbaseDetail,
     StarbaseDetailFuel,

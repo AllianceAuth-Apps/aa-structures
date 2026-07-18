@@ -12,8 +12,7 @@ from allianceauth.services.hooks import get_extension_logger
 from structures.constants import EveCategoryId
 from structures.core.serializers import PocoListSerializer
 from structures.models import Structure
-
-from .common import add_common_context, add_common_data_export
+from structures.views.common import add_common_context, add_common_data_export
 
 logger = get_extension_logger(__name__)
 

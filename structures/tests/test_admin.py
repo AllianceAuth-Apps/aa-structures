@@ -27,8 +27,7 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
-
-from .testdata.factories import (
+from structures.tests.testdata.factories import (
     CustomsOfficeFactory,
     EveAllianceInfoFactory,
     EveCorporationInfoFactory,

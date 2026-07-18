@@ -7,9 +7,8 @@ from structures.tests.testdata.factories import (
     OwnerFactory,
     UserMainBasicFactory,
 )
+from structures.tests.views.utils import json_response_to_dict
 from structures.views import public
-
-from .utils import json_response_to_dict
 
 
 class TestPocoListDataView(NoSocketsTestCase):

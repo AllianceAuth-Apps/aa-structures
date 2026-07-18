@@ -6,15 +6,14 @@ import dhooks_lite
 
 from django.utils.translation import gettext as _
 
-from structures.helpers import get_or_create_eve_entity
-from structures.models import Notification, Webhook
-
-from .helpers import (
+from structures.core.notification_embeds.helpers import (
     gen_corporation_link,
     gen_eve_entity_link,
     gen_eve_entity_link_from_id,
 )
-from .main import NotificationBaseEmbed
+from structures.core.notification_embeds.main import NotificationBaseEmbed
+from structures.helpers import get_or_create_eve_entity
+from structures.models import Notification, Webhook
 
 
 class NotificationCorpCharEmbed(NotificationBaseEmbed):

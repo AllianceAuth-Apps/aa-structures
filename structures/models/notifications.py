@@ -39,9 +39,8 @@ from structures.managers import (
     NotificationManager,
     WebhookManager,
 )
+from structures.models.structures_1 import Structure
 from structures.webhooks.models import WebhookBase
-
-from .structures_1 import Structure
 
 logger = get_extension_logger(__name__)
 

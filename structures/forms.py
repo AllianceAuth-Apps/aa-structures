@@ -2,7 +2,7 @@
 
 from django import forms
 
-from .models import StructureTag
+from structures.models import StructureTag
 
 
 class TagsFilterForm(forms.Form):

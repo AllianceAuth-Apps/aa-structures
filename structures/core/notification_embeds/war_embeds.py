@@ -11,11 +11,13 @@ from django.utils.translation import gettext as _
 from app_utils.datetime import ldap_time_2_datetime
 from app_utils.helpers import humanize_number
 
+from structures.core.notification_embeds.helpers import (
+    gen_eve_entity_link,
+    target_datetime_formatted,
+)
+from structures.core.notification_embeds.main import NotificationBaseEmbed
 from structures.helpers import get_or_create_eve_entity
 from structures.models import Notification, Webhook
-
-from .helpers import gen_eve_entity_link, target_datetime_formatted
-from .main import NotificationBaseEmbed
 
 
 class NotificationAcceptedAlly(NotificationBaseEmbed):

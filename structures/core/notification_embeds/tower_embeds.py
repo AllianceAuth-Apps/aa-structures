@@ -9,15 +9,14 @@ import dhooks_lite
 from django.utils.translation import gettext as _
 
 from structures.core import starbases
-from structures.models import GeneratedNotification, Notification, Structure, Webhook
-
-from .helpers import (
+from structures.core.notification_embeds.helpers import (
     gen_corporation_link,
     gen_solar_system_text,
     target_datetime_formatted,
     timeuntil,
 )
-from .main import NotificationBaseEmbed
+from structures.core.notification_embeds.main import NotificationBaseEmbed
+from structures.models import GeneratedNotification, Notification, Structure, Webhook
 
 
 class NotificationTowerEmbed(NotificationBaseEmbed):

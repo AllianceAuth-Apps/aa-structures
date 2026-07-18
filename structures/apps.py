@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
-from . import __version__
+from structures import __version__
 
 
 class StructuresConfig(AppConfig):
@@ -9,4 +9,4 @@ class StructuresConfig(AppConfig):
     verbose_name = f"Structures v{__version__}"
 
     def ready(self) -> None:
-        from . import checks  # noqa: F401 pylint: disable=unused-import
+        from structures import checks  # noqa: F401 pylint: disable=unused-import

@@ -8,14 +8,13 @@ from django.utils.translation import gettext as _
 
 from app_utils.datetime import ldap_time_2_datetime
 
-from structures.models import Notification, Webhook
-
-from .helpers import (
+from structures.core.notification_embeds.helpers import (
     gen_corporation_link,
     gen_solar_system_text,
     target_datetime_formatted,
 )
-from .main import NotificationBaseEmbed
+from structures.core.notification_embeds.main import NotificationBaseEmbed
+from structures.models import Notification, Webhook
 
 
 class NotificationSkyhookEmbed(NotificationBaseEmbed):

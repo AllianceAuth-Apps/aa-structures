@@ -46,7 +46,7 @@ from structures.models import (
     Webhook,
 )
 
-# from .helpers import datetime_to_ldap  # TODO: Use for notifications
+# from structures.tests.helpers import datetime_to_ldap  # TODO: Use for notifications
 
 T = TypeVar("T")
 

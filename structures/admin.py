@@ -19,9 +19,9 @@ from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.django import admin_boolean_icon_html
 
-from . import app_settings, tasks
-from .core.notification_types import NotificationType
-from .models import (
+from structures import app_settings, tasks
+from structures.core.notification_types import NotificationType
+from structures.models import (
     FuelAlert,
     FuelAlertConfig,
     GeneratedNotification,

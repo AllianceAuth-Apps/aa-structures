@@ -23,14 +23,13 @@ from structures.tests.testdata.factories import (
     EveSolarSystemNullSecFactory,
     IHUBTypeFactory,
     MoonOreTypeFactory,
+    NotificationFactory,
     RefineryFactory,
     SkyhookFactory,
     StarbaseFactory,
     StructureFactory,
     TCUTypeFactory,
 )
-
-from .factories import NotificationFactory
 
 _current_folder = Path(__file__).parent
 _FILENAME_EVEUNIVERSE_TESTDATA = "eveuniverse.json"

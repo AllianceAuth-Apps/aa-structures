@@ -7,8 +7,7 @@ from app_utils.testing import NoSocketsTestCase
 
 from structures.core.notification_types import NotificationType
 from structures.models import GeneratedNotification, Notification, Owner
-
-from .testdata.factories import (
+from structures.tests.testdata.factories import (
     GeneratedNotificationFactory,
     NotificationFactory,
     OwnerCharacterFactory,

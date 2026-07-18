@@ -2,14 +2,13 @@ from django.test import RequestFactory
 
 from app_utils.testing import NoSocketsTestCase
 
+from structures.tests.helpers import json_response_to_dict
 from structures.tests.testdata.factories import (
     CustomsOfficeFactory,
     OwnerFactory,
     UserMainBasicFactory,
 )
 from structures.views import public
-
-from .utils import json_response_to_dict
 
 
 class TestPocoListDataView(NoSocketsTestCase):

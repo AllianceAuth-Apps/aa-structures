@@ -3,8 +3,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .core import DiscordWebhookMixin
-from .managers import WebhookBaseManager
+from structures.webhooks.core import DiscordWebhookMixin
+from structures.webhooks.managers import WebhookBaseManager
 
 
 # TODO: Investigate if this can be changed to a dependency injection to use fakes

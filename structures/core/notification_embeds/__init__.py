@@ -1,5 +1,5 @@
 """Generating notification embeds for Structures."""
 
-from .main import NotificationBaseEmbed
+from structures.core.notification_embeds.main import NotificationBaseEmbed
 
 __all__ = ["NotificationBaseEmbed"]

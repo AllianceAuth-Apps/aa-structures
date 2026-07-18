@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from allianceauth import hooks
 from allianceauth.services.hooks import MenuItemHook, UrlHook
 
-from . import __title__, urls
+from structures import __title__, urls
 
 
 class StructuresMenuItem(MenuItemHook):

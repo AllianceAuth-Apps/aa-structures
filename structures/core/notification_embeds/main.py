@@ -14,11 +14,14 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.urls import reverse_absolute, static_file_absolute_url
 
 from structures import __title__
+from structures.core.notification_embeds.helpers import (
+    gen_alliance_link,
+    gen_corporation_link,
+    target_datetime_formatted,
+)
 from structures.core.notification_types import NotificationType
 from structures.helpers import get_or_create_eve_entity, is_absolute_url
 from structures.models.notifications import Notification, NotificationBase, Webhook
-
-from .helpers import gen_alliance_link, gen_corporation_link, target_datetime_formatted
 
 logger = get_extension_logger(__name__)
 
@@ -183,13 +186,13 @@ class NotificationBaseEmbed:
     def create(notif: "NotificationBase") -> "NotificationBaseEmbed":
         """Creates a new instance of the respective subclass for given Notification."""
 
-        from .billing_embeds import (
+        from structures.core.notification_embeds.billing_embeds import (
             NotificationBillingBillOutOfMoneyMsg,
             NotificationBillingIHubBillAboutToExpire,
             NotificationBillingIHubDestroyedByBillFailure,
             NotificationCorpAllBillMsg,
         )
-        from .corporate_embeds import (
+        from structures.core.notification_embeds.corporate_embeds import (
             NotificationCharAppAcceptMsg,
             NotificationCharAppRejectMsg,
             NotificationCharAppWithdrawMsg,
@@ -201,25 +204,25 @@ class NotificationBaseEmbed:
             NotificationCorpGoalCompleted,
             NotificationCorpGoalCreated,
         )
-        from .moonmining_embeds import (
+        from structures.core.notification_embeds.moonmining_embeds import (
             NotificationMoonminningAutomaticFracture,
             NotificationMoonminningExtractionCanceled,
             NotificationMoonminningExtractionFinished,
             NotificationMoonminningExtractionStarted,
             NotificationMoonminningLaserFired,
         )
-        from .orbital_embeds import (
+        from structures.core.notification_embeds.orbital_embeds import (
             NotificationOrbitalAttacked,
             NotificationOrbitalReinforced,
         )
-        from .skyhook_embeds import (
+        from structures.core.notification_embeds.skyhook_embeds import (
             NotificationSkyhookDeployed,
             NotificationSkyhookDestroyed,
             NotificationSkyhookLostShield,
             NotificationSkyhookOnline,
             NotificationSkyhookUnderAttack,
         )
-        from .sov_embeds import (
+        from structures.core.notification_embeds.sov_embeds import (
             NotificationSovAllAnchoringMsg,
             NotificationSovAllClaimAcquiredMsg,
             NotificationSovAllClaimLostMsg,
@@ -228,7 +231,7 @@ class NotificationBaseEmbed:
             NotificationSovStructureDestroyed,
             NotificationSovStructureReinforced,
         )
-        from .structures_embeds import (
+        from structures.core.notification_embeds.structures_embeds import (
             NotificationStructureAnchoring,
             NotificationStructureDestroyed,
             NotificationStructureFuelAlert,
@@ -247,13 +250,13 @@ class NotificationBaseEmbed:
             NotificationStructureWentHighPower,
             NotificationStructureWentLowPower,
         )
-        from .tower_embeds import (
+        from structures.core.notification_embeds.tower_embeds import (
             NotificationTowerAlertMsg,
             NotificationTowerRefueledExtra,
             NotificationTowerReinforcedExtra,
             NotificationTowerResourceAlertMsg,
         )
-        from .war_embeds import (
+        from structures.core.notification_embeds.war_embeds import (
             NotificationAcceptedAlly,
             NotificationAllWarCorpJoinedAllianceMsg,
             NotificationAllWarSurrenderMsg,

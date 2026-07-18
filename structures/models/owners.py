@@ -45,18 +45,21 @@ from structures.app_settings import (
 )
 from structures.constants import EveGroupId, EveTypeId
 from structures.managers import OwnerManager
-from structures.providers import esi
-
-from .eveuniverse import EveSovereigntyMap
-from .notifications import (
+from structures.models.eveuniverse import EveSovereigntyMap
+from structures.models.notifications import (
     EveEntity,
     GeneratedNotification,
     Notification,
     NotificationType,
     Webhook,
 )
-from .structures_1 import Structure, StructureItem
-from .structures_2 import PocoDetails, StarbaseDetail, StarbaseDetailFuel
+from structures.models.structures_1 import Structure, StructureItem
+from structures.models.structures_2 import (
+    PocoDetails,
+    StarbaseDetail,
+    StarbaseDetailFuel,
+)
+from structures.providers import esi
 
 logger = get_extension_logger(__name__)
 

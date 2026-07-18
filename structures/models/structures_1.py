@@ -26,8 +26,7 @@ from structures.helpers import (
     hours_until_deadline,
 )
 from structures.managers import StructureManager, StructureTagManager
-
-from .eveuniverse import EveSpaceType
+from structures.models.eveuniverse import EveSpaceType
 
 logger = get_extension_logger(__name__)
 
@@ -719,7 +718,7 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
 
     def _send_refueled_notification(self):
         """Send a refueled notifications for this structure."""
-        from .notifications import Notification, NotificationType
+        from structures.models.notifications import Notification, NotificationType
 
         notif_type = (
             NotificationType.TOWER_REFUELED_EXTRA

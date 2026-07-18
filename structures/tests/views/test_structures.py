@@ -12,8 +12,8 @@ from allianceauth.eveonline.models import EveCharacter
 from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import json_response_to_python
 
-import structures.views.status
 from structures.models import Owner, Structure
+from structures.tests.helpers import json_response_to_dict
 from structures.tests.testdata.factories import (
     CustomsOfficeFactory,
     EveCharacterFactory,
@@ -28,8 +28,6 @@ from structures.tests.testdata.factories import (
     WebhookFactory,
 )
 from structures.views import structures
-
-from .utils import json_response_to_dict
 
 VIEWS_PATH = "structures.views.structures"
 OWNERS_PATH = "structures.models.owners"

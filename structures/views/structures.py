@@ -44,8 +44,7 @@ from structures.models import (
     StructureTag,
     Webhook,
 )
-
-from .common import add_common_context, add_common_data_export
+from structures.views.common import add_common_context, add_common_data_export
 
 logger = get_extension_logger(__name__)
 

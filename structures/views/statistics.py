@@ -14,8 +14,7 @@ from app_utils.views import link_html
 from structures.constants import EveCategoryId, EveGroupId, EveTypeId
 from structures.helpers import floating_icon_with_text_html
 from structures.models import Structure
-
-from .common import add_common_context, add_common_data_export
+from structures.views.common import add_common_context, add_common_data_export
 
 logger = get_extension_logger(__name__)
 

@@ -12,10 +12,10 @@ from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
 
-from . import __title__
-from .app_settings import STRUCTURES_TASKS_TIME_LIMIT
-from .core.notification_types import NotificationType
-from .models import (
+from structures import __title__
+from structures.app_settings import STRUCTURES_TASKS_TIME_LIMIT
+from structures.core.notification_types import NotificationType
+from structures.models import (
     EveSovereigntyMap,
     FuelAlertConfig,
     JumpFuelAlertConfig,

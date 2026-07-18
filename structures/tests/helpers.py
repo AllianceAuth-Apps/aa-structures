@@ -7,6 +7,13 @@ from markdown import markdown
 from django.core.cache import cache
 from django.test import TestCase
 
+from app_utils.testing import json_response_to_python
+
+
+def json_response_to_dict(response, key="id") -> dict:
+    """Convert JSON response into dict by given key."""
+    return {obj[key]: obj for obj in json_response_to_python(response)["data"]}
+
 
 def datetime_to_ldap(my_dt: dt.datetime) -> int:
     """Return a standard datetime as ldap datetime."""

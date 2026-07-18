@@ -12,8 +12,7 @@ from allianceauth.services.hooks import get_extension_logger
 
 from structures.constants import EveGroupId
 from structures.core import starbases
-
-from .structures_1 import Structure
+from structures.models.structures_1 import Structure
 
 logger = get_extension_logger(__name__)
 

@@ -125,7 +125,7 @@ Structures has the ability to measure the average notification delay of your sys
 
 ## Admin status notifications
 
-Many alliances are relying that the structure services - i.e. getting attack and fuel notifications on Discord. However, outages can occur, e.g. when tokens become invalid or the Eve Online API server (ESI) has issues. To give alliances the ability to fix outages quickly, Structures has a build in service monitoring capability. Should an issue occur it will automatically send an Auth notification to admins. When combined with the app [Discord Notify](https://gitlab.com/ErikKalkoken/aa-discordnotify), those notifications will be forwarded immediately to Discord, allowing admins to take quick action to resolve any issues.
+Many alliances are relying that the structure services - i.e. getting attack and fuel notifications on Discord. However, outages can occur, e.g. when tokens become invalid or the Eve Online API server (ESI) has issues. To give alliances the ability to fix outages quickly, Structures has a build in service monitoring capability. Should an issue occur it will automatically send an Auth notification to admins. When combined with the app [Discord Notify](https://github.com/AllianceAuth-Apps/aa-discordnotify), those notifications will be forwarded immediately to Discord, allowing admins to take quick action to resolve any issues.
 
 There are currently two types of issue related admin notifications:
 

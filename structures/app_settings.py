@@ -3,10 +3,22 @@
 from app_utils.app_settings import clean_setting
 
 STRUCTURES_ADD_TIMERS = clean_setting("STRUCTURES_ADD_TIMERS", True)
-"""Whether to automatically add timers for certain notifications on the timerboard
-(will have no effect if aa-timerboard app is not installed).
+"""Whether to automatically add timers for supported notification types
+to Alliance Auth's Structure Timers or Erik's Structure Timers
+(apps have to be installed for this setting to work).
 
-Will create timers from anchoring, lost shield and lost armor notifications.
+Supported notification types are:
+
+- moon mining extraction canceled
+- moon mining extraction started
+- orbital reinforced
+- skyhook lost shield
+- sov structure reinforced
+- structure lost armor
+- structure lost shield
+- tower reinforced
+
+Moon mining notifications can be disabled with `STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED`.
 """
 
 STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED = clean_setting(
@@ -77,7 +89,10 @@ Stale notification will no longer be sent automatically.
 STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED = clean_setting(
     "STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", True
 )
-"""Whether to create / remove timers from moon extraction notifications."""
+"""Whether to include moon mining extraction notifications when adding timers.
+
+Requires the "add timers" feature to be enabled with `STRUCTURES_ADD_TIMERS`
+"""
 
 STRUCTURES_NOTIFICATION_MAX_RETRIES = clean_setting(
     "STRUCTURES_NOTIFICATION_MAX_RETRIES", 3
@@ -89,14 +104,14 @@ if an error occurred e.g. rate limiting.
 STRUCTURES_NOTIFICATION_SET_AVATAR = clean_setting(
     "STRUCTURES_NOTIFICATION_SET_AVATAR", True
 )
-"""Wether structures sets the name and avatar icon of a webhook.
+"""Whether structures sets the name and avatar icon of a webhook.
 When ``False`` the webhook will use it's own values as set on the platform.
 """
 
 STRUCTURES_NOTIFICATION_SHOW_MOON_ORE = clean_setting(
     "STRUCTURES_NOTIFICATION_SHOW_MOON_ORE", True
 )
-"""Wether ore details are shown on moon timers."""
+"""Whether ore details are shown on moon timers."""
 
 
 STRUCTURES_NOTIFICATION_SYNC_GRACE_MINUTES = clean_setting(
@@ -131,7 +146,9 @@ STRUCTURES_REPORT_NPC_ATTACKS = clean_setting("STRUCTURES_REPORT_NPC_ATTACKS", T
 STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE = clean_setting(
     "STRUCTURES_SHOW_FUEL_EXPIRES_RELATIVE", True
 )
-"""Whether fuel expires in structures browser is shown as absolute value."""
+"""Whether fuel expiration in the structures browser is shown as a relative value
+(e.g., time remaining) instead of an absolute date.
+"""
 
 STRUCTURES_SHOW_JUMP_GATES = clean_setting("STRUCTURES_SHOW_JUMP_GATES", True)
 """Whether to show the jump gates tab."""
@@ -175,7 +192,7 @@ STRUCTURES_NOTIFICATION_TURNAROUND_LONG = clean_setting(
     "STRUCTURES_NOTIFICATION_TURNAROUND_LONG", 50
 )
 
-# Turnaround duration with more than x seconds are regarded as outliers
+# Turnaround durations of more than x seconds are regarded as outliers
 # and will be ignored when calculating the averages
 STRUCTURES_NOTIFICATION_TURNAROUND_MAX_VALID = clean_setting(
     "STRUCTURES_NOTIFICATION_TURNAROUND_MAX_VALID", 3600

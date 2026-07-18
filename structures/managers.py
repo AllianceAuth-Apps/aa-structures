@@ -302,7 +302,7 @@ class StructureQuerySet(models.QuerySet):
         return query
 
     def annotate_has_poco_details(self) -> models.QuerySet:
-        """Add annotation wether the structure has poco details."""
+        """Add annotation that reports whether the structure has poco details."""
         from .models import PocoDetails
 
         return self.annotate(

@@ -835,14 +835,16 @@ class FuelAlertConfig(BaseFuelAlertConfig):
     def relevant_webhooks(self) -> models.QuerySet:
         """Webhooks relevant for processing fuel notifications based on this config."""
         qs = (
-            Webhook.objects.filter(is_active=True)
-            .filter(Q(owners__isnull=False) | Q(structures__isnull=False))
-            .filter(
-                Q(notification_types__contains=NotificationType.STRUCTURE_FUEL_ALERT)
-                | Q(
-                    notification_types__contains=NotificationType.TOWER_RESOURCE_ALERT_MSG
+            (
+                Webhook.objects.filter_notification_type(
+                    NotificationType.STRUCTURE_FUEL_ALERT
+                )
+                | Webhook.objects.filter_notification_type(
+                    NotificationType.TOWER_RESOURCE_ALERT_MSG
                 )
             )
+            .filter(is_active=True)
+            .filter(Q(owners__isnull=False) | Q(structures__isnull=False))
             .distinct()
         )
         return qs
@@ -889,10 +891,13 @@ class JumpFuelAlertConfig(BaseFuelAlertConfig):
 
     def relevant_webhooks(self) -> models.QuerySet:
         """Webhooks relevant for processing jump fuel notifications based on this config."""
-        return Webhook.objects.filter(
-            is_active=True,
-            notification_types__contains=NotificationType.STRUCTURE_JUMP_FUEL_ALERT,
-        ).filter(Q(owners__isnull=False) | Q(structures__isnull=False))
+        return (
+            Webhook.objects.filter_notification_type(
+                NotificationType.STRUCTURE_JUMP_FUEL_ALERT
+            )
+            .filter(is_active=True)
+            .filter(Q(owners__isnull=False) | Q(structures__isnull=False))
+        )
 
 
 class BaseFuelAlert(models.Model):

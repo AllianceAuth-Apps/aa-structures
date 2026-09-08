@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
 
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.http import Http404
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
@@ -752,6 +753,23 @@ class TestStructureFittingModal(TestCase):
         # then
         self.assertEqual(response.status_code, 302)
 
+    def test_should_not_show_structure_from_different_corporation(self):
+        # given
+        other_structure = StructureFactory()  # structure with a different corporation
+        user = UserMainFactory(
+            main_character__character=self.character,
+            permissions__=[
+                "structures.basic_access",
+                "structures.view_corporation_structures",
+                "structures.view_structure_fit",
+            ],
+        )
+        request = self.factory.get("/")
+        request.user = user
+        # when/then
+        with self.assertRaises(Http404):
+            structures.structure_details(request, other_structure.id)
+
 
 class TestDetailsModal(TestCase):
     @classmethod
@@ -780,3 +798,23 @@ class TestDetailsModal(TestCase):
         response = structures.starbase_detail(request, structure.id)
         # then
         self.assertEqual(response.status_code, 200)
+
+    def test_should_not_load_poco_detail_from_different_corporation(self):
+        # given
+        other_owner = OwnerFactory()  # owner with a different corporation
+        structure = CustomsOfficeFactory(owner=other_owner)
+        request = self.factory.get("/")
+        request.user = self.user
+        # when/then
+        with self.assertRaises(Http404):
+            structures.poco_details(request, structure.id)
+
+    def test_should_not_load_starbase_detail_from_different_corporation(self):
+        # given
+        other_owner = OwnerFactory()  # owner with a different corporation
+        structure = StarbaseFactory(owner=other_owner)
+        request = self.factory.get("/")
+        request.user = self.user
+        # when/then
+        with self.assertRaises(Http404):
+            structures.starbase_detail(request, structure.id)

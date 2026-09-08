@@ -22,3 +22,4 @@ _build/
 alliance_auth.sqlite3
 .temp/
 .env
+.claude/

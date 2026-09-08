@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 import dhooks_lite
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError, HTTPError, Timeout, TooManyRedirects
 from simple_mq import SimpleMQ
 
 from django.contrib.auth.models import User
@@ -152,13 +152,22 @@ class DiscordWebhookMixin:
         else:
             embeds = None
 
-        response = hook.execute(
-            content=message.get("content"),
-            embeds=embeds,
-            username=message.get("username"),
-            avatar_url=message.get("avatar_url"),
-            wait_for_response=True,
-        )
+        try:
+            response = hook.execute(
+                content=message.get("content"),
+                embeds=embeds,
+                username=message.get("username"),
+                avatar_url=message.get("avatar_url"),
+                wait_for_response=True,
+            )
+        except (ConnectionError, Timeout, TooManyRedirects) as ex:
+            logger.warning(
+                "Webhook %s: Network error while sending message to Discord: %s",
+                self,
+                ex,
+            )
+            return False
+
         logger.debug("headers: %s", response.headers)
         logger.debug("status_code: %s", response.status_code)
         logger.debug("content: %s", response.content)

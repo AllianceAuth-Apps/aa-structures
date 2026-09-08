@@ -204,7 +204,11 @@ def generate_new_timers_for_owner(owner_pk: int):
     owner.add_or_remove_timers_from_notifications()
 
 
-@shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
+@shared_task(
+    base=QueueOnce,
+    once={"keys": ["owner_pk"]},
+    time_limit=STRUCTURES_TASKS_TIME_LIMIT,
+)
 def send_new_notifications_for_owner(owner_pk: int):
     """Send new notifications to Discord."""
     owner = Owner.objects.get(pk=owner_pk)

@@ -369,6 +369,58 @@ class TestNotificationRelevantWebhooks(NoSocketsTestCase):
             result_qs, Webhook.objects.filter(pk=webhook_structure.pk)
         )
 
+    def test_should_return_structure_webhooks_when_structure_has_multiple_webhooks(
+        self,
+    ):
+        # given
+        webhook_owner = WebhookFactory(
+            notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
+        )
+        owner = OwnerFactory(webhooks=[webhook_owner])
+        structure = StructureFactory(owner=owner)
+        webhook_structure_1 = WebhookFactory(
+            notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
+        )
+        webhook_structure_2 = WebhookFactory(
+            notification_types=[NotificationType.STRUCTURE_UNDER_ATTACK]
+        )
+        structure.webhooks.add(webhook_structure_1, webhook_structure_2)
+        notif = NotificationFactory(
+            owner=owner,
+            notif_type=NotificationType.STRUCTURE_UNDER_ATTACK,
+            text_from_dict={
+                "allianceID": 3011,
+                "allianceLinkData": ["showinfo", 16159, 3011],
+                "allianceName": "Big Bad Alliance",
+                "armorPercentage": 98.65129050962584,
+                "charID": 1011,
+                "corpLinkData": ["showinfo", 2, 2011],
+                "corpName": "Bad Company",
+                "hullPercentage": 100.0,
+                "shieldPercentage": 4.704536686417284e-14,
+                "solarsystemID": structure.eve_solar_system_id,
+                "structureID": structure.id,
+                "structureShowInfoData": [
+                    "showinfo",
+                    structure.eve_type_id,
+                    structure.id,
+                ],
+                "structureTypeID": structure.eve_type_id,
+            },
+        )
+        # when
+        result_qs = notif.relevant_webhooks()
+        # then
+        # A structure with 2+ direct webhooks must still use its own webhooks,
+        # not silently fall back to the owner's defaults.
+        self.assertQuerySetEqual(
+            result_qs,
+            Webhook.objects.filter(
+                pk__in=[webhook_structure_1.pk, webhook_structure_2.pk]
+            ),
+            ordered=False,
+        )
+
     def test_should_return_owner_webhooks_when_notif_has_multiple_structures(self):
         # given
         webhook_owner = WebhookFactory(

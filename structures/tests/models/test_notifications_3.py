@@ -15,8 +15,10 @@ from structures.tests.testdata.factories import (
     StarbaseFactory,
     StructureFactory,
 )
+from structures.tests.testdata.helpers import load_notification_entities
 
 MODULE_PATH = "structures.models.notifications"
+TIMERS_MODULE_PATH = "structures.core.notification_timers"
 
 
 class TestGeneratedNotification(NoSocketsTestCase):
@@ -194,3 +196,36 @@ class TestProcessTimers(NoSocketsTestCase):
             result = notif.add_or_remove_timer()
         # then
         self.assertFalse(result)
+
+
+@mock.patch(MODULE_PATH + ".STRUCTURES_ADD_TIMERS", True)
+@mock.patch(TIMERS_MODULE_PATH + ".STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED", True)
+class TestMoonExtractionCancelledTimer(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.owner = OwnerFactory()
+        load_notification_entities(cls.owner)
+
+    def test_should_not_mark_processed_when_no_matching_started_notification(self):
+        # given
+        notif = NotificationFactory(
+            owner=self.owner,
+            notif_type=NotificationType.MOONMINING_EXTRACTION_CANCELLED,
+            text_from_dict={
+                "cancelledBy": 1001,
+                "cancelledByLink": '<a href="showinfo:1383//1001">Bruce Wayne</a>',
+                "moonID": 40161465,
+                "solarSystemID": 30002537,
+                "structureID": 1000000000002,
+                "structureLink": ('<a href="showinfo:35835//1000000000002">Dummy</a>'),
+                "structureName": "Dummy",
+                "structureTypeID": 35835,
+            },
+        )
+        # when
+        result = notif.add_or_remove_timer()
+        # then
+        self.assertFalse(result)
+        notif.refresh_from_db()
+        self.assertFalse(notif.is_timer_added)

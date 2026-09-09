@@ -633,6 +633,11 @@ class Owner(models.Model):
         self, token: Token, structures: List[dict]
     ) -> bool:
         count = 0
+        existing_names = dict(
+            self.structures.filter(
+                id__in=[s["structure_id"] for s in structures]
+            ).values_list("id", "name")
+        )
         for s in structures:
             try:
                 structure_info_obj = (
@@ -654,7 +659,8 @@ class Owner(models.Model):
                     self._report_esi_issue(
                         f"fetch structure #{s['structure_id']}", ex, token
                     )
-                s["name"] = "(no data)"
+                # Don't clobber a previously resolved name on a transient failure.
+                s["name"] = existing_names.get(s["structure_id"]) or "(no data)"
             else:
                 structure_info = structure_info_obj.model_dump()
                 count += 1

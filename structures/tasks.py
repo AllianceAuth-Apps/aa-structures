@@ -49,14 +49,15 @@ def update_sov_map(_self):
 @shared_task(time_limit=STRUCTURES_TASKS_TIME_LIMIT)
 def update_structures():
     """Update all structures for all active owners from ESI."""
-    for owner in Owner.objects.all():
-        if owner.is_active:
-            update_structures_for_owner.delay(owner.pk)
+    has_active_owner = False
+    has_alliance_main = False
+    for owner in Owner.objects.filter(is_active=True):
+        has_active_owner = True
+        update_structures_for_owner.delay(owner.pk)
+        if owner.is_alliance_main:
+            has_alliance_main = True
 
-    if (
-        Owner.objects.filter(is_active=True).count() > 0
-        and Owner.objects.filter(is_active=True, is_alliance_main=True).count() == 0
-    ):
+    if has_active_owner and not has_alliance_main:
         logger.warning(
             "No owner configured to process alliance wide notifications. "
             "Please set 'is alliance main' to True for the designated owner."

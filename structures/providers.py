@@ -20,10 +20,8 @@ esi = ESIClientProvider(
         "GetCorporationsCorporationIdStructures",
         "GetSovereigntyMap",
         "GetUniverseStructuresStructureId",
-        "GetUniverseStructuresStructureId",
         "PostCorporationsCorporationIdAssetsNames",
         "PostCorporationsCorporationIdAssetsLocations",
-        "PostCorporationsCorporationIdAssetsNames",
     ],
     spec_file=spec_file,
 )

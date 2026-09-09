@@ -96,9 +96,10 @@ def structure_list(request: HttpRequest):
     if request.method == "POST":
         form = TagsFilterForm(data=request.POST)
         if form.is_valid():
-            for name, activated in form.cleaned_data.items():
-                if activated:
-                    tags.append(get_object_or_404(StructureTag, name=name))
+            tag_names = [
+                name for name, activated in form.cleaned_data.items() if activated
+            ]
+            tags = list(StructureTag.objects.filter(name__in=tag_names))
 
             url = reverse("structures:structure_list")
             if tags:

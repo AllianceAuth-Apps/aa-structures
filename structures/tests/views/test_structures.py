@@ -3,8 +3,10 @@ from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
 
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.db import connection
 from django.http import Http404
 from django.test import RequestFactory, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
@@ -401,6 +403,24 @@ class TestStructureListTagFilters(TestCase):
         self.assertIn("tags", query_dict)
         params = query_dict["tags"][0].split(",")
         self.assertSetEqual(set(params), {"tag_c", "tag_b"})
+
+    def test_should_lookup_selected_tags_with_a_single_query(self):
+        # given
+        request = self.factory.post("/", data={"tag_b": True, "tag_c": True})
+        request.user = self.user
+        # when
+        with CaptureQueriesContext(connection) as ctx:
+            response = structures.structure_list(request)
+        # then
+        self.assertEqual(response.status_code, 302)
+        # 1 query to build the form fields + 1 batched lookup of selected tags,
+        # regardless of how many tags were selected
+        tag_queries = [
+            query
+            for query in ctx.captured_queries
+            if '"structures_structuretag"' in query["sql"]
+        ]
+        self.assertEqual(len(tag_queries), 2)
 
     def test_handle_post_with_no_tags(self):
         # given

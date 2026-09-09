@@ -344,6 +344,50 @@ class TestUpdateStructuresEsi(TestCaseWithClearCache):
         self.assertEqual(structure.name, "(no data)")
 
     @pook.on
+    def test_should_keep_last_known_name_when_universe_endpoint_fails(self):
+        # given
+        owner = OwnerFactory(user=self.user, structures_last_update_at=None)
+        structure_id = 1000000000001
+        solar_system = EveSolarSystemFactory()
+        structure_type = CitadelTypeFactory()
+        StructureFactory(
+            id=structure_id,
+            owner=owner,
+            eve_type=structure_type,
+            eve_solar_system=solar_system,
+            name="My Awesome Structure",
+        )
+        pook.get(
+            f"https://esi.evetech.net/corporations/{self.corporation_id}/structures",
+            reply=200,
+            response_json=[
+                {
+                    "corporation_id": self.corporation_id,
+                    "profile_id": 101853,
+                    "reinforce_hour": 18,
+                    "state": "shield_vulnerable",
+                    "structure_id": structure_id,
+                    "system_id": solar_system.id,
+                    "type_id": structure_type.id,
+                },
+            ],
+        )
+        pook.get(
+            f"https://esi.evetech.net/universe/structures/{structure_id}",
+            reply=500,
+            response_json={"error": "internal_error"},
+        )
+
+        # when
+        owner.update_structures_esi()
+
+        # then
+        owner.refresh_from_db()
+        self.assertFalse(owner.is_structure_sync_fresh)
+        structure = Structure.objects.get(id=structure_id)
+        self.assertEqual(structure.name, "My Awesome Structure")
+
+    @pook.on
     def test_tags_are_not_modified_by_update(self):
         # given
         owner = OwnerFactory(user=self.user, structures_last_update_at=None)

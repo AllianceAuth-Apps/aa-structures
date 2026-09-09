@@ -1215,6 +1215,7 @@ class Owner(models.Model):
         )
         for notif in new_eve_notifications:
             notif.send_to_configured_webhooks()
+            notifications_count += 1
 
         new_generated_notifications: models.QuerySet[GeneratedNotification] = (
             self.generatednotification_set.filter(**my_filter)
@@ -1223,6 +1224,7 @@ class Owner(models.Model):
         )
         for notif in new_generated_notifications:
             notif.send_to_configured_webhooks()
+            notifications_count += 1
 
         if (
             not new_eve_notifications.exists()

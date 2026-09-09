@@ -893,6 +893,7 @@ class JumpFuelAlertConfig(BaseFuelAlertConfig):
             )
             .filter(is_active=True)
             .filter(Q(owners__isnull=False) | Q(structures__isnull=False))
+            .distinct()
         )
 
 

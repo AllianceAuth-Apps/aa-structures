@@ -224,7 +224,7 @@ class TestStructureListDataFilterVariant(TestCase):
         request = self.factory.get("/")
         request.user = self.user
         # when/then
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Http404):
             structures.structure_list_data(request, "invalid")
 
     def test_should_not_return_structure_from_different_corporations(self):

@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.db.models import Prefetch, QuerySet
-from django.http import HttpRequest, JsonResponse
+from django.http import Http404, HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -204,7 +204,12 @@ def _structures_query(
         .filter_tags(tag_names)
     )
 
-    match StructureSelection(selection):
+    try:
+        parsed_selection = StructureSelection(selection)
+    except ValueError:
+        raise Http404(f"Unknown selection: {selection}") from None
+
+    match parsed_selection:
         case StructureSelection.STRUCTURES:
             return structures_qs.filter(
                 eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE

@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
 
@@ -418,7 +419,7 @@ class TestStructureListTagFilters(TestCase):
         tag_queries = [
             query
             for query in ctx.captured_queries
-            if '"structures_structuretag"' in query["sql"]
+            if re.search(r"\bstructures_structuretag\b", query["sql"])
         ]
         self.assertEqual(len(tag_queries), 2)
 

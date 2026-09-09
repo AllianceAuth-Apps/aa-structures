@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 
 import dhooks_lite
 
@@ -462,7 +463,7 @@ class TestNotificationStructureReinforceChange(NoSocketsTestCase):
         structure_queries = [
             query
             for query in ctx.captured_queries
-            if '"structures_structure"' in query["sql"]
+            if re.search(r"\bstructures_structure\b", query["sql"])
         ]
         self.assertEqual(len(structure_queries), 1)
 

@@ -77,9 +77,7 @@ class NotificationSkyhookUnderAttack(NotificationSkyhookEmbed):
     def __init__(self, n: Notification) -> None:
         super().__init__(n)
         self._title = _("Skyhook under attack")
-        self._description += _(
-            "is under attack by %(attacker)s.\n" "%(damage_text)s"
-        ) % {
+        self._description += _("is under attack by %(attacker)s.\n%(damage_text)s") % {
             "attacker": self.gen_attacker_link(),
             "damage_text": self.compile_damage_text("Percentage"),
         }

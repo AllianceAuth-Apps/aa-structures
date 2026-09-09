@@ -240,6 +240,23 @@ class TestNotificationEmbedsGenerate(NoSocketsTestCase):
         self.assertEqual(discord_embed.footer.text, "Structures")
         self.assertIn("structures_logo.png", discord_embed.footer.icon_url)
 
+    def test_should_generate_jump_fuel_alert_embed_when_structure_no_longer_exists(
+        self,
+    ):
+        # given
+        structure = StructureFactory(owner=self.owner)
+        notification = Notification.create_from_structure(
+            structure,
+            notif_type=NotificationType.STRUCTURE_JUMP_FUEL_ALERT,
+            threshold=1000,
+        )
+        structure.delete()
+        notification_embed = NotificationBaseEmbed.create(notification)
+        # when
+        discord_embed = notification_embed.generate_embed()
+        # then
+        self.assertIsInstance(discord_embed, dhooks_lite.Embed)
+
     def test_should_not_break_with_too_large_description(self):
         # given
         notification = Notification.objects.get(notification_id=1000000403)

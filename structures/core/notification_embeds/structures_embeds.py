@@ -95,7 +95,9 @@ class NotificationStructureJumpFuelAlert(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Jump gate low on Liquid Ozone")
         threshold_str = f"{self._data['threshold']:,}"
-        quantity_str = f"{self._structure.jump_fuel_quantity():,}"
+        quantity_str = (
+            f"{self._structure.jump_fuel_quantity():,}" if self._structure else "?"
+        )
         self._description += _(
             "is below %(threshold)s units on Liquid Ozone.\n"
             "Remaining units: %(remaining)s."

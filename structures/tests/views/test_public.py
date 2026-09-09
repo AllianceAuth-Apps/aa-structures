@@ -11,6 +11,23 @@ from structures.tests.testdata.factories import (
 from structures.views import public
 
 
+class TestPublicView(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.factory = RequestFactory()
+        cls.user = UserMainBasicFactory()
+
+    def test_should_fall_back_to_main_character_when_character_id_is_not_numeric(self):
+        # given
+        request = self.factory.get("/", {"character_id": "abc"})
+        request.user = self.user
+        # when
+        response = public.public(request)
+        # then
+        self.assertEqual(response.status_code, 200)
+
+
 class TestPocoListDataView(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):

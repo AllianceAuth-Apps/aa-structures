@@ -325,6 +325,29 @@ class TestNotificationAdmin(TestCase):
         self.assertEqual(mock_process_for_timerboard.call_count, 1)
         self.assertTrue(mock_message_user.called)
 
+    @patch(MODULE_PATH + ".NotificationAdmin.message_user", spec=True)
+    @patch(MODULE_PATH + ".Notification.add_or_remove_timer")
+    def test_action_process_for_timerboard_reports_ignored_count(
+        self, mock_process_for_timerboard, mock_message_user
+    ):
+        # given
+        NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.STRUCTURE_LOST_SHIELD
+        )
+        NotificationFactory(
+            owner=self.owner, notif_type=NotificationType.STRUCTURE_LOST_SHIELD
+        )
+        mock_process_for_timerboard.side_effect = [True, False]
+        queryset = Notification.objects.all()
+        # when
+        self.modeladmin.add_or_remove_timer(MockRequest(self.user), queryset)
+        # then
+        message = str(mock_message_user.call_args[0][1])
+        self.assertIn("Added timers from 1 notifications to timerboard.", message)
+        self.assertIn(
+            "Ignored 1 notification(s), which has no relation to timers.", message
+        )
+
     def test_filter_renderable_notifications(self):
         class NotificationAdminTest(admin.ModelAdmin):
             list_filter = (RenderableNotificationFilter,)

@@ -296,7 +296,7 @@ class NotificationCorpWarSurrenderMsg(NotificationWarBaseEmbed):
 class NotificationWarHQRemovedFromSpace(NotificationWarBaseEmbed):
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
-        war_hq = self._data["warHQ"]
+        war_hq = strip_tags(self._data["warHQ"])
         time_declared = ldap_time_2_datetime(self._data["timeDeclared"])
         self._title = _("WarHQ %s lost") % war_hq
         self._description = _(

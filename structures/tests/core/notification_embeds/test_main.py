@@ -3,7 +3,9 @@ import datetime as dt
 import dhooks_lite
 
 from django.core.cache import cache
+from django.db import connection
 from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils.timezone import now
 from eveuniverse.tests.testdata.factories_2 import EveMoonFactory, EveSolarSystemFactory
 
@@ -421,4 +423,52 @@ class TestEveNotificationEmbeds(NoSocketsTestCase):
         self.assertTrue(obj.description)
         self.assertTrue(obj.description)
         self.assertTrue(obj.description)
+
+
+class TestNotificationStructureReinforceChange(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.owner = OwnerFactory()
+
+    def test_should_batch_fetch_structures_and_handle_missing_ones(self):
+        # given
+        structure_1 = StructureFactory(owner=self.owner)
+        structure_2 = StructureFactory(owner=self.owner)
+        missing_structure_id = 1_599_999_999_999
+        notif = NotificationFactory(
+            owner=self.owner,
+            notif_type=NotificationType.STRUCTURE_REINFORCEMENT_CHANGED,
+            text_from_dict={
+                "allStructureInfo": [
+                    [structure_1.id, structure_1.name, structure_1.eve_type_id],
+                    [
+                        missing_structure_id,
+                        "Ghost Structure",
+                        structure_2.eve_type_id,
+                    ],
+                    [structure_2.id, structure_2.name, structure_2.eve_type_id],
+                ],
+                "hour": 19,
+                "numStructures": 3,
+                "timestamp": 132141703753688216,
+                "weekday": 255,
+            },
+        )
+        # when
+        with CaptureQueriesContext(connection) as ctx:
+            embed = NotificationBaseEmbed.create(notif)
+        # then: structures are fetched with a single batched query, not one per entry
+        structure_queries = [
+            query
+            for query in ctx.captured_queries
+            if '"structures_structure"' in query["sql"]
+        ]
+        self.assertEqual(len(structure_queries), 1)
+
+        obj = embed.generate_embed()
+        self.assertIn(structure_1.name, obj.description)
+        self.assertIn(structure_2.name, obj.description)
+        self.assertIn("Ghost Structure", obj.description)
+        self.assertIn("(unknown)", obj.description)
         self.assertTrue(obj.description)

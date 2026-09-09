@@ -140,10 +140,10 @@ class _AbstractStructureListSerializer(ABC):
         self, structure: Structure, row: dict, check_tags: bool = True
     ):
         structure_name_html = escape(structure.name)
-        tags = []
-        if check_tags and structure.tags.exists():
-            tags += [x.html for x in structure.tags.all()]
-            structure_name_html += format_html("<br>{}", mark_safe(" ".join(tags)))
+        if check_tags:
+            tags = [x.html for x in structure.tags.all()]
+            if tags:
+                structure_name_html += format_html("<br>{}", mark_safe(" ".join(tags)))
 
         row["structure_name_and_tags"] = structure_name_html
 

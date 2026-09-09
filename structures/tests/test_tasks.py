@@ -122,6 +122,15 @@ class TestUpdateStructuresForOwner(TestCase):
         owner_pks = {args[0][0] for args in call_args_list}
         self.assertSetEqual(owner_pks, {self.owner.pk})
 
+    def test_should_query_owners_with_a_single_query(
+        self, mock_update_structures_for_owner
+    ):
+        # given
+        OwnerFactory(is_active=False)
+        # when/then
+        with self.assertNumQueries(1):
+            tasks.update_structures()
+
 
 # TODO: Investigate how to call the top level method that contains the chains()
 

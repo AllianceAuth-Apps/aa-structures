@@ -309,10 +309,7 @@ class NotificationBase(models.Model):
         else:
             structures_qs = self.calc_related_structures()
 
-        if (
-            structures_qs.exists()
-            and structures_qs.filter(webhooks__isnull=False).count() == 1
-        ):
+        if structures_qs.count() == 1 and structures_qs.first().webhooks.exists():
             webhooks_qs = structures_qs.first().webhooks
         else:
             webhooks_qs = self.owner.webhooks
@@ -896,6 +893,7 @@ class JumpFuelAlertConfig(BaseFuelAlertConfig):
             )
             .filter(is_active=True)
             .filter(Q(owners__isnull=False) | Q(structures__isnull=False))
+            .distinct()
         )
 
 

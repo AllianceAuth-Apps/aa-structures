@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 import dhooks_lite
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError, HTTPError, Timeout, TooManyRedirects
 from simple_mq import SimpleMQ
 
 from django.contrib.auth.models import User
@@ -47,17 +47,18 @@ class DiscordWebhookMixin:
         return f"{self.__class__.__name__}(pk={self.pk}, name='{self.name}')"
 
     def queue_size(self) -> int:
-        """returns current size of the queue"""
-        return self._main_queue.size()
+        """returns current size of the queue, including messages pending retry"""
+        return self._main_queue.size() + self._error_queue.size()
 
     def clear_queue(self) -> int:
         """deletes all messages from the queue. Returns number of cleared messages."""
         counter = 0
-        while True:
-            message = self._main_queue.dequeue()
-            if message is None:
-                break
-            counter += 1
+        for queue in (self._main_queue, self._error_queue):
+            while True:
+                message = queue.dequeue()
+                if message is None:
+                    break
+                counter += 1
 
         return counter
 
@@ -152,13 +153,22 @@ class DiscordWebhookMixin:
         else:
             embeds = None
 
-        response = hook.execute(
-            content=message.get("content"),
-            embeds=embeds,
-            username=message.get("username"),
-            avatar_url=message.get("avatar_url"),
-            wait_for_response=True,
-        )
+        try:
+            response = hook.execute(
+                content=message.get("content"),
+                embeds=embeds,
+                username=message.get("username"),
+                avatar_url=message.get("avatar_url"),
+                wait_for_response=True,
+            )
+        except (ConnectionError, Timeout, TooManyRedirects) as ex:
+            logger.warning(
+                "Webhook %s: Network error while sending message to Discord: %s",
+                self,
+                ex,
+            )
+            return False
+
         logger.debug("headers: %s", response.headers)
         logger.debug("status_code: %s", response.status_code)
         logger.debug("content: %s", response.content)

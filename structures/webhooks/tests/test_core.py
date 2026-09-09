@@ -3,7 +3,7 @@ from random import randint
 from unittest.mock import Mock, patch
 
 import dhooks_lite
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError, HTTPError
 
 from django.test import TestCase
 
@@ -61,6 +61,22 @@ class TestDiscordWebhookMixin(TestCase):
         # 0 after clearing queue
         self.webhook.clear_queue()
         self.assertEqual(self.webhook.queue_size(), 0)
+
+    def test_should_include_error_queue_in_size_and_clear(self):
+        # given
+        self.webhook.send_message("dummy")
+        self.webhook._error_queue.enqueue("dummy-error-message")
+
+        # then: size includes messages pending retry in the error queue
+        self.assertEqual(self.webhook.queue_size(), 2)
+
+        # when
+        cleared = self.webhook.clear_queue()
+
+        # then: clear_queue purges both queues
+        self.assertEqual(cleared, 2)
+        self.assertEqual(self.webhook.queue_size(), 0)
+        self.assertEqual(self.webhook._error_queue.size(), 0)
 
     def test_can_send_simple_message(self):
         self.webhook.send_message(content="test-content")
@@ -129,6 +145,18 @@ class TestDiscordWebhookMixin(TestCase):
         mock_execute.return_value = dhooks_lite.WebhookResponse(
             {}, status_code=404, content={"dummy": True}
         )
+
+        self.webhook.send_message("dummy")
+        self.webhook.send_message("dummy")
+
+        result = self.webhook.send_queued_messages()
+        self.assertEqual(result, 0)
+        self.assertEqual(self.webhook.queue_size(), 2)
+        self.assertEqual(self.webhook._error_queue.size(), 0)
+
+    @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute")
+    def test_send_queued_messages_network_errors_are_requeued(self, mock_execute):
+        mock_execute.side_effect = ConnectionError("dummy connection error")
 
         self.webhook.send_message("dummy")
         self.webhook.send_message("dummy")

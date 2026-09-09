@@ -38,12 +38,11 @@ class NotificationCorpAppNewMsg(NotificationCorpCharEmbed):
         self._description = _(
             "New application from %(character_name)s to join %(corporation_name)s:\n"
             "> %(application_text)s"
-            % {
-                "character_name": self._character_link,
-                "corporation_name": self._corporation_link,
-                "application_text": self._application_text,
-            }
-        )
+        ) % {
+            "character_name": self._character_link,
+            "corporation_name": self._corporation_link,
+            "application_text": self._application_text,
+        }
         self._color = Webhook.Color.INFO
 
 
@@ -178,11 +177,10 @@ class NotificationCorpGoalClosed(NotificationCorpGoalEmbed):
         self._description = _(
             "Project **%(goal_name)s** has ben closed by %(closer)s "
             "and will not accept further contributions."
-            % {
-                "goal_name": self._goal_name,
-                "closer": gen_eve_entity_link(closer),
-            }
-        )
+        ) % {
+            "goal_name": self._goal_name,
+            "closer": gen_eve_entity_link(closer),
+        }
         self._color = Webhook.Color.INFO
 
 
@@ -193,11 +191,10 @@ class NotificationCorpGoalCompleted(NotificationCorpGoalEmbed):
         self._description = _(
             "Project **%(goal_name)s** created by %(creator)s "
             "has been successfully completed after reaching it's target."
-            % {
-                "goal_name": self._goal_name,
-                "creator": self._creator_link,
-            }
-        )
+        ) % {
+            "goal_name": self._goal_name,
+            "creator": self._creator_link,
+        }
         self._color = Webhook.Color.SUCCESS
 
 
@@ -208,9 +205,8 @@ class NotificationCorpGoalCreated(NotificationCorpGoalEmbed):
         self._description = _(
             "Project **%(goal_name)s** has been created by %(creator)s "
             "and is open for contributions."
-            % {
-                "goal_name": self._goal_name,
-                "creator": self._creator_link,
-            }
-        )
+        ) % {
+            "goal_name": self._goal_name,
+            "creator": self._creator_link,
+        }
         self._color = Webhook.Color.INFO

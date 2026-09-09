@@ -95,7 +95,9 @@ class NotificationStructureJumpFuelAlert(NotificationStructureEmbed):
         super().__init__(notification)
         self._title = _("Jump gate low on Liquid Ozone")
         threshold_str = f"{self._data['threshold']:,}"
-        quantity_str = f"{self._structure.jump_fuel_quantity():,}"
+        quantity_str = (
+            f"{self._structure.jump_fuel_quantity():,}" if self._structure else "?"
+        )
         self._description += _(
             "is below %(threshold)s units on Liquid Ozone.\n"
             "Remaining units: %(remaining)s."
@@ -262,13 +264,19 @@ class NotificationStructureReinforceChange(NotificationBaseEmbed):
 
     def __init__(self, notification: Notification) -> None:
         super().__init__(notification)
+        structure_ids = [
+            structure_info[0] for structure_info in self._data["allStructureInfo"]
+        ]
+        structures_by_id = {
+            structure.id: structure
+            for structure in Structure.objects.select_related_defaults().filter(
+                id__in=structure_ids
+            )
+        }
         all_structure_info = []
         for structure_info in self._data["allStructureInfo"]:
-            try:
-                structure = Structure.objects.select_related_defaults().get(
-                    id=structure_info[0]
-                )
-            except Structure.DoesNotExist:
+            structure = structures_by_id.get(structure_info[0])
+            if structure is None:
                 all_structure_info.append(
                     self.StructureInfo(
                         name=structure_info[1],

@@ -259,6 +259,8 @@ class Structure(models.Model):  # pylint: disable = too-many-public-methods
         verbose_name=_("fuel expires at"),
         help_text=_("Date on which the structure will run out of fuel"),
     )
+    # despite the name, also true when the structure only has fuel/cargo/fighters, not just a fit
+    # TODO: rename to has_items with the next migration
     has_fitting = models.BooleanField(
         null=True,
         default=None,

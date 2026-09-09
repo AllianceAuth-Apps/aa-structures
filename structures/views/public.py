@@ -26,7 +26,10 @@ def public(request: HttpRequest) -> HttpResponse:
         .order_by("character_name")
         .values("character_id", "character_name")
     )
-    character_id = int(request.GET.get("character_id", 0))
+    try:
+        character_id = int(request.GET.get("character_id", 0))
+    except ValueError:
+        character_id = 0
     if not character_id:
         try:
             character_id = request.user.profile.main_character.character_id

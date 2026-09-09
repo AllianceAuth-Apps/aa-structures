@@ -323,6 +323,28 @@ class TestSendNewNotifications(NoSocketsTestCase):
     #     )
     #     self.assertSetEqual(notifications_processed, notifications_expected)
 
+    @patch(OWNERS_PATH + ".notify", spec=True)
+    def test_should_report_number_of_notifications_synced(
+        self, mock_notify, mock_send_message
+    ):
+        # given
+        mock_send_message.return_value = 1
+        webhook = WebhookFactory(notification_types=NotificationType.values)
+        self.owner.webhooks.add(webhook)
+        user = UserMainDefaultOwnerFactory()
+        expected_count = self.owner.notification_set.filter(
+            notif_type__in=NotificationType.values, is_sent=False
+        ).count()
+        self.assertGreater(expected_count, 0)
+
+        # when
+        self.owner.send_new_notifications(user=user)
+
+        # then
+        self.assertTrue(mock_notify.called)
+        message = mock_notify.call_args.kwargs["message"]
+        self.assertIn(f"{expected_count} notifications synced.", message)
+
     def test_should_send_all_notifications_corp(self, mock_send_message):
         # given
         mock_send_message.return_value = 1

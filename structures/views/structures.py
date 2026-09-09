@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.db.models import Prefetch, QuerySet
-from django.http import HttpRequest, JsonResponse
+from django.http import Http404, HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -96,9 +96,10 @@ def structure_list(request: HttpRequest):
     if request.method == "POST":
         form = TagsFilterForm(data=request.POST)
         if form.is_valid():
-            for name, activated in form.cleaned_data.items():
-                if activated:
-                    tags.append(get_object_or_404(StructureTag, name=name))
+            tag_names = [
+                name for name, activated in form.cleaned_data.items() if activated
+            ]
+            tags = list(StructureTag.objects.filter(name__in=tag_names))
 
             url = reverse("structures:structure_list")
             if tags:
@@ -204,7 +205,12 @@ def _structures_query(
         .filter_tags(tag_names)
     )
 
-    match StructureSelection(selection):
+    try:
+        parsed_selection = StructureSelection(selection)
+    except ValueError:
+        raise Http404(f"Unknown selection: {selection}") from None
+
+    match parsed_selection:
         case StructureSelection.STRUCTURES:
             return structures_qs.filter(
                 eve_type__eve_group__eve_category_id=EveCategoryId.STRUCTURE
@@ -296,7 +302,8 @@ def structure_details(request: HttpRequest, structure_id: int):
     """Render structure details view."""
 
     structure: Structure = get_object_or_404(
-        Structure.objects.select_related(
+        Structure.objects.visible_for_user(request.user)
+        .select_related(
             "owner",
             "owner__corporation",
             "owner__corporation__alliance",
@@ -305,7 +312,8 @@ def structure_details(request: HttpRequest, structure_id: int):
             "eve_solar_system",
             "eve_solar_system__eve_constellation",
             "eve_solar_system__eve_constellation__eve_region",
-        ).prefetch_related(
+        )
+        .prefetch_related(
             Prefetch(
                 "services",
                 queryset=StructureService.objects.order_by("name"),
@@ -473,7 +481,8 @@ def poco_details(request: HttpRequest, structure_id):
     """Shows details modal for a POCO."""
 
     structure = get_object_or_404(
-        Structure.objects.select_related(
+        Structure.objects.visible_for_user(request.user)
+        .select_related(
             "owner",
             "eve_type",
             "eve_solar_system",
@@ -481,7 +490,8 @@ def poco_details(request: HttpRequest, structure_id):
             "eve_solar_system__eve_constellation__eve_region",
             "poco_details",
             "eve_planet",
-        ).filter(eve_type=EveTypeId.CUSTOMS_OFFICE, poco_details__isnull=False),
+        )
+        .filter(eve_type=EveTypeId.CUSTOMS_OFFICE, poco_details__isnull=False),
         id=structure_id,
     )
     context = {
@@ -498,7 +508,8 @@ def starbase_detail(request: HttpRequest, structure_id: int):
     """Shows detail modal for a starbase."""
 
     structure = get_object_or_404(
-        Structure.objects.select_related(
+        Structure.objects.visible_for_user(request.user)
+        .select_related(
             "owner",
             "owner__corporation",
             "owner__corporation__alliance",
@@ -509,7 +520,8 @@ def starbase_detail(request: HttpRequest, structure_id: int):
             "eve_solar_system__eve_constellation__eve_region",
             "starbase_detail",
             "eve_moon",
-        ).filter(starbase_detail__isnull=False),
+        )
+        .filter(starbase_detail__isnull=False),
         id=structure_id,
     )
     fuels = structure.starbase_detail.fuels.select_related("eve_type").order_by(

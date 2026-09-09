@@ -323,8 +323,6 @@ def _gen_timer_moon_extraction(notif: Notification) -> bool:
                 timer_processed = True
 
         case NotificationType.MOONMINING_EXTRACTION_CANCELLED:
-            timer_processed = True
-
             for notification in Notification.objects.filter(
                 notif_type=NotificationType.MOONMINING_EXTRACTION_STARTED,
                 owner=notif.owner,
@@ -335,6 +333,7 @@ def _gen_timer_moon_extraction(notif: Notification) -> bool:
                 parsed_text_2 = notification.parsed_text()
                 my_structure_type_id = parsed_text_2["structureTypeID"]
                 if my_structure_type_id == parsed_text["structureTypeID"]:
+                    timer_processed = True
                     eve_time_2 = _extract_eve_time(parsed_text_2)
 
                     if AuthTimer:

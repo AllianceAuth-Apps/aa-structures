@@ -47,17 +47,18 @@ class DiscordWebhookMixin:
         return f"{self.__class__.__name__}(pk={self.pk}, name='{self.name}')"
 
     def queue_size(self) -> int:
-        """returns current size of the queue"""
-        return self._main_queue.size()
+        """returns current size of the queue, including messages pending retry"""
+        return self._main_queue.size() + self._error_queue.size()
 
     def clear_queue(self) -> int:
         """deletes all messages from the queue. Returns number of cleared messages."""
         counter = 0
-        while True:
-            message = self._main_queue.dequeue()
-            if message is None:
-                break
-            counter += 1
+        for queue in (self._main_queue, self._error_queue):
+            while True:
+                message = queue.dequeue()
+                if message is None:
+                    break
+                counter += 1
 
         return counter
 

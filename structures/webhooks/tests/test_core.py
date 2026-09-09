@@ -62,6 +62,22 @@ class TestDiscordWebhookMixin(TestCase):
         self.webhook.clear_queue()
         self.assertEqual(self.webhook.queue_size(), 0)
 
+    def test_should_include_error_queue_in_size_and_clear(self):
+        # given
+        self.webhook.send_message("dummy")
+        self.webhook._error_queue.enqueue("dummy-error-message")
+
+        # then: size includes messages pending retry in the error queue
+        self.assertEqual(self.webhook.queue_size(), 2)
+
+        # when
+        cleared = self.webhook.clear_queue()
+
+        # then: clear_queue purges both queues
+        self.assertEqual(cleared, 2)
+        self.assertEqual(self.webhook.queue_size(), 0)
+        self.assertEqual(self.webhook._error_queue.size(), 0)
+
     def test_can_send_simple_message(self):
         self.webhook.send_message(content="test-content")
         self.assertEqual(self.webhook.queue_size(), 1)

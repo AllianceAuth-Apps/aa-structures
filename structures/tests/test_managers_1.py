@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pook
 
+from django.test import TestCase
 from django.utils.timezone import now
 from eveuniverse.tests.testdata.factories_2 import EveSolarSystemFactory
 
@@ -186,7 +187,7 @@ class TestEveSovereigntyMapManagerOther(NoSocketsTestCase):
         )
 
 
-class TestStructureManagerEsi(NoSocketsTestCase):
+class TestStructureManagerEsi(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

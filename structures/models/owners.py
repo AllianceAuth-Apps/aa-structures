@@ -504,9 +504,17 @@ class Owner(models.Model):
 
             token = character.valid_token()
             if not token:
-                self.disable_character_with_error_threshold(
-                    character=character, reason="No valid token found for character"
-                )
+                if not character.has_token():
+                    self.delete_character(
+                        character=character,
+                        reason="Character has no valid token anymore",
+                    )
+                else:  # token could not be refreshed, e.g. during an SSO outage
+                    logger.warning(
+                        "%s: Token for character %s currently not valid. Skipping.",
+                        self,
+                        character,
+                    )
                 continue
 
             found_character = character
@@ -1541,6 +1549,19 @@ class OwnerCharacter(models.Model):
             .require_scopes(Owner.esi_scopes())
             .require_valid()
             .first()
+        )
+
+    def has_token(self) -> bool:
+        """Report whether the character has a token with the required scopes,
+        valid or not.
+        """
+        return (
+            Token.objects.filter(
+                user=self.character_ownership.user,
+                character_id=self.character_ownership.character.character_id,
+            )
+            .require_scopes(Owner.esi_scopes())
+            .exists()
         )
 
     def reset(self) -> None:

@@ -1007,6 +1007,57 @@ class TestOwnerToken(NoSocketsTestCase):
         # then
         self.assertIsNone(token)
 
+    def test_has_token_should_return_true_when_valid_token_exists(self):
+        # given
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
+        # when/then
+        self.assertTrue(owner.characters.first().has_token())
+
+    def test_has_token_should_return_true_when_token_exists_but_expired(self):
+        # given
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
+        user.token_set.update(created=now() - dt.timedelta(days=1))
+        # when/then
+        self.assertTrue(owner.characters.first().has_token())
+
+    def test_has_token_should_return_false_when_token_deleted(self):
+        # given
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
+        token = user.token_set.get()
+        other_token = user.token_set.get()
+        other_token.pk = None
+        other_token.save()  # keeps character ownership alive, but has no scopes
+        token.delete()
+        # when/then
+        self.assertFalse(owner.characters.first().has_token())
+
+    def test_has_token_should_return_false_when_token_lacks_scopes(self):
+        # given
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
+        user.token_set.first().scopes.clear()
+        # when/then
+        self.assertFalse(owner.characters.first().has_token())
+
+    def test_has_token_should_return_false_when_only_other_character_has_token(
+        self,
+    ):
+        # given
+        character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=character)
+        owner = OwnerFactory(user=user, characters=[character])
+        other_character = EveCharacterFactory()
+        user.token_set.update(character_id=other_character.character_id)
+        # when/then
+        self.assertFalse(owner.characters.first().has_token())
+
 
 @patch(OWNERS_PATH + ".STRUCTURES_ADMIN_NOTIFICATIONS_ENABLED", True)
 @patch(OWNERS_PATH + ".notify_admins")

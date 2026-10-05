@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils.timezone import now
-from esi.errors import TokenError
+from esi.errors import IncompleteResponseError, TokenError, TokenInvalidError
 from esi.models import Token
 
 from structures.models import Owner, OwnerCharacter
@@ -20,7 +20,28 @@ from structures.tests.testdata.factories import (
     UserMainDefaultOwnerFactory,
 )
 
+try:
+    from esi.errors import SSOUnavailableError
+except ImportError:  # django-esi < 10
+    SSOUnavailableError = IncompleteResponseError
+
 MODULE_PATH = "structures.models.owners"
+
+
+def _expire_tokens(user):
+    """Make all tokens of a user expired, so they need to be refreshed."""
+    user.token_set.update(created=now() - timedelta(days=1))
+
+
+def _add_other_token(user):
+    """Add a token without scopes for the main character of a user.
+
+    This keeps the character ownership alive when the original token is deleted.
+    """
+    token = user.token_set.first()
+    token.pk = None
+    token.created = now()
+    token.save()
 
 
 class TestOwner(TestCase):
@@ -314,7 +335,7 @@ class TestOwnerFetchToken(TestCase):
         self.assertTrue(mock_notify.called)
         self.assertEqual(owner.characters.count(), 0)
 
-    def test_raise_error_when_no_valid_token_found_and_disable_character(
+    def test_raise_error_when_token_lacks_scopes_and_delete_character(
         self, mock_notify_admins, mock_notify
     ):
         # given
@@ -325,10 +346,171 @@ class TestOwnerFetchToken(TestCase):
         # when/then
         with self.assertRaises(TokenError):
             owner.fetch_token()
-        character = owner.characters.first()
-        self.assertFalse(character.is_enabled)
+        self.assertEqual(owner.characters.count(), 0)
         self.assertTrue(mock_notify_admins.called)
         self.assertTrue(mock_notify.called)
+
+    def test_raise_error_when_token_deleted_and_delete_character(
+        self, mock_notify_admins, mock_notify
+    ):
+        # given
+        eve_character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=eve_character)
+        owner = OwnerFactory(user=user, characters=[eve_character])
+        token = user.token_set.get()
+        _add_other_token(user)
+        token.delete()
+        # when/then
+        with self.assertRaises(TokenError):
+            owner.fetch_token()
+        self.assertEqual(owner.characters.count(), 0)
+        self.assertTrue(mock_notify_admins.called)
+        self.assertTrue(mock_notify.called)
+
+    def test_should_keep_character_when_sso_unavailable(
+        self, mock_notify_admins, mock_notify
+    ):
+        # given
+        eve_character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=eve_character)
+        owner = OwnerFactory(user=user, characters=[eve_character])
+        _expire_tokens(user)
+        # when/then
+        with patch(
+            "esi.models.Token.refresh", spec=True, side_effect=SSOUnavailableError
+        ):
+            with self.assertRaises(TokenError):
+                owner.fetch_token()
+        character = owner.characters.get()
+        self.assertTrue(character.is_enabled)
+        self.assertTrue(user.token_set.exists())
+        self.assertFalse(mock_notify_admins.called)
+        self.assertFalse(mock_notify.called)
+
+    def test_should_keep_character_when_sso_response_incomplete(
+        self, mock_notify_admins, mock_notify
+    ):
+        # given
+        eve_character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=eve_character)
+        owner = OwnerFactory(user=user, characters=[eve_character])
+        _expire_tokens(user)
+        # when/then
+        with patch(
+            "esi.models.Token.refresh", spec=True, side_effect=IncompleteResponseError
+        ):
+            with self.assertRaises(TokenError):
+                owner.fetch_token()
+        character = owner.characters.get()
+        self.assertTrue(character.is_enabled)
+        self.assertTrue(user.token_set.exists())
+        self.assertFalse(mock_notify_admins.called)
+        self.assertFalse(mock_notify.called)
+
+    def test_should_delete_character_when_sso_rejects_token(
+        self, mock_notify_admins, mock_notify
+    ):
+        # given
+        eve_character = EveCharacterFactory()
+        user = UserMainDefaultOwnerFactory(main_character__character=eve_character)
+        owner = OwnerFactory(user=user, characters=[eve_character])
+        token = user.token_set.get()
+        _expire_tokens(user)
+        _add_other_token(user)
+        # when/then
+        with patch(
+            "esi.models.Token.refresh", spec=True, side_effect=TokenInvalidError
+        ):
+            with self.assertRaises(TokenError):
+                owner.fetch_token()
+        self.assertEqual(owner.characters.count(), 0)
+        self.assertFalse(user.token_set.filter(pk=token.pk).exists())
+        self.assertTrue(mock_notify_admins.called)
+        self.assertTrue(mock_notify.called)
+
+    def test_should_use_next_character_when_first_token_temporarily_invalid(
+        self, mock_notify_admins, mock_notify
+    ):
+        # given
+        owner = OwnerFactory(characters=False)
+        character_1 = OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 1, 0, tzinfo=dt.timezone.utc
+            ),
+        )
+        character_2 = OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 2, 0, tzinfo=dt.timezone.utc
+            ),
+        )
+        _expire_tokens(character_1.character_ownership.user)
+        # when
+        with patch(
+            "esi.models.Token.refresh", spec=True, side_effect=SSOUnavailableError
+        ):
+            token = owner.fetch_token()
+        # then
+        self.assertEqual(token.character_id, character_2.character_id())
+        self.assertTrue(owner.characters.filter(pk=character_1.pk).exists())
+        self.assertFalse(mock_notify_admins.called)
+        self.assertFalse(mock_notify.called)
+
+    def test_should_use_next_character_when_first_has_no_token(
+        self, mock_notify_admins, mock_notify
+    ):
+        # given
+        owner = OwnerFactory(characters=False)
+        character_1 = OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 1, 0, tzinfo=dt.timezone.utc
+            ),
+        )
+        character_2 = OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 2, 0, tzinfo=dt.timezone.utc
+            ),
+        )
+        user_1 = character_1.character_ownership.user
+        token = user_1.token_set.get()
+        _add_other_token(user_1)
+        token.delete()
+        # when
+        token = owner.fetch_token()
+        # then
+        self.assertEqual(token.character_id, character_2.character_id())
+        self.assertFalse(owner.characters.filter(pk=character_1.pk).exists())
+        self.assertTrue(mock_notify_admins.called)
+        self.assertTrue(mock_notify.called)
+
+    def test_should_not_rotate_skipped_character(self, mock_notify_admins, mock_notify):
+        # given
+        owner = OwnerFactory(characters=False)
+        last_used_at = dt.datetime(2021, 1, 1, 1, 0, tzinfo=dt.timezone.utc)
+        character_1 = OwnerCharacterFactory(
+            owner=owner, notifications_last_used_at=last_used_at
+        )
+        OwnerCharacterFactory(
+            owner=owner,
+            notifications_last_used_at=dt.datetime(
+                2021, 1, 1, 2, 0, tzinfo=dt.timezone.utc
+            ),
+        )
+        _expire_tokens(character_1.character_ownership.user)
+        # when
+        with patch(
+            "esi.models.Token.refresh", spec=True, side_effect=SSOUnavailableError
+        ):
+            owner.fetch_token(
+                rotate_characters=Owner.RotateCharactersType.NOTIFICATIONS,
+                ignore_schedule=True,
+            )
+        # then
+        character_1.refresh_from_db()
+        self.assertEqual(character_1.notifications_last_used_at, last_used_at)
 
     def test_raise_error_when_character_no_longer_a_corporation_member_and_delete_it(
         self, mock_notify_admins, mock_notify

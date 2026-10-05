@@ -4,12 +4,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils.timezone import now
-from esi.errors import (
-    IncompleteResponseError,
-    SSOUnavailableError,
-    TokenError,
-    TokenInvalidError,
-)
+from esi.errors import IncompleteResponseError, TokenError, TokenInvalidError
 from esi.models import Token
 
 from structures.models import Owner, OwnerCharacter
@@ -24,6 +19,11 @@ from structures.tests.testdata.factories import (
     UserMainBasicFactory,
     UserMainDefaultOwnerFactory,
 )
+
+try:
+    from esi.errors import SSOUnavailableError
+except ImportError:  # django-esi < 10
+    SSOUnavailableError = IncompleteResponseError
 
 MODULE_PATH = "structures.models.owners"
 
